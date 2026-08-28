@@ -1,0 +1,110 @@
+#include "PreviewCommand.h"
+
+namespace PixelShipGeneratorPreview
+{
+    namespace
+    {
+        constexpr std::array<PreviewCommandData, static_cast<std::size_t>(PreviewCommandType::PREVIEW_COMMAND_TYPE_END)> CommandData = { {
+            { PreviewCommandType::GENERATE_NEW, "Generate New", "N / SPACE", "Generate a completely new ship. In gallery mode, generate a new gallery batch.", PreviewCommandGroup::GENERATION },
+            { PreviewCommandType::REROLL, "Reroll", "R", "Regenerate only currently unlocked generation channels.", PreviewCommandGroup::GENERATION },
+            { PreviewCommandType::GENERATE_FROM_MASTER_SEED, "Known Seed", "G", "Generate the current recipe from a known master seed.", PreviewCommandGroup::GENERATION },
+            { PreviewCommandType::PREVIOUS_HISTORY, "Previous", "LEFT / P / BACKSPACE", "Move to the previous history entry.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::NEXT_HISTORY, "Next", "RIGHT", "Move to the next history entry.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::OPEN_GALLERY, "Gallery", "B", "Enter gallery mode with a new batch seed.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::OPEN_GALLERY_FROM_SEED, "Gallery Seed", "H", "Enter or rebuild gallery mode from a known batch seed.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::GALLERY_LEFT, "Gallery Left", "ARROWS", "Move the gallery selection with the arrow keys.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::GALLERY_RIGHT, "Gallery Right", "", "Move the gallery selection right.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::GALLERY_UP, "Gallery Up", "", "Move the gallery selection up.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::GALLERY_DOWN, "Gallery Down", "", "Move the gallery selection down.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::SELECT_GALLERY_CANDIDATE, "Select Gallery", "ENTER", "Select the highlighted gallery candidate.", PreviewCommandGroup::NAVIGATION },
+            { PreviewCommandType::ADD_CURRENT_TO_FAVORITES, "Add Favorite", "", "Bookmark the exact current generation recipe for this session.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES, "Remove Favorite", "", "Remove the exact current generation recipe from Favorites.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::OPEN_FAVORITES, "Favorites", "", "Browse the ships explicitly bookmarked during this session.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::CLOSE_FAVORITES, "Back", "", "Return from the Favorites browser to the current ship.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::FAVORITES_LEFT, "Favorites Left", "FAV ARROWS", "Move the Favorites selection left.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::FAVORITES_RIGHT, "Favorites Right", "", "Move the Favorites selection right.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::FAVORITES_UP, "Favorites Up", "", "Move the Favorites selection up.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::FAVORITES_DOWN, "Favorites Down", "", "Move the Favorites selection down.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::SELECT_FAVORITE, "Load Favorite", "FAV ENTER", "Load the highlighted Favorite as the current generation state.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::SELECT_STYLE, "Style", "F1-F4", "Direct style selection preserves F1 SLEEK, F2 FIGHTER, F3 HEAVY, F4 INDUSTRIAL. Previous/Next reaches every style, including SPEARHEAD and DELTA.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::PREVIOUS_STYLE, "Previous Style", "", "Select the previous structural style.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::NEXT_STYLE, "Next Style", "", "Select the next structural style.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::SELECT_FACTION, "Faction", "Z / X / C / V", "Direct faction selection: Z FRONTIER, X MILITARY, C ASCENDANT, V XENO.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::PREVIOUS_FACTION, "Previous Faction", "", "Select the previous faction.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::NEXT_FACTION, "Next Faction", "", "Select the next faction.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::SELECT_RESOLUTION, "Resolution", "1-7", "Direct resolution selection: 1 24, 2 32, 3 44, 4 64, 5 96, 6 128, 7 160.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::PREVIOUS_RESOLUTION, "Previous Preset", "", "Select the previous established resolution preset.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::NEXT_RESOLUTION, "Next Preset", "", "Select the next established resolution preset.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::SET_WIDTH, "Set Width", "", "Apply the width selected by the Width slider.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::SET_HEIGHT, "Set Height", "", "Apply the height selected by the Height slider.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::TOGGLE_ASPECT_RATIO_LOCK, "1:1 Lock", "", "Lock Width and Height together as a square. Enabled by default.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::ADD_RESOLUTION_BOOKMARK, "Add Bookmark", "", "Bookmark the current Width x Height dimensions. Up to six values are stored as PreviewApp preferences.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::REMOVE_RESOLUTION_BOOKMARK, "Remove Bookmark", "", "Remove the current Width x Height dimensions from the bookmark list.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::SELECT_RESOLUTION_BOOKMARK, "Resolution Bookmark", "SHIFT+1-6", "Select one of the saved dimension bookmarks. Slots are sorted by width, then height.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::TOGGLE_ATTACHMENTS_ENABLED, "Attach Gen", "A", "Enable or disable attachment generation for the current recipe.", PreviewCommandGroup::GENERATION },
+            { PreviewCommandType::TOGGLE_STRUCTURE_LOCK, "Struct Lock", "Q", "Preserve structural geometry while rerolling.", PreviewCommandGroup::LOCKS },
+            { PreviewCommandType::TOGGLE_PALETTE_LOCK, "Palette Lock", "W", "Preserve the palette while rerolling.", PreviewCommandGroup::LOCKS },
+            { PreviewCommandType::TOGGLE_DETAILS_LOCK, "Details Lock", "E", "Preserve surface-detail generation while rerolling.", PreviewCommandGroup::LOCKS },
+            { PreviewCommandType::TOGGLE_ATTACHMENTS_LOCK, "Attach Lock", "T", "Preserve the attachment RNG channel while rerolling.", PreviewCommandGroup::LOCKS },
+            { PreviewCommandType::TOGGLE_HELP, "Help", "F5", "Show or hide the keyboard controls overlay.", PreviewCommandGroup::VIEW },
+            { PreviewCommandType::TOGGLE_GENERATION_INSPECTOR, "Gen Inspector", "F6", "Show or hide generated structural and procedural diagnostics.", PreviewCommandGroup::VIEW },
+            { PreviewCommandType::TOGGLE_PALETTE_INSPECTOR, "Palette", "F7", "Show or hide the resolved palette inspector.", PreviewCommandGroup::VIEW },
+            { PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW, "Mask View", "M", "Cycle FINAL, individual mask, and combined diagnostic views.", PreviewCommandGroup::VIEW },
+            { PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW, "Gen Stages", "F8", "Toggle captured hull-generation stage visualization.", PreviewCommandGroup::VIEW },
+            { PreviewCommandType::PREVIOUS_GENERATION_STAGE, "Previous Stage", "[", "Show the previous captured generation stage.", PreviewCommandGroup::VIEW },
+            { PreviewCommandType::NEXT_GENERATION_STAGE, "Next Stage", "]", "Show the next captured generation stage.", PreviewCommandGroup::VIEW },
+            { PreviewCommandType::TOGGLE_ANIMATION, "Animation", "I", "Toggle static and idle-animation playback; resume playback from frame inspection.", PreviewCommandGroup::ANIMATION },
+            { PreviewCommandType::TOGGLE_FRAME_INSPECTION, "Frame Inspect", "K", "Enter or leave idle-animation frame inspection.", PreviewCommandGroup::ANIMATION },
+            { PreviewCommandType::PREVIOUS_FRAME, "Previous Frame", "LEFT / P / BACKSPACE", "Show the previous animation frame while inspecting frames.", PreviewCommandGroup::ANIMATION },
+            { PreviewCommandType::NEXT_FRAME, "Next Frame", "RIGHT", "Show the next animation frame while inspecting frames.", PreviewCommandGroup::ANIMATION },
+            { PreviewCommandType::PIN_CURRENT, "Pin Current", "F9", "Keep this ship visible for side-by-side comparison.", PreviewCommandGroup::COMPARISON },
+            { PreviewCommandType::CLEAR_PIN, "Clear Pin", "F10", "Clear the pinned comparison reference.", PreviewCommandGroup::COMPARISON },
+            { PreviewCommandType::TOGGLE_COMPARISON, "Comparison", "F11", "Toggle pinned side-by-side comparison view.", PreviewCommandGroup::COMPARISON },
+            { PreviewCommandType::SAVE_CURRENT, "Save PNG", "S", "Save the current static sprite or inspected animation frame as PNG.", PreviewCommandGroup::FILES },
+            { PreviewCommandType::EXPORT_RECIPE, "Export Recipe", "", "Export the current recipe, or the selected Favorite recipe while browsing Favorites, as .shipgen.json.", PreviewCommandGroup::FILES },
+            { PreviewCommandType::IMPORT_RECIPE, "Import Recipe", "", "Load a .shipgen.json path entered in the console and regenerate the exact ship.", PreviewCommandGroup::FILES },
+            { PreviewCommandType::SAVE_SPRITESHEET, "Save Spritesheet", "Y", "Save the complete horizontal idle-animation spritesheet.", PreviewCommandGroup::FILES },
+            { PreviewCommandType::OPEN_REROLL_STUDIO, "Reroll Studio", "", "Open the non-destructive fine-grained attribute reroll workflow.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::REROLL_STUDIO_TOGGLE_DOMAIN, "Toggle Attribute", "", "Selected attributes receive new Task-50 domain seeds; unselected domain seeds are preserved.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::REROLL_STUDIO_SELECT_ALL, "Select All", "", "Select every fine-grained reroll domain.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::REROLL_STUDIO_CLEAR, "Clear", "", "Clear the attribute reroll selection.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::REROLL_STUDIO_SELECT_STRUCTURE, "Structural", "", "Select the Structure-owned Task-50 reroll domains.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::REROLL_STUDIO_SELECT_APPEARANCE, "Appearance", "", "Select Palette and Details for appearance-only rerolling.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::REROLL_STUDIO_GENERATE_CANDIDATE, "Reroll Candidate", "R / SPACE", "Generate a new candidate from the unchanged BaseRecipe using only the selected domains.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::REROLL_STUDIO_ACCEPT, "Accept", "ENTER", "Make the current candidate the authoritative recipe/ship and add it to History.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::REROLL_STUDIO_CANCEL, "Cancel", "ESCAPE", "Discard the candidate and return to the original current ship unchanged.", PreviewCommandGroup::REROLL_STUDIO },
+            { PreviewCommandType::OPEN_CALIBRATION_LAB, "Calibration Lab", "", "Open the developer-only generation weight calibration workflow.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_PREVIOUS_GROUP, "Previous Group", "", "Select the previous tunable calibration weight group.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_NEXT_GROUP, "Next Group", "", "Select the next tunable calibration weight group.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_SET_WEIGHT, "Set Weight", "", "Change one temporary relative weight. Production defaults are not modified.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_GENERATE_PAIR, "New A/B Pair", "N", "Generate the next balanced controlled comparison pair for the selected group.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_PREFER_LEFT, "Prefer Left", "LEFT / A", "Record a preference for the ship currently shown on the left.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_NO_PREFERENCE, "No Preference", "DOWN / S", "Record a tie/no-preference result for the current pair.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_PREFER_RIGHT, "Prefer Right", "RIGHT / D", "Record a preference for the ship currently shown on the right.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_SKIP, "Skip Pair", "SPACE", "Skip the pair without affecting preference scores.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_RESET_GROUP, "Reset Group", "", "Restore the selected style/group to its production-default weights.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_RESET_ALL, "Reset All", "", "Restore every temporary tuning value to its production-default snapshot.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_APPLY_SUGGESTED, "Apply Suggested", "", "Explicitly apply suggested weights to the temporary tuning profile only.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_TOGGLE_SHOW_VALUES, "Show Test Values", "", "Show or hide the underlying option names during A/B comparisons.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_TOGGLE_CONTEXT_FILTER, "Context Filter", "", "Toggle statistics between all records and the current style, faction, and dimension bucket.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_RUN_OBJECTIVE_BATCH, "Objective Batch", "", "Run a small deterministic Task-33 statistics batch for production defaults versus the temporary tuning profile.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_SAVE_SESSION, "Save Session", "", "Save the calibration profile, pair schedule and comparison records to JSON.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_LOAD_SESSION, "Load Session", "", "Resume the saved calibration session JSON.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_EXPORT_REPORT, "Export CSV", "", "Export raw calibration comparison records as CSV for external analysis.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_EXPORT_TUNING_PROFILE, "Export Tuning", "", "Export the current temporary tuning profile without modifying C++ defaults.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::CALIBRATION_EXIT, "Exit Calibration", "ESCAPE", "Return to the normal PreviewApp without applying tuning to production defaults.", PreviewCommandGroup::CALIBRATION },
+            { PreviewCommandType::BACK_OR_EXIT, "Back / Exit", "ESCAPE", "Dismiss the active overlay or mode, otherwise close the application.", PreviewCommandGroup::VIEW }
+        } };
+    }
+
+    const PreviewCommandData& getPreviewCommandData(PreviewCommandType type)
+    {
+        const std::size_t index = static_cast<std::size_t>(type);
+        return index < CommandData.size() ? CommandData[index] : CommandData.back();
+    }
+
+    const std::array<PreviewCommandData, static_cast<std::size_t>(PreviewCommandType::PREVIEW_COMMAND_TYPE_END)>& getPreviewCommandDataTable()
+    {
+        return CommandData;
+    }
+}
