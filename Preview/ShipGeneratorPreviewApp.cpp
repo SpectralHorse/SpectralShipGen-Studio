@@ -10,7 +10,7 @@
 #include <string>
 #include <utility>
 
-#include "SFMLImageAdapter.h"
+#include <PixelShipGenerator/SFMLImageAdapter.h>
 #include "GenerationCalibration.h"
 #include "GenerationCalibrationSerializer.h"
 #include "PreviewCommand.h"

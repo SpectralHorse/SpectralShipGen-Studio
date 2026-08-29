@@ -7,7 +7,7 @@
 #include <sstream>
 #include <utility>
 
-#include "Application/SFMLPixelText.h"
+#include "SFMLPixelText.h"
 #include "DiagnosticsResultSerializer.h"
 #include "ShipGenerationPerformance.h"
 

@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "Application/SFMLCharts.h"
+#include "SFMLCharts.h"
 #include "DiagnosticsAnalysis.h"
 #include "DiagnosticsAppController.h"
 #include "ShipFactionType.h"

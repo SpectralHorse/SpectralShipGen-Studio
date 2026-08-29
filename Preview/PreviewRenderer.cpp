@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "PreviewCommand.h"
-#include "Application/SFMLPixelText.h"
+#include "SFMLPixelText.h"
 #include "PreviewThumbnailGrid.h"
 
 namespace
