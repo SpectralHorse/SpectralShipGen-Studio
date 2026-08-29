@@ -381,6 +381,28 @@ namespace
         return enabled ? "ON" : "OFF";
     }
 
+    std::string getAnimationTypeDisplayName(PixelShipGenerator::ShipAnimationType type)
+    {
+        switch (type)
+        {
+        case PixelShipGenerator::ShipAnimationType::IDLE: return "IDLE";
+        case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
+        case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
+        default: return "UNSUPPORTED";
+        }
+    }
+
+    std::string getMovementPhaseDisplayName(PixelShipGenerator::ShipMovementAnimationPhase phase)
+    {
+        switch (phase)
+        {
+        case PixelShipGenerator::ShipMovementAnimationPhase::ENTER: return "ENTER";
+        case PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN: return "SUSTAIN";
+        case PixelShipGenerator::ShipMovementAnimationPhase::EXIT: return "EXIT";
+        default: return "UNKNOWN";
+        }
+    }
+
     std::string getSameDifferent(bool same)
     {
         return same ? "SAME" : "DIFFERENT";
@@ -1168,10 +1190,11 @@ namespace PixelShipGeneratorPreview
             y += 16.0f;
         }
 
-        if (data.IdleAnimation != nullptr && data.IdleAnimationSettings != nullptr && !data.IdleAnimation->Frames.empty())
+        if (data.SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE && data.IdleAnimation != nullptr && data.IdleAnimationSettings != nullptr && !data.IdleAnimation->Frames.empty())
         {
             y += 4.0f;
             drawSectionHeader(window, "IDLE ANIMATION", x, y);
+            drawLabelValue(window, "TYPE", getAnimationTypeDisplayName(data.SelectedAnimationType), x, y);
             drawLabelValue(window, "SEED", std::to_string(data.IdleAnimation->Seed), x, y);
             drawLabelValue(window, "DURATION", std::to_string(data.IdleAnimation->DurationMilliseconds) + " ms", x, y);
             drawLabelValue(window, "FRAMES", std::to_string(data.IdleAnimation->Sampling.ActualFrameCount), x, y);
@@ -1188,6 +1211,31 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "MICRO", getOnOff(data.IdleAnimationSettings->MechanicalMicroMovement), x, y);
             drawLabelValue(window, "HOVER", getOnOff(data.IdleAnimationSettings->HoverOffset), x, y);
             drawLabelValue(window, "DETAIL FX", getOnOff(data.IdleAnimationSettings->SmallDetailVariation), x, y);
+        }
+        else if (data.MovementAnimation != nullptr && data.MovementAnimationSettings != nullptr && data.MovementAnimation->Type == data.SelectedAnimationType)
+        {
+            const PixelShipGenerator::ShipMovementAnimationClip& clip = PixelShipGenerator::getMovementAnimationClip(*data.MovementAnimation, data.MovementPhase);
+            if (!clip.Frames.empty())
+            {
+                y += 4.0f;
+                drawSectionHeader(window, "MOVEMENT ANIMATION", x, y);
+                drawLabelValue(window, "TYPE", getAnimationTypeDisplayName(data.SelectedAnimationType), x, y);
+                drawLabelValue(window, "PHASE", getMovementPhaseDisplayName(data.MovementPhase), x, y);
+                drawLabelValue(window, "SEED", std::to_string(data.MovementAnimation->Seed), x, y);
+                drawLabelValue(window, "DURATION", std::to_string(clip.DurationMilliseconds) + " ms", x, y);
+                drawLabelValue(window, "FRAMES", std::to_string(clip.Sampling.ActualFrameCount), x, y);
+                drawLabelValue(window, "SAMPLING", clip.Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
+                drawLabelValue(window, "FRAME LIMITS", std::to_string(clip.Sampling.MinimumFrameCount) + "-" + std::to_string(clip.Sampling.MaximumFrameCount), x, y);
+                drawLabelValue(window, "FRAME TIME", getMillisecondsString(clip.FrameDurationMilliseconds), x, y);
+                drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(clip.Frames.size()), x, y);
+                drawLabelValue(window, "COMPONENTS", std::to_string(clip.Sampling.ActiveAnimatedComponentCount), x, y);
+                drawLabelValue(window, "MAX TRAVEL", std::to_string(data.MovementAnimation->Diagnostics.MaximumMechanicalTravelPixels) + " px", x, y);
+                drawLabelValue(window, "PHASE GROUPS", std::to_string(data.MovementAnimation->Diagnostics.IndependentPhaseGroupCount), x, y);
+                drawLabelValue(window, "PLAYBACK", data.Mode == PreviewMode::ANIMATION ? "PLAY" : data.Mode == PreviewMode::FRAME_INSPECTION ? "PAUSED" : "STATIC", x, y);
+                drawLabelValue(window, "ENGINES", std::to_string(data.MovementAnimation->Diagnostics.ActiveEngineCount), x, y);
+                drawLabelValue(window, "WEAPONS", std::to_string(data.MovementAnimation->Diagnostics.ActiveWeaponCount), x, y);
+                drawLabelValue(window, "ATTACH", std::to_string(data.MovementAnimation->Diagnostics.ActiveAttachmentCount), x, y);
+            }
         }
 
         if (data.Diagnostics != nullptr && data.Diagnostics->GenerationStageView && data.GenerationDebugInfo != nullptr && !data.GenerationDebugInfo->HullStages.empty())
@@ -1513,10 +1561,11 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "ARMOR WT", std::to_string(debug.SurfaceDetailProfile.AccentArmorWeight), rightX, rightY);
         }
 
-        if (data.IdleAnimation != nullptr && data.IdleAnimationSettings != nullptr && !data.IdleAnimation->Frames.empty())
+        if (data.SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE && data.IdleAnimation != nullptr && data.IdleAnimationSettings != nullptr && !data.IdleAnimation->Frames.empty())
         {
             rightY += 5.0f;
             drawSectionHeader(window, "ANIMATION", rightX, rightY);
+            drawLabelValue(window, "TYPE", getAnimationTypeDisplayName(data.SelectedAnimationType), rightX, rightY);
             drawLabelValue(window, "SEED", std::to_string(data.IdleAnimation->Seed), rightX, rightY);
             drawLabelValue(window, "DURATION", std::to_string(data.IdleAnimation->DurationMilliseconds) + " ms", rightX, rightY);
             drawLabelValue(window, "FRAMES", std::to_string(data.IdleAnimation->Sampling.ActualFrameCount), rightX, rightY);
@@ -1531,6 +1580,29 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "MICRO MOVE", getOnOff(data.IdleAnimationSettings->MechanicalMicroMovement), rightX, rightY);
             drawLabelValue(window, "HOVER", getOnOff(data.IdleAnimationSettings->HoverOffset), rightX, rightY);
             drawLabelValue(window, "DETAIL FX", getOnOff(data.IdleAnimationSettings->SmallDetailVariation), rightX, rightY);
+        }
+        else if (data.MovementAnimation != nullptr && data.MovementAnimationSettings != nullptr && data.MovementAnimation->Type == data.SelectedAnimationType)
+        {
+            const PixelShipGenerator::ShipMovementAnimationClip& clip = PixelShipGenerator::getMovementAnimationClip(*data.MovementAnimation, data.MovementPhase);
+            if (!clip.Frames.empty())
+            {
+                rightY += 5.0f;
+                drawSectionHeader(window, "ANIMATION", rightX, rightY);
+                drawLabelValue(window, "TYPE", getAnimationTypeDisplayName(data.SelectedAnimationType), rightX, rightY);
+                drawLabelValue(window, "PHASE", getMovementPhaseDisplayName(data.MovementPhase), rightX, rightY);
+                drawLabelValue(window, "SEED", std::to_string(data.MovementAnimation->Seed), rightX, rightY);
+                drawLabelValue(window, "DURATION", std::to_string(clip.DurationMilliseconds) + " ms", rightX, rightY);
+                drawLabelValue(window, "FRAMES", std::to_string(clip.Sampling.ActualFrameCount), rightX, rightY);
+                drawLabelValue(window, "SAMPLING", clip.Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", rightX, rightY);
+                drawLabelValue(window, "FRAME TIME", getMillisecondsString(clip.FrameDurationMilliseconds), rightX, rightY);
+                drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(clip.Frames.size()), rightX, rightY);
+                drawLabelValue(window, "COMPONENTS", std::to_string(clip.Sampling.ActiveAnimatedComponentCount), rightX, rightY);
+                drawLabelValue(window, "MAX TRAVEL", std::to_string(data.MovementAnimation->Diagnostics.MaximumMechanicalTravelPixels) + " px", rightX, rightY);
+                drawLabelValue(window, "PHASE GROUPS", std::to_string(data.MovementAnimation->Diagnostics.IndependentPhaseGroupCount), rightX, rightY);
+                drawLabelValue(window, "ENGINES", std::to_string(data.MovementAnimation->Diagnostics.ActiveEngineCount), rightX, rightY);
+                drawLabelValue(window, "WEAPONS", std::to_string(data.MovementAnimation->Diagnostics.ActiveWeaponCount), rightX, rightY);
+                drawLabelValue(window, "ATTACH", std::to_string(data.MovementAnimation->Diagnostics.ActiveAttachmentCount), rightX, rightY);
+            }
         }
     }
 

@@ -155,6 +155,50 @@ namespace
         }
     }
 
+    std::string getAnimationTypeDisplayName(PixelShipGenerator::ShipAnimationType type)
+    {
+        switch (type)
+        {
+        case PixelShipGenerator::ShipAnimationType::IDLE: return "IDLE";
+        case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
+        case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
+        default: return "UNSUPPORTED";
+        }
+    }
+
+    std::string getAnimationTypeFileToken(PixelShipGenerator::ShipAnimationType type)
+    {
+        switch (type)
+        {
+        case PixelShipGenerator::ShipAnimationType::IDLE: return "idle";
+        case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "move_left";
+        case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "move_right";
+        default: return "animation";
+        }
+    }
+
+    std::string getMovementPhaseDisplayName(PixelShipGenerator::ShipMovementAnimationPhase phase)
+    {
+        switch (phase)
+        {
+        case PixelShipGenerator::ShipMovementAnimationPhase::ENTER: return "ENTER";
+        case PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN: return "SUSTAIN";
+        case PixelShipGenerator::ShipMovementAnimationPhase::EXIT: return "EXIT";
+        default: return "UNKNOWN";
+        }
+    }
+
+    std::string getMovementPhaseFileToken(PixelShipGenerator::ShipMovementAnimationPhase phase)
+    {
+        switch (phase)
+        {
+        case PixelShipGenerator::ShipMovementAnimationPhase::ENTER: return "enter";
+        case PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN: return "sustain";
+        case PixelShipGenerator::ShipMovementAnimationPhase::EXIT: return "exit";
+        default: return "phase";
+        }
+    }
+
     std::string getSaveBaseName(const PixelShipGeneratorPreview::PreviewGenerationRecipe& recipe)
     {
         return "ship_" + getResolutionString(recipe) + "_" + getStyleName(recipe.Style) + "_" + getFactionName(recipe.Faction) + "_seed_" + std::to_string(recipe.Seeds.Master);
@@ -614,6 +658,45 @@ namespace PixelShipGeneratorPreview
         return image;
     }
 
+    void ShipGeneratorPreviewApp::cycleAnimationType()
+    {
+        constexpr std::array<PixelShipGenerator::ShipAnimationType, 3u> Types =
+        {
+            PixelShipGenerator::ShipAnimationType::IDLE,
+            PixelShipGenerator::ShipAnimationType::MOVE_LEFT,
+            PixelShipGenerator::ShipAnimationType::MOVE_RIGHT
+        };
+
+        const auto iterator = std::find(Types.begin(), Types.end(), m_SelectedAnimationType);
+        const std::size_t currentIndex = iterator == Types.end() ? 0u : static_cast<std::size_t>(std::distance(Types.begin(), iterator));
+        m_SelectedAnimationType = Types[(currentIndex + 1u) % Types.size()];
+        m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+        m_AnimationFrameIndex = 0u;
+        if (!regenerateAnimation()) { return; }
+
+        if (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) { setDisplayedAnimationFrame(0u); }
+        else { setDisplayedStaticFrame(); }
+        setStatusMessage("Animation type: " + getAnimationTypeDisplayName(m_SelectedAnimationType));
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::cycleMovementPhase()
+    {
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return; }
+
+        const uint32_t phaseCount = static_cast<uint32_t>(PixelShipGenerator::ShipMovementAnimationPhase::SHIP_MOVEMENT_ANIMATION_PHASE_END);
+        const uint32_t nextPhase = (static_cast<uint32_t>(m_MovementAnimationPhase) + 1u) % phaseCount;
+        m_MovementAnimationPhase = static_cast<PixelShipGenerator::ShipMovementAnimationPhase>(nextPhase);
+        m_AnimationFrameIndex = 0u;
+        m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
+        m_AnimationClock.restart();
+        if (!refreshAnimationTextures()) { return; }
+
+        if (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) { setDisplayedAnimationFrame(0u); }
+        setStatusMessage("Movement phase: " + getMovementPhaseDisplayName(m_MovementAnimationPhase));
+        updateWindowTitle();
+    }
+
     void ShipGeneratorPreviewApp::cycleDiagnosticView()
     {
         m_Diagnostics.GenerationStageView = false;
@@ -626,13 +709,11 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::enterAnimationPlayback()
     {
-        if (m_IdleAnimation.Frames.empty())
-        {
-            return;
-        }
+        const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+        if (frames.empty()) { return; }
 
         m_PreviewMode = PreviewMode::ANIMATION;
-        setDisplayedAnimationFrame(m_AnimationFrameIndex % static_cast<uint32_t>(m_IdleAnimation.Frames.size()));
+        setDisplayedAnimationFrame(m_AnimationFrameIndex % static_cast<uint32_t>(frames.size()));
         m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
         m_AnimationClock.restart();
         updateWindowTitle();
@@ -836,13 +917,11 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::enterFrameInspection()
     {
-        if (m_IdleAnimation.Frames.empty())
-        {
-            return;
-        }
+        const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+        if (frames.empty()) { return; }
 
         m_PreviewMode = PreviewMode::FRAME_INSPECTION;
-        setDisplayedAnimationFrame(m_AnimationFrameIndex % static_cast<uint32_t>(m_IdleAnimation.Frames.size()));
+        setDisplayedAnimationFrame(m_AnimationFrameIndex % static_cast<uint32_t>(frames.size()));
         updateWindowTitle();
     }
 
@@ -1175,6 +1254,8 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW: toggleGenerationStageView(); break;
         case PreviewCommandType::PREVIOUS_GENERATION_STAGE: moveGenerationStage(-1); break;
         case PreviewCommandType::NEXT_GENERATION_STAGE: moveGenerationStage(1); break;
+        case PreviewCommandType::CYCLE_ANIMATION_TYPE: cycleAnimationType(); break;
+        case PreviewCommandType::CYCLE_MOVEMENT_PHASE: cycleMovementPhase(); break;
         case PreviewCommandType::TOGGLE_ANIMATION:
             if (m_PreviewMode == PreviewMode::ANIMATION) { m_PreviewMode = PreviewMode::STATIC; setDisplayedStaticFrame(); updateWindowTitle(); }
             else { enterAnimationPlayback(); }
@@ -1391,6 +1472,8 @@ namespace PixelShipGeneratorPreview
             case sf::Keyboard::Escape: return PreviewCommand{ PreviewCommandType::BACK_OR_EXIT, 0u };
             case sf::Keyboard::S: return PreviewCommand{ PreviewCommandType::SAVE_CURRENT, 0u };
             case sf::Keyboard::Y: return PreviewCommand{ PreviewCommandType::SAVE_SPRITESHEET, 0u };
+            case sf::Keyboard::O: return PreviewCommand{ PreviewCommandType::CYCLE_ANIMATION_TYPE, 0u };
+            case sf::Keyboard::L: return PreviewCommand{ PreviewCommandType::CYCLE_MOVEMENT_PHASE, 0u };
             default: return std::nullopt;
             }
         }
@@ -1420,6 +1503,8 @@ namespace PixelShipGeneratorPreview
         case sf::Keyboard::Right: return PreviewCommand{ PreviewCommandType::NEXT_HISTORY, 0u };
         case sf::Keyboard::S: return PreviewCommand{ PreviewCommandType::SAVE_CURRENT, 0u };
         case sf::Keyboard::Y: return PreviewCommand{ PreviewCommandType::SAVE_SPRITESHEET, 0u };
+        case sf::Keyboard::O: return PreviewCommand{ PreviewCommandType::CYCLE_ANIMATION_TYPE, 0u };
+        case sf::Keyboard::L: return PreviewCommand{ PreviewCommandType::CYCLE_MOVEMENT_PHASE, 0u };
         case sf::Keyboard::I: return PreviewCommand{ PreviewCommandType::TOGGLE_ANIMATION, 0u };
         case sf::Keyboard::K: return PreviewCommand{ PreviewCommandType::TOGGLE_FRAME_INSPECTION, 0u };
         case sf::Keyboard::G: return PreviewCommand{ PreviewCommandType::GENERATE_FROM_MASTER_SEED, 0u };
@@ -1659,10 +1744,15 @@ namespace PixelShipGeneratorPreview
         if (type == PreviewCommandType::PREVIOUS_GENERATION_STAGE || type == PreviewCommandType::NEXT_GENERATION_STAGE) { return m_Diagnostics.GenerationStageView && !m_GenerationDebugInfo.HullStages.empty(); }
         if (type == PreviewCommandType::SAVE_CURRENT) { return true; }
         if (type == PreviewCommandType::EXPORT_RECIPE || type == PreviewCommandType::IMPORT_RECIPE) { return true; }
-        if (type == PreviewCommandType::SAVE_SPRITESHEET) { return !m_IdleAnimation.Frames.empty(); }
-        if (type == PreviewCommandType::TOGGLE_ANIMATION || type == PreviewCommandType::TOGGLE_FRAME_INSPECTION) { return !m_IdleAnimation.Frames.empty(); }
+        if (type == PreviewCommandType::SAVE_SPRITESHEET) { return !getActiveAnimationFrames().empty(); }
+        if (type == PreviewCommandType::TOGGLE_ANIMATION || type == PreviewCommandType::TOGGLE_FRAME_INSPECTION) { return !getActiveAnimationFrames().empty(); }
+        if (type == PreviewCommandType::CYCLE_ANIMATION_TYPE) { return true; }
+        if (type == PreviewCommandType::CYCLE_MOVEMENT_PHASE) { return m_SelectedAnimationType != PixelShipGenerator::ShipAnimationType::IDLE; }
 
-        if (m_PreviewMode == PreviewMode::FRAME_INSPECTION) { return type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME; }
+        if (m_PreviewMode == PreviewMode::FRAME_INSPECTION)
+        {
+            return type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME || type == PreviewCommandType::CYCLE_ANIMATION_TYPE || type == PreviewCommandType::CYCLE_MOVEMENT_PHASE;
+        }
         if (type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME || type == PreviewCommandType::GALLERY_LEFT || type == PreviewCommandType::GALLERY_RIGHT || type == PreviewCommandType::GALLERY_UP || type == PreviewCommandType::GALLERY_DOWN || type == PreviewCommandType::SELECT_GALLERY_CANDIDATE) { return false; }
         if (type == PreviewCommandType::PREVIOUS_HISTORY) { return m_HistoryIndex > 0u; }
         if (type == PreviewCommandType::NEXT_HISTORY) { return m_HistoryIndex + 1u < m_History.size(); }
@@ -1701,12 +1791,13 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::moveAnimationFrame(int32_t delta)
     {
-        if (m_IdleAnimation.Frames.empty())
+        const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+        if (frames.empty())
         {
             return;
         }
 
-        const int32_t frameCount = static_cast<int32_t>(m_IdleAnimation.Frames.size());
+        const int32_t frameCount = static_cast<int32_t>(frames.size());
         int32_t frameIndex = static_cast<int32_t>(m_AnimationFrameIndex) + delta;
         if (frameIndex < 0) { frameIndex = frameCount - 1; }
         if (frameIndex >= frameCount) { frameIndex = 0; }
@@ -1856,7 +1947,7 @@ namespace PixelShipGeneratorPreview
         std::cout << "\tPalette:     " << recipe.Seeds.Palette << '\n';
         std::cout << "\tDetails:     " << recipe.Seeds.Details << '\n';
         std::cout << "\tAttachments: " << recipe.Seeds.Attachments << '\n';
-        if (!m_IdleAnimation.Frames.empty()) { std::cout << "\tAnimation:   " << m_IdleAnimation.Seed << '\n'; }
+        if (!getActiveAnimationFrames().empty()) { std::cout << "\tAnimation:   " << getActiveAnimationSeed() << '\n'; }
         std::cout << '\n';
     }
 
@@ -1953,23 +2044,40 @@ namespace PixelShipGeneratorPreview
     bool ShipGeneratorPreviewApp::regenerateAnimation()
     {
         m_IdleAnimation = m_IdleAnimator.generate(m_GeneratedShip, m_IdleAnimationSettings);
+
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_LEFT || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_RIGHT)
+        {
+            m_MovementAnimation = m_LateralMovementAnimator.generate(m_GeneratedShip, m_SelectedAnimationType, m_MovementAnimationSettings);
+        }
+
         m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
         m_AnimationClock.restart();
-        m_AnimationTextures.clear();
-        m_AnimationTextures.resize(m_IdleAnimation.Frames.size());
+        return refreshAnimationTextures();
+    }
 
-        for (std::size_t index = 0u; index < m_IdleAnimation.Frames.size(); ++index)
+    bool ShipGeneratorPreviewApp::refreshAnimationTextures()
+    {
+        const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+        m_AnimationTextures.clear();
+        m_AnimationTextures.resize(frames.size());
+
+        for (std::size_t index = 0u; index < frames.size(); ++index)
         {
-            const sf::Image image = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(m_IdleAnimation.Frames[index]);
+            const sf::Image image = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(frames[index]);
 
             if (!m_AnimationTextures[index].loadFromImage(image))
             {
-                std::cerr << "Failed to create idle animation texture.\n";
+                std::cerr << "Failed to create animation texture.\n";
                 m_AnimationTextures.clear();
                 return false;
             }
 
             m_AnimationTextures[index].setSmooth(false);
+        }
+
+        if (m_AnimationFrameIndex >= m_AnimationTextures.size())
+        {
+            m_AnimationFrameIndex = 0u;
         }
 
         return !m_AnimationTextures.empty();
@@ -1996,8 +2104,12 @@ namespace PixelShipGeneratorPreview
         data.Comparison = &m_Comparison;
         data.Ship = &m_GeneratedShip;
         data.GenerationDebugInfo = &m_GenerationDebugInfo;
+        data.SelectedAnimationType = m_SelectedAnimationType;
         data.IdleAnimation = &m_IdleAnimation;
         data.IdleAnimationSettings = &m_IdleAnimationSettings;
+        data.MovementAnimation = &m_MovementAnimation;
+        data.MovementAnimationSettings = &m_MovementAnimationSettings;
+        data.MovementPhase = m_MovementAnimationPhase;
         data.HistoryIndex = m_HistoryIndex;
         data.HistoryCount = m_History.size();
         data.AnimationFrameIndex = m_AnimationFrameIndex;
@@ -2061,13 +2173,19 @@ namespace PixelShipGeneratorPreview
 
         if (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION)
         {
-            if (m_AnimationFrameIndex >= m_IdleAnimation.Frames.size())
+            const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+            if (m_AnimationFrameIndex >= frames.size())
             {
                 return;
             }
 
-            const std::filesystem::path savePath = getAvailableSavePath(baseName + "_idle_frame_" + getFrameNumberString(m_AnimationFrameIndex));
-            saveCoreImage(m_IdleAnimation.Frames[m_AnimationFrameIndex], savePath);
+            std::string animationName = baseName + "_" + getAnimationTypeFileToken(m_SelectedAnimationType);
+            if (m_SelectedAnimationType != PixelShipGenerator::ShipAnimationType::IDLE)
+            {
+                animationName += "_" + getMovementPhaseFileToken(m_MovementAnimationPhase);
+            }
+            const std::filesystem::path savePath = getAvailableSavePath(animationName + "_frame_" + getFrameNumberString(m_AnimationFrameIndex));
+            saveCoreImage(frames[m_AnimationFrameIndex], savePath);
             return;
         }
 
@@ -2088,15 +2206,44 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::saveSpritesheet()
     {
-        if (m_IdleAnimation.Frames.empty())
+        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        const std::string baseName = getSaveBaseName(recipe);
+
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            if (m_IdleAnimation.Frames.empty())
+            {
+                return;
+            }
+
+            const PixelShipGenerator::Image spritesheet = PixelShipGenerator::createHorizontalSpritesheet(m_IdleAnimation);
+            saveCoreImage(spritesheet, getAvailableSavePath(baseName + "_idle_" + std::to_string(m_IdleAnimation.Frames.size()) + "frames"));
+            return;
+        }
+
+        if (m_MovementAnimation.Type != m_SelectedAnimationType)
         {
             return;
         }
 
-        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        const PixelShipGenerator::Image spritesheet = PixelShipGenerator::createHorizontalSpritesheet(m_IdleAnimation);
-        const std::string baseName = getSaveBaseName(recipe) + "_idle_" + std::to_string(m_IdleAnimation.Frames.size()) + "frames";
-        saveCoreImage(spritesheet, getAvailableSavePath(baseName));
+        const std::array<const PixelShipGenerator::ShipMovementAnimationClip*, 3u> clips =
+        {
+            &m_MovementAnimation.Enter,
+            &m_MovementAnimation.Sustain,
+            &m_MovementAnimation.Exit
+        };
+
+        for (const PixelShipGenerator::ShipMovementAnimationClip* clip : clips)
+        {
+            if (clip == nullptr || clip->Frames.empty())
+            {
+                continue;
+            }
+
+            const PixelShipGenerator::Image spritesheet = PixelShipGenerator::createHorizontalSpritesheet(*clip);
+            const std::string fileName = baseName + "_" + getAnimationTypeFileToken(m_SelectedAnimationType) + "_" + getMovementPhaseFileToken(clip->Phase) + "_" + std::to_string(clip->Frames.size()) + "frames";
+            saveCoreImage(spritesheet, getAvailableSavePath(fileName));
+        }
     }
 
     void ShipGeneratorPreviewApp::selectGalleryCandidate(uint32_t index)
@@ -2131,14 +2278,84 @@ namespace PixelShipGeneratorPreview
         return static_cast<std::size_t>(std::distance(m_FavoritesState.Grid.Items.begin(), iterator));
     }
 
+    const PixelShipGenerator::ShipMovementAnimationClip* ShipGeneratorPreviewApp::getActiveMovementClip() const
+    {
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE || m_MovementAnimation.Type != m_SelectedAnimationType)
+        {
+            return nullptr;
+        }
+        return &PixelShipGenerator::getMovementAnimationClip(m_MovementAnimation, m_MovementAnimationPhase);
+    }
+
+    const std::vector<PixelShipGenerator::Image>& ShipGeneratorPreviewApp::getActiveAnimationFrames() const
+    {
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            return m_IdleAnimation.Frames;
+        }
+
+        const PixelShipGenerator::ShipMovementAnimationClip* clip = getActiveMovementClip();
+        if (clip != nullptr)
+        {
+            return clip->Frames;
+        }
+
+        static const std::vector<PixelShipGenerator::Image> EmptyFrames;
+        return EmptyFrames;
+    }
+
+    double ShipGeneratorPreviewApp::getActiveAnimationFrameDurationMilliseconds() const
+    {
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            return m_IdleAnimation.FrameDurationMilliseconds;
+        }
+        const PixelShipGenerator::ShipMovementAnimationClip* clip = getActiveMovementClip();
+        return clip != nullptr ? clip->FrameDurationMilliseconds : 0.0;
+    }
+
+    uint64_t ShipGeneratorPreviewApp::getActiveAnimationSeed() const
+    {
+        return m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE ? m_IdleAnimation.Seed : m_MovementAnimation.Seed;
+    }
+
+    const PixelShipGenerator::AnimationSamplingPlan& ShipGeneratorPreviewApp::getActiveAnimationSampling() const
+    {
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            return m_IdleAnimation.Sampling;
+        }
+        const PixelShipGenerator::ShipMovementAnimationClip* clip = getActiveMovementClip();
+        return clip != nullptr ? clip->Sampling : m_IdleAnimation.Sampling;
+    }
+
+    uint32_t ShipGeneratorPreviewApp::getActiveAnimationDurationMilliseconds() const
+    {
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            return m_IdleAnimation.DurationMilliseconds;
+        }
+        const PixelShipGenerator::ShipMovementAnimationClip* clip = getActiveMovementClip();
+        return clip != nullptr ? clip->DurationMilliseconds : 0u;
+    }
+
     std::string ShipGeneratorPreviewApp::getAnimationEffectDisplay() const
     {
         std::string effects;
-        if (m_IdleAnimationSettings.EngineFlicker) { effects += "E"; }
-        if (m_IdleAnimationSettings.LightBlinking) { effects += "L"; }
-        if (m_IdleAnimationSettings.MechanicalMicroMovement) { effects += "M"; }
-        if (m_IdleAnimationSettings.HoverOffset) { effects += "H"; }
-        if (m_IdleAnimationSettings.SmallDetailVariation) { effects += "D"; }
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            if (m_IdleAnimationSettings.EngineFlicker) { effects += "E"; }
+            if (m_IdleAnimationSettings.LightBlinking) { effects += "L"; }
+            if (m_IdleAnimationSettings.MechanicalMicroMovement) { effects += "M"; }
+            if (m_IdleAnimationSettings.HoverOffset) { effects += "H"; }
+            if (m_IdleAnimationSettings.SmallDetailVariation) { effects += "D"; }
+        }
+        else
+        {
+            if (m_MovementAnimationSettings.EngineVectoring) { effects += "E"; }
+            if (m_MovementAnimationSettings.WeaponStabilization) { effects += "W"; }
+            if (m_MovementAnimationSettings.AttachmentArticulation) { effects += "A"; }
+        }
         return effects.empty() ? "NONE" : effects;
     }
 
@@ -2370,12 +2587,13 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::update()
     {
-        if (m_PreviewMode != PreviewMode::ANIMATION || m_IdleAnimation.Frames.empty())
+        const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+        if (m_PreviewMode != PreviewMode::ANIMATION || frames.empty())
         {
             return;
         }
 
-        const double frameDurationMicroseconds = std::max(1.0, m_IdleAnimation.FrameDurationMilliseconds * 1000.0);
+        const double frameDurationMicroseconds = std::max(1.0, getActiveAnimationFrameDurationMilliseconds() * 1000.0);
         const double elapsedMicroseconds = std::max(0.0, static_cast<double>(m_AnimationClock.restart().asMicroseconds()));
         m_AnimationPlaybackAccumulatorMicroseconds += elapsedMicroseconds;
         if (m_AnimationPlaybackAccumulatorMicroseconds < frameDurationMicroseconds)
@@ -2385,8 +2603,48 @@ namespace PixelShipGeneratorPreview
 
         const uint32_t elapsedFrames = std::max(1u, static_cast<uint32_t>(m_AnimationPlaybackAccumulatorMicroseconds / frameDurationMicroseconds));
         m_AnimationPlaybackAccumulatorMicroseconds -= static_cast<double>(elapsedFrames) * frameDurationMicroseconds;
-        const uint32_t nextFrame = (m_AnimationFrameIndex + elapsedFrames) % static_cast<uint32_t>(m_IdleAnimation.Frames.size());
-        setDisplayedAnimationFrame(nextFrame);
+        const uint32_t frameCount = static_cast<uint32_t>(frames.size());
+
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE || m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN)
+        {
+            setDisplayedAnimationFrame((m_AnimationFrameIndex + elapsedFrames) % frameCount);
+            updateWindowTitle();
+            return;
+        }
+
+        const uint64_t targetFrame = static_cast<uint64_t>(m_AnimationFrameIndex) + static_cast<uint64_t>(elapsedFrames);
+        if (m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::ENTER)
+        {
+            if (targetFrame < frameCount)
+            {
+                setDisplayedAnimationFrame(static_cast<uint32_t>(targetFrame));
+            }
+            else
+            {
+                const uint64_t leftoverFrames = targetFrame - frameCount;
+                m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
+                refreshAnimationTextures();
+                const uint32_t sustainCount = static_cast<uint32_t>(getActiveAnimationFrames().size());
+                if (sustainCount > 0u)
+                {
+                    setDisplayedAnimationFrame(static_cast<uint32_t>(leftoverFrames % sustainCount));
+                }
+            }
+            updateWindowTitle();
+            return;
+        }
+
+        if (targetFrame < frameCount)
+        {
+            setDisplayedAnimationFrame(static_cast<uint32_t>(targetFrame));
+        }
+        else
+        {
+            m_PreviewMode = PreviewMode::STATIC;
+            m_AnimationFrameIndex = 0u;
+            m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
+            setDisplayedStaticFrame();
+        }
         updateWindowTitle();
     }
 
@@ -2433,11 +2691,17 @@ namespace PixelShipGeneratorPreview
             title += " | Compare: PIN " + std::to_string(m_Comparison.Pinned.Recipe.Seeds.Master);
         }
 
-        if ((m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) && !m_IdleAnimation.Frames.empty())
+        const std::vector<PixelShipGenerator::Image>& animationFrames = getActiveAnimationFrames();
+        if ((m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) && !animationFrames.empty())
         {
-            title += m_PreviewMode == PreviewMode::ANIMATION ? " | Idle: PLAY" : " | Idle: FRAME";
-            title += " | Frame " + std::to_string(m_AnimationFrameIndex + 1u) + "/" + std::to_string(m_IdleAnimation.Frames.size());
-            title += " | AnimationSeed: " + std::to_string(m_IdleAnimation.Seed);
+            title += m_PreviewMode == PreviewMode::ANIMATION ? " | Anim: PLAY " : " | Anim: FRAME ";
+            title += getAnimationTypeDisplayName(m_SelectedAnimationType);
+            if (m_SelectedAnimationType != PixelShipGenerator::ShipAnimationType::IDLE)
+            {
+                title += " | Phase: " + getMovementPhaseDisplayName(m_MovementAnimationPhase);
+            }
+            title += " | Frame " + std::to_string(m_AnimationFrameIndex + 1u) + "/" + std::to_string(animationFrames.size());
+            title += " | AnimationSeed: " + std::to_string(getActiveAnimationSeed());
             title += " | FX: " + getAnimationEffectDisplay();
         }
 

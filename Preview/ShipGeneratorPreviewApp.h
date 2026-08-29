@@ -17,6 +17,8 @@
 #include "ShipGenerator.h"
 #include "ShipIdleAnimation.h"
 #include "ShipIdleAnimator.h"
+#include "ShipLateralMovementAnimator.h"
+#include "ShipMovementAnimation.h"
 
 #include "AttributeRerollStudio.h"
 #include "GenerationCalibration.h"
@@ -46,7 +48,9 @@ namespace PixelShipGeneratorPreview
         bool buildGallery(uint64_t batchSeed);
         PreviewCommandPanelState createCommandPanelState() const;
         PixelShipGenerator::Image createDiagnosticImage() const;
+        void cycleAnimationType();
         void cycleDiagnosticView();
+        void cycleMovementPhase();
         void enterAnimationPlayback();
         void enterAttributeRerollStudio();
         void cancelAttributeRerollStudio();
@@ -78,6 +82,12 @@ namespace PixelShipGeneratorPreview
         bool generateShipFromRecipe(const PreviewGenerationRecipe& recipe, PixelShipGenerator::GeneratedShip& outShip, PixelShipGenerator::ShipGenerationDebugInfo* debugInfo = nullptr);
         std::optional<std::size_t> findFavoriteIndex(const PreviewGenerationRecipe& recipe) const;
         std::string getAnimationEffectDisplay() const;
+        const std::vector<PixelShipGenerator::Image>& getActiveAnimationFrames() const;
+        double getActiveAnimationFrameDurationMilliseconds() const;
+        uint64_t getActiveAnimationSeed() const;
+        const PixelShipGenerator::AnimationSamplingPlan& getActiveAnimationSampling() const;
+        uint32_t getActiveAnimationDurationMilliseconds() const;
+        const PixelShipGenerator::ShipMovementAnimationClip* getActiveMovementClip() const;
         std::optional<PreviewCommand> getKeyboardCommand(sf::Keyboard::Key key, bool shift) const;
         void handleKeyPressed(const sf::Event::KeyEvent& event);
         void handleMouseMoved(const sf::Event::MouseMoveEvent& event);
@@ -107,6 +117,7 @@ namespace PixelShipGeneratorPreview
         void refreshDisplayedTexture();
         bool regenerate();
         bool regenerateAnimation();
+        bool refreshAnimationTextures();
         void render();
         void reroll();
         void saveCurrent();
@@ -141,6 +152,7 @@ namespace PixelShipGeneratorPreview
         sf::RenderWindow m_Window;
         PixelShipGenerator::ShipGenerator m_Generator;
         PixelShipGenerator::ShipIdleAnimator m_IdleAnimator;
+        PixelShipGenerator::ShipLateralMovementAnimator m_LateralMovementAnimator;
         std::mt19937_64 m_SeedGenerator;
         PreviewRenderer m_Renderer;
         PreviewCommandPanel m_CommandPanel;
@@ -171,6 +183,10 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::ShipGenerationDebugInfo m_GenerationDebugInfo;
         PixelShipGenerator::ShipIdleAnimationSettings m_IdleAnimationSettings;
         PixelShipGenerator::ShipIdleAnimation m_IdleAnimation;
+        PixelShipGenerator::ShipMovementAnimationSettings m_MovementAnimationSettings;
+        PixelShipGenerator::ShipMovementAnimation m_MovementAnimation;
+        PixelShipGenerator::ShipAnimationType m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
+        PixelShipGenerator::ShipMovementAnimationPhase m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
         uint32_t m_AnimationFrameIndex = 0u;
         sf::Clock m_AnimationClock;
         double m_AnimationPlaybackAccumulatorMicroseconds = 0.0;

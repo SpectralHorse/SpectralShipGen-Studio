@@ -11,6 +11,7 @@
 #include "GenerationCalibration.h"
 #include "ShipGenerationDebugInfo.h"
 #include "ShipIdleAnimation.h"
+#include "ShipMovementAnimation.h"
 
 #include "PreviewCommandPanel.h"
 #include "PreviewState.h"
@@ -32,8 +33,12 @@ namespace PixelShipGeneratorPreview
         const PreviewComparisonState* Comparison = nullptr;
         const PixelShipGenerator::GeneratedShip* Ship = nullptr;
         const PixelShipGenerator::ShipGenerationDebugInfo* GenerationDebugInfo = nullptr;
+        PixelShipGenerator::ShipAnimationType SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
         const PixelShipGenerator::ShipIdleAnimation* IdleAnimation = nullptr;
         const PixelShipGenerator::ShipIdleAnimationSettings* IdleAnimationSettings = nullptr;
+        const PixelShipGenerator::ShipMovementAnimation* MovementAnimation = nullptr;
+        const PixelShipGenerator::ShipMovementAnimationSettings* MovementAnimationSettings = nullptr;
+        PixelShipGenerator::ShipMovementAnimationPhase MovementPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
         const PreviewCommandPanel* CommandPanel = nullptr;
         std::size_t HistoryIndex = 0u;
         std::size_t HistoryCount = 0u;
