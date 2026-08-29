@@ -390,6 +390,7 @@ namespace
         case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
         case PixelShipGenerator::ShipAnimationType::MOVE_UP: return "MOVE UP";
         case PixelShipGenerator::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
+        case PixelShipGenerator::ShipAnimationType::FIRE: return "FIRE";
         default: return "UNSUPPORTED";
         }
     }
@@ -403,6 +404,25 @@ namespace
         case PixelShipGenerator::ShipMovementAnimationPhase::EXIT: return "EXIT";
         default: return "UNKNOWN";
         }
+    }
+
+    std::string getFiringPhaseDisplayName(PixelShipGenerator::ShipFiringAnimationPhase phase)
+    {
+        switch (phase)
+        {
+        case PixelShipGenerator::ShipFiringAnimationPhase::REST: return "REST";
+        case PixelShipGenerator::ShipFiringAnimationPhase::PRE_FIRE: return "PRE-FIRE";
+        case PixelShipGenerator::ShipFiringAnimationPhase::RECOIL: return "RECOIL";
+        case PixelShipGenerator::ShipFiringAnimationPhase::RECOVERY: return "RECOVERY";
+        default: return "UNKNOWN";
+        }
+    }
+
+    std::string getCurrentFiringPhaseDisplayName(const PixelShipGenerator::ShipFiringAnimation& animation, uint32_t frameIndex)
+    {
+        if (animation.NormalizedSampleTimes.empty()) { return "REST"; }
+        const uint32_t index = std::min(frameIndex, static_cast<uint32_t>(animation.NormalizedSampleTimes.size() - 1u));
+        return getFiringPhaseDisplayName(PixelShipGenerator::getFiringAnimationPhase(animation.NormalizedSampleTimes[index]));
     }
 
     std::string getSameDifferent(bool same)
@@ -1214,6 +1234,25 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "HOVER", getOnOff(data.IdleAnimationSettings->HoverOffset), x, y);
             drawLabelValue(window, "DETAIL FX", getOnOff(data.IdleAnimationSettings->SmallDetailVariation), x, y);
         }
+        else if (data.SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE && data.FiringAnimation != nullptr && data.FiringAnimationSettings != nullptr && !data.FiringAnimation->Frames.empty())
+        {
+            y += 4.0f;
+            drawSectionHeader(window, "FIRING ANIMATION", x, y);
+            drawLabelValue(window, "TYPE", "FIRE", x, y);
+            drawLabelValue(window, "SEED", std::to_string(data.FiringAnimation->Seed), x, y);
+            drawLabelValue(window, "TARGET", std::to_string(data.FiringAnimation->Target.WeaponComponentIndex), x, y);
+            drawLabelValue(window, "PHASE", getCurrentFiringPhaseDisplayName(*data.FiringAnimation, data.AnimationFrameIndex), x, y);
+            drawLabelValue(window, "GROUP", std::to_string(data.FiringAnimation->Diagnostics.TargetSymmetryGroup), x, y);
+            drawLabelValue(window, "DURATION", std::to_string(data.FiringAnimation->DurationMilliseconds) + " ms", x, y);
+            drawLabelValue(window, "FRAMES", std::to_string(data.FiringAnimation->Sampling.ActualFrameCount), x, y);
+            drawLabelValue(window, "SAMPLING", data.FiringAnimation->Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
+            drawLabelValue(window, "FRAME TIME", getMillisecondsString(data.FiringAnimation->FrameDurationMilliseconds), x, y);
+            drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(data.FiringAnimation->Frames.size()), x, y);
+            drawLabelValue(window, "WEAPONS", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount), x, y);
+            drawLabelValue(window, "RECOIL", std::to_string(data.FiringAnimation->Diagnostics.MaximumRecoilTravelPixels) + " px", x, y);
+            drawLabelValue(window, "PRE-FIRE", std::to_string(data.FiringAnimation->Diagnostics.MaximumPreFireExtensionPixels) + " px", x, y);
+            drawLabelValue(window, "PLAYBACK", data.Mode == PreviewMode::ANIMATION ? "PLAY" : data.Mode == PreviewMode::FRAME_INSPECTION ? "PAUSED" : "STATIC", x, y);
+        }
         else if (data.MovementAnimation != nullptr && data.MovementAnimationSettings != nullptr && data.MovementAnimation->Type == data.SelectedAnimationType)
         {
             const PixelShipGenerator::ShipMovementAnimationClip& clip = PixelShipGenerator::getMovementAnimationClip(*data.MovementAnimation, data.MovementPhase);
@@ -1584,6 +1623,24 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "MICRO MOVE", getOnOff(data.IdleAnimationSettings->MechanicalMicroMovement), rightX, rightY);
             drawLabelValue(window, "HOVER", getOnOff(data.IdleAnimationSettings->HoverOffset), rightX, rightY);
             drawLabelValue(window, "DETAIL FX", getOnOff(data.IdleAnimationSettings->SmallDetailVariation), rightX, rightY);
+        }
+        else if (data.SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE && data.FiringAnimation != nullptr && data.FiringAnimationSettings != nullptr && !data.FiringAnimation->Frames.empty())
+        {
+            rightY += 5.0f;
+            drawSectionHeader(window, "ANIMATION", rightX, rightY);
+            drawLabelValue(window, "TYPE", "FIRE", rightX, rightY);
+            drawLabelValue(window, "SEED", std::to_string(data.FiringAnimation->Seed), rightX, rightY);
+            drawLabelValue(window, "TARGET", std::to_string(data.FiringAnimation->Target.WeaponComponentIndex), rightX, rightY);
+            drawLabelValue(window, "PHASE", getCurrentFiringPhaseDisplayName(*data.FiringAnimation, data.AnimationFrameIndex), rightX, rightY);
+            drawLabelValue(window, "GROUP", std::to_string(data.FiringAnimation->Diagnostics.TargetSymmetryGroup), rightX, rightY);
+            drawLabelValue(window, "DURATION", std::to_string(data.FiringAnimation->DurationMilliseconds) + " ms", rightX, rightY);
+            drawLabelValue(window, "FRAMES", std::to_string(data.FiringAnimation->Sampling.ActualFrameCount), rightX, rightY);
+            drawLabelValue(window, "SAMPLING", data.FiringAnimation->Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", rightX, rightY);
+            drawLabelValue(window, "FRAME TIME", getMillisecondsString(data.FiringAnimation->FrameDurationMilliseconds), rightX, rightY);
+            drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(data.FiringAnimation->Frames.size()), rightX, rightY);
+            drawLabelValue(window, "WEAPONS", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount), rightX, rightY);
+            drawLabelValue(window, "RECOIL", std::to_string(data.FiringAnimation->Diagnostics.MaximumRecoilTravelPixels) + " px", rightX, rightY);
+            drawLabelValue(window, "PRE-FIRE", std::to_string(data.FiringAnimation->Diagnostics.MaximumPreFireExtensionPixels) + " px", rightX, rightY);
         }
         else if (data.MovementAnimation != nullptr && data.MovementAnimationSettings != nullptr && data.MovementAnimation->Type == data.SelectedAnimationType)
         {

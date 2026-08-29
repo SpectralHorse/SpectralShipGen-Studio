@@ -10,6 +10,7 @@
 #include "AttributeRerollStudio.h"
 #include "GenerationCalibration.h"
 #include "ShipGenerationDebugInfo.h"
+#include "ShipFiringAnimation.h"
 #include "ShipIdleAnimation.h"
 #include "ShipMovementAnimation.h"
 
@@ -39,6 +40,8 @@ namespace PixelShipGeneratorPreview
         const PixelShipGenerator::ShipMovementAnimation* MovementAnimation = nullptr;
         const PixelShipGenerator::ShipMovementAnimationSettings* MovementAnimationSettings = nullptr;
         PixelShipGenerator::ShipMovementAnimationPhase MovementPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+        const PixelShipGenerator::ShipFiringAnimation* FiringAnimation = nullptr;
+        const PixelShipGenerator::ShipFiringAnimationSettings* FiringAnimationSettings = nullptr;
         const PreviewCommandPanel* CommandPanel = nullptr;
         std::size_t HistoryIndex = 0u;
         std::size_t HistoryCount = 0u;

@@ -73,6 +73,7 @@ namespace PixelShipGeneratorPreview
         NEXT_GENERATION_STAGE,
         CYCLE_ANIMATION_TYPE,
         CYCLE_MOVEMENT_PHASE,
+        CYCLE_FIRING_TARGET,
         TOGGLE_ANIMATION,
         TOGGLE_FRAME_INSPECTION,
         PREVIOUS_FRAME,

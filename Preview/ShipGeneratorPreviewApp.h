@@ -12,6 +12,8 @@
 
 #include "GeneratedShip.h"
 #include "ShipFactionType.h"
+#include "ShipFiringAnimation.h"
+#include "ShipFiringAnimator.h"
 #include "ShipGenerationDebugInfo.h"
 #include "ShipGenerationProfile.h"
 #include "ShipGenerator.h"
@@ -52,6 +54,7 @@ namespace PixelShipGeneratorPreview
         void cycleAnimationType();
         void cycleDiagnosticView();
         void cycleMovementPhase();
+        void cycleFiringTarget();
         void enterAnimationPlayback();
         void enterAttributeRerollStudio();
         void cancelAttributeRerollStudio();
@@ -153,6 +156,7 @@ namespace PixelShipGeneratorPreview
         sf::RenderWindow m_Window;
         PixelShipGenerator::ShipGenerator m_Generator;
         PixelShipGenerator::ShipIdleAnimator m_IdleAnimator;
+        PixelShipGenerator::ShipFiringAnimator m_FiringAnimator;
         PixelShipGenerator::ShipLateralMovementAnimator m_LateralMovementAnimator;
         PixelShipGenerator::ShipLongitudinalMovementAnimator m_LongitudinalMovementAnimator;
         std::mt19937_64 m_SeedGenerator;
@@ -187,6 +191,10 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::ShipIdleAnimation m_IdleAnimation;
         PixelShipGenerator::ShipMovementAnimationSettings m_MovementAnimationSettings;
         PixelShipGenerator::ShipMovementAnimation m_MovementAnimation;
+        PixelShipGenerator::ShipFiringAnimationSettings m_FiringAnimationSettings;
+        PixelShipGenerator::ShipFiringAnimation m_FiringAnimation;
+        std::vector<PixelShipGenerator::ShipFiringAnimationTarget> m_FiringTargets;
+        uint32_t m_SelectedFiringTargetIndex = 0u;
         PixelShipGenerator::ShipAnimationType m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
         PixelShipGenerator::ShipMovementAnimationPhase m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
         uint32_t m_AnimationFrameIndex = 0u;
