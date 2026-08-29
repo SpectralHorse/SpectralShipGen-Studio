@@ -173,6 +173,7 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::ShipIdleAnimation m_IdleAnimation;
         uint32_t m_AnimationFrameIndex = 0u;
         sf::Clock m_AnimationClock;
+        double m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
 
         sf::Image m_PreviewImage;
         sf::Texture m_PreviewTexture;

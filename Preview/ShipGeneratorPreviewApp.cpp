@@ -25,7 +25,6 @@ namespace
 {
     constexpr std::size_t MaximumHistorySize = 20u;
     constexpr uint32_t GalleryCandidateMaximumAttempts = 16u;
-    constexpr sf::Int32 AnimationFrameDurationMilliseconds = 100;
     const std::filesystem::path PreviewPreferencesPath = "pixel_ship_generator_preview_preferences.json";
     const std::filesystem::path CalibrationSessionPath = "generation_calibration_session.json";
     const std::filesystem::path CalibrationReportPath = "generation_calibration_report.csv";
@@ -634,6 +633,7 @@ namespace PixelShipGeneratorPreview
 
         m_PreviewMode = PreviewMode::ANIMATION;
         setDisplayedAnimationFrame(m_AnimationFrameIndex % static_cast<uint32_t>(m_IdleAnimation.Frames.size()));
+        m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
         m_AnimationClock.restart();
         updateWindowTitle();
     }
@@ -1953,6 +1953,8 @@ namespace PixelShipGeneratorPreview
     bool ShipGeneratorPreviewApp::regenerateAnimation()
     {
         m_IdleAnimation = m_IdleAnimator.generate(m_GeneratedShip, m_IdleAnimationSettings);
+        m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
+        m_AnimationClock.restart();
         m_AnimationTextures.clear();
         m_AnimationTextures.resize(m_IdleAnimation.Frames.size());
 
@@ -2373,14 +2375,18 @@ namespace PixelShipGeneratorPreview
             return;
         }
 
-        if (m_AnimationClock.getElapsedTime().asMilliseconds() < AnimationFrameDurationMilliseconds)
+        const double frameDurationMicroseconds = std::max(1.0, m_IdleAnimation.FrameDurationMilliseconds * 1000.0);
+        const double elapsedMicroseconds = std::max(0.0, static_cast<double>(m_AnimationClock.restart().asMicroseconds()));
+        m_AnimationPlaybackAccumulatorMicroseconds += elapsedMicroseconds;
+        if (m_AnimationPlaybackAccumulatorMicroseconds < frameDurationMicroseconds)
         {
             return;
         }
 
-        const uint32_t nextFrame = (m_AnimationFrameIndex + 1u) % static_cast<uint32_t>(m_IdleAnimation.Frames.size());
+        const uint32_t elapsedFrames = std::max(1u, static_cast<uint32_t>(m_AnimationPlaybackAccumulatorMicroseconds / frameDurationMicroseconds));
+        m_AnimationPlaybackAccumulatorMicroseconds -= static_cast<double>(elapsedFrames) * frameDurationMicroseconds;
+        const uint32_t nextFrame = (m_AnimationFrameIndex + elapsedFrames) % static_cast<uint32_t>(m_IdleAnimation.Frames.size());
         setDisplayedAnimationFrame(nextFrame);
-        m_AnimationClock.restart();
         updateWindowTitle();
     }
 

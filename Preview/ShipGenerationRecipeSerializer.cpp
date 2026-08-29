@@ -181,6 +181,18 @@ namespace
         return false;
     }
 
+    const char* animationSamplingModeRecipeString(PixelShipGenerator::AnimationSamplingMode mode)
+    {
+        return mode == PixelShipGenerator::AnimationSamplingMode::EXACT_FRAME_COUNT ? "EXACT_FRAME_COUNT" : "ADAPTIVE";
+    }
+
+    bool animationSamplingModeFromRecipeString(const std::string& value, PixelShipGenerator::AnimationSamplingMode& mode)
+    {
+        if (value == "ADAPTIVE") { mode = PixelShipGenerator::AnimationSamplingMode::ADAPTIVE; return true; }
+        if (value == "EXACT_FRAME_COUNT") { mode = PixelShipGenerator::AnimationSamplingMode::EXACT_FRAME_COUNT; return true; }
+        return false;
+    }
+
     std::string boolString(bool value) { return value ? "true" : "false"; }
 
     ShipGenerationRecipeLoadResult errorResult(const std::string& error)
@@ -201,7 +213,13 @@ namespace
 
     bool validateAnimation(const PixelShipGenerator::ShipIdleAnimationSettings& settings, std::string& error)
     {
-        if (settings.FrameCount == 0u || settings.FrameCount > 1000u) { error = "animation.frame_count must be in the range 1-1000."; return false; }
+        if (settings.AnimationDurationMilliseconds == 0u || settings.AnimationDurationMilliseconds > 120000u) { error = "animation.duration_milliseconds must be in the range 1-120000."; return false; }
+        if (settings.FrameCount == 0u || settings.FrameCount > 1000u) { error = "animation.exact_frame_count must be in the range 1-1000."; return false; }
+        if (settings.MinimumFrameCount == 0u || settings.MinimumFrameCount > 1000u) { error = "animation.minimum_frame_count must be in the range 1-1000."; return false; }
+        if (settings.MaximumFrameCount == 0u || settings.MaximumFrameCount > 1000u) { error = "animation.maximum_frame_count must be in the range 1-1000."; return false; }
+        if (settings.MinimumFrameCount > settings.MaximumFrameCount) { error = "animation.minimum_frame_count must not exceed animation.maximum_frame_count."; return false; }
+        if (settings.SamplingMode != PixelShipGenerator::AnimationSamplingMode::ADAPTIVE && settings.SamplingMode != PixelShipGenerator::AnimationSamplingMode::EXACT_FRAME_COUNT) { error = "animation.sampling_mode is invalid."; return false; }
+        if (settings.SamplingMode == PixelShipGenerator::AnimationSamplingMode::EXACT_FRAME_COUNT && (settings.FrameCount < settings.MinimumFrameCount || settings.FrameCount > settings.MaximumFrameCount)) { error = "animation.exact_frame_count must be within animation frame limits in EXACT_FRAME_COUNT mode."; return false; }
         return true;
     }
 }
@@ -306,7 +324,11 @@ namespace PixelShipGeneratorPreview
             if (animation.Seed.has_value()) { stream << *animation.Seed; }
             else { stream << "null"; }
             stream << ",\n";
-            stream << "    \"frame_count\": " << animation.FrameCount << ",\n";
+            stream << "    \"duration_milliseconds\": " << animation.AnimationDurationMilliseconds << ",\n";
+            stream << "    \"exact_frame_count\": " << animation.FrameCount << ",\n";
+            stream << "    \"minimum_frame_count\": " << animation.MinimumFrameCount << ",\n";
+            stream << "    \"maximum_frame_count\": " << animation.MaximumFrameCount << ",\n";
+            stream << "    \"sampling_mode\": \"" << animationSamplingModeRecipeString(animation.SamplingMode) << "\",\n";
             stream << "    \"engine_flicker\": " << boolString(animation.EngineFlicker) << ",\n";
             stream << "    \"light_blinking\": " << boolString(animation.LightBlinking) << ",\n";
             stream << "    \"mechanical_micro_movement\": " << boolString(animation.MechanicalMicroMovement) << ",\n";
@@ -329,7 +351,7 @@ namespace PixelShipGeneratorPreview
             if (first >= last || jsonText[first] != '{' || jsonText[last - 1u] != '}') { return errorResult("Failed to parse JSON object."); }
             uint32_t formatVersion = 0u;
             if (!extractUInt32(jsonText, "format_version", formatVersion)) { return errorResult("Missing or invalid field: format_version."); }
-            if (formatVersion != 1u && formatVersion != 2u && formatVersion != ShipGenerationRecipeFormatVersion) { return errorResult("Unsupported format version: " + std::to_string(formatVersion) + "."); }
+            if (formatVersion != 1u && formatVersion != 2u && formatVersion != 3u && formatVersion != ShipGenerationRecipeFormatVersion) { return errorResult("Unsupported format version: " + std::to_string(formatVersion) + "."); }
 
             std::string shipObject;
             if (!extractObject(jsonText, "ship", shipObject)) { return errorResult("Missing or invalid object: ship."); }
@@ -412,7 +434,24 @@ namespace PixelShipGeneratorPreview
             {
                 PixelShipGenerator::ShipIdleAnimationSettings animation;
                 if (!extractOptionalUInt64(animationObject, "seed", animation.Seed)) { return errorResult("Missing or invalid field: animation.seed."); }
-                if (!extractUInt32(animationObject, "frame_count", animation.FrameCount)) { return errorResult("Missing or invalid field: animation.frame_count."); }
+                if (formatVersion >= 4u)
+                {
+                    std::string samplingMode;
+                    if (!extractUInt32(animationObject, "duration_milliseconds", animation.AnimationDurationMilliseconds)) { return errorResult("Missing or invalid field: animation.duration_milliseconds."); }
+                    if (!extractUInt32(animationObject, "exact_frame_count", animation.FrameCount)) { return errorResult("Missing or invalid field: animation.exact_frame_count."); }
+                    if (!extractUInt32(animationObject, "minimum_frame_count", animation.MinimumFrameCount)) { return errorResult("Missing or invalid field: animation.minimum_frame_count."); }
+                    if (!extractUInt32(animationObject, "maximum_frame_count", animation.MaximumFrameCount)) { return errorResult("Missing or invalid field: animation.maximum_frame_count."); }
+                    if (!extractString(animationObject, "sampling_mode", samplingMode)) { return errorResult("Missing or invalid field: animation.sampling_mode."); }
+                    if (!animationSamplingModeFromRecipeString(samplingMode, animation.SamplingMode)) { return errorResult("Unknown animation.sampling_mode: " + samplingMode + "."); }
+                }
+                else
+                {
+                    if (!extractUInt32(animationObject, "frame_count", animation.FrameCount)) { return errorResult("Missing or invalid field: animation.frame_count."); }
+                    animation.AnimationDurationMilliseconds = animation.FrameCount * 100u;
+                    animation.MinimumFrameCount = animation.FrameCount;
+                    animation.MaximumFrameCount = animation.FrameCount;
+                    animation.SamplingMode = PixelShipGenerator::AnimationSamplingMode::EXACT_FRAME_COUNT;
+                }
                 if (!extractBool(animationObject, "engine_flicker", animation.EngineFlicker)) { return errorResult("Missing or invalid field: animation.engine_flicker."); }
                 if (!extractBool(animationObject, "light_blinking", animation.LightBlinking)) { return errorResult("Missing or invalid field: animation.light_blinking."); }
                 if (!extractBool(animationObject, "mechanical_micro_movement", animation.MechanicalMicroMovement)) { return errorResult("Missing or invalid field: animation.mechanical_micro_movement."); }

@@ -9,7 +9,7 @@
 
 namespace PixelShipGeneratorPreview
 {
-    inline constexpr uint32_t ShipGenerationRecipeFormatVersion = 3u;
+    inline constexpr uint32_t ShipGenerationRecipeFormatVersion = 4u;
 
     struct ShipGenerationRecipeDocument
     {

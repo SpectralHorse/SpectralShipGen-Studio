@@ -431,6 +431,13 @@ namespace
         return stream.str();
     }
 
+    std::string getMillisecondsString(double milliseconds)
+    {
+        std::ostringstream stream;
+        stream << std::fixed << std::setprecision(1) << milliseconds << " ms";
+        return stream.str();
+    }
+
     std::string colorToHex(const PixelShipGenerator::Color& color)
     {
         std::ostringstream stream;
@@ -1166,7 +1173,15 @@ namespace PixelShipGeneratorPreview
             y += 4.0f;
             drawSectionHeader(window, "IDLE ANIMATION", x, y);
             drawLabelValue(window, "SEED", std::to_string(data.IdleAnimation->Seed), x, y);
+            drawLabelValue(window, "DURATION", std::to_string(data.IdleAnimation->DurationMilliseconds) + " ms", x, y);
+            drawLabelValue(window, "FRAMES", std::to_string(data.IdleAnimation->Sampling.ActualFrameCount), x, y);
+            drawLabelValue(window, "SAMPLING", data.IdleAnimation->Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
+            drawLabelValue(window, "FRAME LIMITS", std::to_string(data.IdleAnimation->Sampling.MinimumFrameCount) + "-" + std::to_string(data.IdleAnimation->Sampling.MaximumFrameCount), x, y);
+            drawLabelValue(window, "FRAME TIME", getMillisecondsString(data.IdleAnimation->FrameDurationMilliseconds), x, y);
             drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(data.IdleAnimation->Frames.size()), x, y);
+            drawLabelValue(window, "COMPONENTS", std::to_string(data.IdleAnimation->Sampling.ActiveAnimatedComponentCount), x, y);
+            drawLabelValue(window, "MAX TRAVEL", std::to_string(std::max(data.IdleAnimation->Sampling.MaximumMechanicalTravelPixels, data.IdleAnimation->Sampling.MaximumExhaustTravelPixels)) + " px", x, y);
+            drawLabelValue(window, "PHASE GROUPS", std::to_string(data.IdleAnimation->Sampling.IndependentPhaseGroupCount), x, y);
             drawLabelValue(window, "PLAYBACK", data.Mode == PreviewMode::ANIMATION ? "PLAY" : data.Mode == PreviewMode::FRAME_INSPECTION ? "PAUSED" : "STATIC", x, y);
             drawLabelValue(window, "ENGINE", getOnOff(data.IdleAnimationSettings->EngineFlicker), x, y);
             drawLabelValue(window, "LIGHTS", getOnOff(data.IdleAnimationSettings->LightBlinking), x, y);
@@ -1503,7 +1518,14 @@ namespace PixelShipGeneratorPreview
             rightY += 5.0f;
             drawSectionHeader(window, "ANIMATION", rightX, rightY);
             drawLabelValue(window, "SEED", std::to_string(data.IdleAnimation->Seed), rightX, rightY);
+            drawLabelValue(window, "DURATION", std::to_string(data.IdleAnimation->DurationMilliseconds) + " ms", rightX, rightY);
+            drawLabelValue(window, "FRAMES", std::to_string(data.IdleAnimation->Sampling.ActualFrameCount), rightX, rightY);
+            drawLabelValue(window, "SAMPLING", data.IdleAnimation->Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", rightX, rightY);
+            drawLabelValue(window, "FRAME TIME", getMillisecondsString(data.IdleAnimation->FrameDurationMilliseconds), rightX, rightY);
             drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(data.IdleAnimation->Frames.size()), rightX, rightY);
+            drawLabelValue(window, "COMPONENTS", std::to_string(data.IdleAnimation->Sampling.ActiveAnimatedComponentCount), rightX, rightY);
+            drawLabelValue(window, "MAX TRAVEL", std::to_string(std::max(data.IdleAnimation->Sampling.MaximumMechanicalTravelPixels, data.IdleAnimation->Sampling.MaximumExhaustTravelPixels)) + " px", rightX, rightY);
+            drawLabelValue(window, "PHASE GROUPS", std::to_string(data.IdleAnimation->Sampling.IndependentPhaseGroupCount), rightX, rightY);
             drawLabelValue(window, "ENGINE FX", getOnOff(data.IdleAnimationSettings->EngineFlicker), rightX, rightY);
             drawLabelValue(window, "LIGHT FX", getOnOff(data.IdleAnimationSettings->LightBlinking), rightX, rightY);
             drawLabelValue(window, "MICRO MOVE", getOnOff(data.IdleAnimationSettings->MechanicalMicroMovement), rightX, rightY);
