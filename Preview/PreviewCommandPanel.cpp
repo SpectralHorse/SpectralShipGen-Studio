@@ -461,6 +461,7 @@ namespace PixelShipGeneratorPreview
         addGroupHeader("ANIMATION", y);
         addPairButtons({ PreviewCommandType::CYCLE_ANIMATION_TYPE, 0u }, { PreviewCommandType::CYCLE_MOVEMENT_PHASE, 0u }, y);
         addFullButton({ PreviewCommandType::CYCLE_FIRING_TARGET, 0u }, y);
+        addPairButtons({ PreviewCommandType::APPLY_ANIMATION_STATE, 0u }, { PreviewCommandType::RETURN_ANIMATION_TO_IDLE, 0u }, y);
         addPairButtons({ PreviewCommandType::TOGGLE_ANIMATION, 0u }, { PreviewCommandType::TOGGLE_FRAME_INSPECTION, 0u }, y);
         addPairButtons({ PreviewCommandType::PREVIOUS_FRAME, 0u }, { PreviewCommandType::NEXT_FRAME, 0u }, y);
 

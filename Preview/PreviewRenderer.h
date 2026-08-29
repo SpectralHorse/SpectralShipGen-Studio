@@ -40,6 +40,10 @@ namespace PixelShipGeneratorPreview
         const PixelShipGenerator::ShipMovementAnimation* MovementAnimation = nullptr;
         const PixelShipGenerator::ShipMovementAnimationSettings* MovementAnimationSettings = nullptr;
         PixelShipGenerator::ShipMovementAnimationPhase MovementPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+        PixelShipGenerator::ShipAnimationType RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        PixelShipGenerator::ShipAnimationType PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        bool MovementTransitionPending = false;
+        bool TransientStatePreviewActive = false;
         const PixelShipGenerator::ShipFiringAnimation* FiringAnimation = nullptr;
         const PixelShipGenerator::ShipFiringAnimationSettings* FiringAnimationSettings = nullptr;
         const PreviewCommandPanel* CommandPanel = nullptr;

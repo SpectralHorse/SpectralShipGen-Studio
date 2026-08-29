@@ -1251,6 +1251,11 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "WEAPONS", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount), x, y);
             drawLabelValue(window, "RECOIL", std::to_string(data.FiringAnimation->Diagnostics.MaximumRecoilTravelPixels) + " px", x, y);
             drawLabelValue(window, "PRE-FIRE", std::to_string(data.FiringAnimation->Diagnostics.MaximumPreFireExtensionPixels) + " px", x, y);
+            if (data.TransientStatePreviewActive)
+            {
+                drawLabelValue(window, "UNDERLYING", getAnimationTypeDisplayName(data.RuntimeMovementType), x, y);
+                drawLabelValue(window, "OVERRIDES", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount) + " weapon", x, y);
+            }
             drawLabelValue(window, "PLAYBACK", data.Mode == PreviewMode::ANIMATION ? "PLAY" : data.Mode == PreviewMode::FRAME_INSPECTION ? "PAUSED" : "STATIC", x, y);
         }
         else if (data.MovementAnimation != nullptr && data.MovementAnimationSettings != nullptr && data.MovementAnimation->Type == data.SelectedAnimationType)
@@ -1262,6 +1267,7 @@ namespace PixelShipGeneratorPreview
                 drawSectionHeader(window, "MOVEMENT ANIMATION", x, y);
                 drawLabelValue(window, "TYPE", getAnimationTypeDisplayName(data.SelectedAnimationType), x, y);
                 drawLabelValue(window, "PHASE", getMovementPhaseDisplayName(data.MovementPhase), x, y);
+                if (data.MovementTransitionPending) { drawLabelValue(window, "NEXT", getAnimationTypeDisplayName(data.PendingMovementType), x, y); }
                 drawLabelValue(window, "SEED", std::to_string(data.MovementAnimation->Seed), x, y);
                 drawLabelValue(window, "DURATION", std::to_string(clip.DurationMilliseconds) + " ms", x, y);
                 drawLabelValue(window, "FRAMES", std::to_string(clip.Sampling.ActualFrameCount), x, y);
@@ -1641,6 +1647,11 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "WEAPONS", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount), rightX, rightY);
             drawLabelValue(window, "RECOIL", std::to_string(data.FiringAnimation->Diagnostics.MaximumRecoilTravelPixels) + " px", rightX, rightY);
             drawLabelValue(window, "PRE-FIRE", std::to_string(data.FiringAnimation->Diagnostics.MaximumPreFireExtensionPixels) + " px", rightX, rightY);
+            if (data.TransientStatePreviewActive)
+            {
+                drawLabelValue(window, "UNDERLYING", getAnimationTypeDisplayName(data.RuntimeMovementType), rightX, rightY);
+                drawLabelValue(window, "OVERRIDES", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount) + " weapon", rightX, rightY);
+            }
         }
         else if (data.MovementAnimation != nullptr && data.MovementAnimationSettings != nullptr && data.MovementAnimation->Type == data.SelectedAnimationType)
         {
@@ -1651,6 +1662,7 @@ namespace PixelShipGeneratorPreview
                 drawSectionHeader(window, "ANIMATION", rightX, rightY);
                 drawLabelValue(window, "TYPE", getAnimationTypeDisplayName(data.SelectedAnimationType), rightX, rightY);
                 drawLabelValue(window, "PHASE", getMovementPhaseDisplayName(data.MovementPhase), rightX, rightY);
+                if (data.MovementTransitionPending) { drawLabelValue(window, "NEXT", getAnimationTypeDisplayName(data.PendingMovementType), rightX, rightY); }
                 drawLabelValue(window, "SEED", std::to_string(data.MovementAnimation->Seed), rightX, rightY);
                 drawLabelValue(window, "DURATION", std::to_string(clip.DurationMilliseconds) + " ms", rightX, rightY);
                 drawLabelValue(window, "FRAMES", std::to_string(clip.Sampling.ActualFrameCount), rightX, rightY);

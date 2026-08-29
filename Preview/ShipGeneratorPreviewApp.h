@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "GeneratedShip.h"
+#include "ShipAnimationStateCoordinator.h"
 #include "ShipFactionType.h"
 #include "ShipFiringAnimation.h"
 #include "ShipFiringAnimator.h"
@@ -55,6 +56,9 @@ namespace PixelShipGeneratorPreview
         void cycleDiagnosticView();
         void cycleMovementPhase();
         void cycleFiringTarget();
+        void applySelectedAnimationState();
+        void returnAnimationToIdle();
+        bool beginComposedFiringEvent();
         void enterAnimationPlayback();
         void enterAttributeRerollStudio();
         void cancelAttributeRerollStudio();
@@ -156,6 +160,7 @@ namespace PixelShipGeneratorPreview
         sf::RenderWindow m_Window;
         PixelShipGenerator::ShipGenerator m_Generator;
         PixelShipGenerator::ShipIdleAnimator m_IdleAnimator;
+        PixelShipGenerator::ShipAnimationStateCoordinator m_AnimationStateCoordinator;
         PixelShipGenerator::ShipFiringAnimator m_FiringAnimator;
         PixelShipGenerator::ShipLateralMovementAnimator m_LateralMovementAnimator;
         PixelShipGenerator::ShipLongitudinalMovementAnimator m_LongitudinalMovementAnimator;
@@ -200,6 +205,15 @@ namespace PixelShipGeneratorPreview
         uint32_t m_AnimationFrameIndex = 0u;
         sf::Clock m_AnimationClock;
         double m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
+
+        PixelShipGenerator::ShipAnimationType m_RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        PixelShipGenerator::ShipAnimationType m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        bool m_MovementTransitionPending = false;
+        bool m_TransientStatePreviewActive = false;
+        double m_RuntimeMovementNormalizedTime = 0.0;
+        double m_ResumeMovementNormalizedTime = 0.0;
+        double m_StatePreviewFrameDurationMilliseconds = 0.0;
+        std::vector<PixelShipGenerator::Image> m_StatePreviewFrames;
 
         sf::Image m_PreviewImage;
         sf::Texture m_PreviewTexture;

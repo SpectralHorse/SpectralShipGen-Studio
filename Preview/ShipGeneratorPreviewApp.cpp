@@ -169,6 +169,18 @@ namespace
         }
     }
 
+    bool isMovementAnimationType(PixelShipGenerator::ShipAnimationType type)
+    {
+        return type == PixelShipGenerator::ShipAnimationType::MOVE_LEFT || type == PixelShipGenerator::ShipAnimationType::MOVE_RIGHT || type == PixelShipGenerator::ShipAnimationType::MOVE_UP || type == PixelShipGenerator::ShipAnimationType::MOVE_DOWN;
+    }
+
+    double wrapNormalizedAnimationTime(double normalizedTime)
+    {
+        double wrapped = normalizedTime - std::floor(normalizedTime);
+        if (wrapped < 0.0) { wrapped += 1.0; }
+        return wrapped;
+    }
+
     std::string getAnimationTypeFileToken(PixelShipGenerator::ShipAnimationType type)
     {
         switch (type)
@@ -679,6 +691,9 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::cycleAnimationType()
     {
+        m_TransientStatePreviewActive = false;
+        m_StatePreviewFrames.clear();
+
         constexpr std::array<PixelShipGenerator::ShipAnimationType, 6u> Types =
         {
             PixelShipGenerator::ShipAnimationType::IDLE,
@@ -726,14 +741,172 @@ namespace PixelShipGeneratorPreview
         m_AnimationFrameIndex = 0u;
         m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
         m_AnimationClock.restart();
-        if (!regenerateAnimation()) { return; }
-        if (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) { setDisplayedAnimationFrame(0u); }
+        if (m_TransientStatePreviewActive)
+        {
+            if (!beginComposedFiringEvent()) { return; }
+        }
+        else
+        {
+            if (!regenerateAnimation()) { return; }
+            if (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) { setDisplayedAnimationFrame(0u); }
+        }
         if (m_FiringAnimation.Diagnostics.ValidTarget && !m_FiringAnimation.Diagnostics.Weapons.empty())
         {
             const auto& weapon = m_FiringAnimation.Diagnostics.Weapons.front();
             setStatusMessage("Firing target: " + getWeaponTypeDisplayName(weapon.Type) + " component " + std::to_string(m_FiringAnimation.Target.WeaponComponentIndex));
         }
         updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::applySelectedAnimationState()
+    {
+        m_TransientStatePreviewActive = false;
+        m_StatePreviewFrames.clear();
+
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE)
+        {
+            beginComposedFiringEvent();
+            return;
+        }
+
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            returnAnimationToIdle();
+            return;
+        }
+
+        if (!isMovementAnimationType(m_SelectedAnimationType)) { return; }
+        const PixelShipGenerator::ShipAnimationType target = m_SelectedAnimationType;
+        if (m_RuntimeMovementType == target)
+        {
+            m_MovementTransitionPending = false;
+            m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+            m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
+            if (!regenerateAnimation()) { return; }
+            const auto* clip = getActiveMovementClip();
+            if (clip != nullptr && !clip->Frames.empty())
+            {
+                const uint32_t index = static_cast<uint32_t>(std::floor(wrapNormalizedAnimationTime(m_RuntimeMovementNormalizedTime) * static_cast<double>(clip->Frames.size()))) % static_cast<uint32_t>(clip->Frames.size());
+                m_AnimationFrameIndex = index;
+            }
+            enterAnimationPlayback();
+            setStatusMessage("State: " + getAnimationTypeDisplayName(target) + " SUSTAIN");
+            return;
+        }
+
+        if (m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            m_RuntimeMovementType = target;
+            m_MovementTransitionPending = false;
+            m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+            m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+            m_RuntimeMovementNormalizedTime = 0.0;
+            if (!regenerateAnimation()) { return; }
+            enterAnimationPlayback();
+            setStatusMessage("State transition: IDLE -> " + getAnimationTypeDisplayName(target));
+            return;
+        }
+
+        const PixelShipGenerator::ShipAnimationType current = m_RuntimeMovementType;
+        const PixelShipGenerator::ShipMovementTransitionPlan plan = m_AnimationStateCoordinator.planMovementTransition(current, target, m_MovementAnimationSettings);
+        m_PendingMovementType = target;
+        m_MovementTransitionPending = plan.ExitCurrentMovement && plan.EnterTargetMovement;
+        m_SelectedAnimationType = current;
+        m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::EXIT;
+        if (!regenerateAnimation()) { return; }
+        enterAnimationPlayback();
+        setStatusMessage("State transition: " + getAnimationTypeDisplayName(current) + " -> NEUTRAL -> " + getAnimationTypeDisplayName(target));
+    }
+
+    void ShipGeneratorPreviewApp::returnAnimationToIdle()
+    {
+        m_TransientStatePreviewActive = false;
+        m_StatePreviewFrames.clear();
+        if (m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
+            m_MovementTransitionPending = false;
+            m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+            if (!regenerateAnimation()) { return; }
+            enterAnimationPlayback();
+            setStatusMessage("State: IDLE");
+            return;
+        }
+
+        const PixelShipGenerator::ShipAnimationType current = m_RuntimeMovementType;
+        const PixelShipGenerator::ShipMovementTransitionPlan plan = m_AnimationStateCoordinator.planMovementTransition(current, PixelShipGenerator::ShipAnimationType::IDLE, m_MovementAnimationSettings);
+        m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        m_MovementTransitionPending = plan.ExitCurrentMovement;
+        m_SelectedAnimationType = current;
+        m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::EXIT;
+        if (!regenerateAnimation()) { return; }
+        enterAnimationPlayback();
+        setStatusMessage("State transition: " + getAnimationTypeDisplayName(current) + " -> IDLE");
+    }
+
+    bool ShipGeneratorPreviewApp::beginComposedFiringEvent()
+    {
+        m_FiringTargets = m_FiringAnimator.getAvailableTargets(m_GeneratedShip);
+        if (m_FiringTargets.empty())
+        {
+            setStatusMessage("FIRE unavailable: generated ship has no movable weapon component.");
+            return false;
+        }
+
+        m_SelectedFiringTargetIndex %= static_cast<uint32_t>(m_FiringTargets.size());
+        const PixelShipGenerator::ShipFiringAnimationTarget target = m_FiringTargets[m_SelectedFiringTargetIndex];
+        m_FiringAnimation = m_FiringAnimator.generate(m_GeneratedShip, target, m_FiringAnimationSettings);
+        if (m_FiringAnimation.Frames.empty()) { return false; }
+
+        PixelShipGenerator::ShipMovementAnimation movement;
+        uint32_t sustainDurationMilliseconds = 0u;
+        if (m_RuntimeMovementType != PixelShipGenerator::ShipAnimationType::IDLE)
+        {
+            if (m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::MOVE_LEFT || m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::MOVE_RIGHT)
+            {
+                movement = m_LateralMovementAnimator.generate(m_GeneratedShip, m_RuntimeMovementType, m_MovementAnimationSettings);
+            }
+            else
+            {
+                movement = m_LongitudinalMovementAnimator.generate(m_GeneratedShip, m_RuntimeMovementType, m_MovementAnimationSettings);
+            }
+            sustainDurationMilliseconds = movement.Sustain.DurationMilliseconds;
+        }
+
+        m_StatePreviewFrames.clear();
+        m_StatePreviewFrames.reserve(m_FiringAnimation.NormalizedSampleTimes.size());
+        for (double firingTime : m_FiringAnimation.NormalizedSampleTimes)
+        {
+            PixelShipGenerator::ShipAnimationStateRequest request;
+            request.UnderlyingMovementType = m_RuntimeMovementType;
+            request.MovementPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
+            if (sustainDurationMilliseconds > 0u)
+            {
+                const double elapsedMilliseconds = firingTime * static_cast<double>(m_FiringAnimation.DurationMilliseconds);
+                request.MovementNormalizedTime = wrapNormalizedAnimationTime(m_RuntimeMovementNormalizedTime + elapsedMilliseconds / static_cast<double>(sustainDurationMilliseconds));
+            }
+            request.FireActive = true;
+            request.FiringTarget = target;
+            request.FiringNormalizedTime = firingTime;
+            m_StatePreviewFrames.push_back(m_AnimationStateCoordinator.evaluate(m_GeneratedShip, request, m_MovementAnimationSettings, m_FiringAnimationSettings).Pose.Frame);
+        }
+
+        if (sustainDurationMilliseconds > 0u)
+        {
+            m_ResumeMovementNormalizedTime = wrapNormalizedAnimationTime(m_RuntimeMovementNormalizedTime + static_cast<double>(m_FiringAnimation.DurationMilliseconds) / static_cast<double>(sustainDurationMilliseconds));
+        }
+        else
+        {
+            m_ResumeMovementNormalizedTime = 0.0;
+        }
+
+        m_StatePreviewFrameDurationMilliseconds = m_FiringAnimation.FrameDurationMilliseconds;
+        m_TransientStatePreviewActive = true;
+        m_AnimationFrameIndex = 0u;
+        if (!refreshAnimationTextures()) { return false; }
+        enterAnimationPlayback();
+        setStatusMessage(std::string("Transient FIRE over ") + (m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::IDLE ? "NEUTRAL" : getAnimationTypeDisplayName(m_RuntimeMovementType)));
+        return true;
     }
 
     void ShipGeneratorPreviewApp::cycleDiagnosticView()
@@ -1296,6 +1469,8 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::CYCLE_ANIMATION_TYPE: cycleAnimationType(); break;
         case PreviewCommandType::CYCLE_MOVEMENT_PHASE: cycleMovementPhase(); break;
         case PreviewCommandType::CYCLE_FIRING_TARGET: cycleFiringTarget(); break;
+        case PreviewCommandType::APPLY_ANIMATION_STATE: applySelectedAnimationState(); break;
+        case PreviewCommandType::RETURN_ANIMATION_TO_IDLE: returnAnimationToIdle(); break;
         case PreviewCommandType::TOGGLE_ANIMATION:
             if (m_PreviewMode == PreviewMode::ANIMATION) { m_PreviewMode = PreviewMode::STATIC; setDisplayedStaticFrame(); updateWindowTitle(); }
             else { enterAnimationPlayback(); }
@@ -1501,6 +1676,7 @@ namespace PixelShipGeneratorPreview
 
         if (m_PreviewMode == PreviewMode::FRAME_INSPECTION)
         {
+            if (key == sf::Keyboard::J) { return PreviewCommand{ shift ? PreviewCommandType::RETURN_ANIMATION_TO_IDLE : PreviewCommandType::APPLY_ANIMATION_STATE, 0u }; }
             switch (key)
             {
             case sf::Keyboard::Left:
@@ -1535,6 +1711,7 @@ namespace PixelShipGeneratorPreview
 
         switch (key)
         {
+        case sf::Keyboard::J: return PreviewCommand{ shift ? PreviewCommandType::RETURN_ANIMATION_TO_IDLE : PreviewCommandType::APPLY_ANIMATION_STATE, 0u };
         case sf::Keyboard::Escape: return PreviewCommand{ PreviewCommandType::BACK_OR_EXIT, 0u };
         case sf::Keyboard::N:
         case sf::Keyboard::Space: return PreviewCommand{ PreviewCommandType::GENERATE_NEW, 0u };
@@ -1791,10 +1968,12 @@ namespace PixelShipGeneratorPreview
         if (type == PreviewCommandType::CYCLE_ANIMATION_TYPE) { return true; }
         if (type == PreviewCommandType::CYCLE_MOVEMENT_PHASE) { return m_SelectedAnimationType != PixelShipGenerator::ShipAnimationType::IDLE && m_SelectedAnimationType != PixelShipGenerator::ShipAnimationType::FIRE; }
         if (type == PreviewCommandType::CYCLE_FIRING_TARGET) { return m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE && m_FiringTargets.size() > 1u; }
+        if (type == PreviewCommandType::APPLY_ANIMATION_STATE) { return true; }
+        if (type == PreviewCommandType::RETURN_ANIMATION_TO_IDLE) { return m_RuntimeMovementType != PixelShipGenerator::ShipAnimationType::IDLE || m_TransientStatePreviewActive; }
 
         if (m_PreviewMode == PreviewMode::FRAME_INSPECTION)
         {
-            return type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME || type == PreviewCommandType::CYCLE_ANIMATION_TYPE || type == PreviewCommandType::CYCLE_MOVEMENT_PHASE || type == PreviewCommandType::CYCLE_FIRING_TARGET;
+            return type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME || type == PreviewCommandType::CYCLE_ANIMATION_TYPE || type == PreviewCommandType::CYCLE_MOVEMENT_PHASE || type == PreviewCommandType::CYCLE_FIRING_TARGET || type == PreviewCommandType::APPLY_ANIMATION_STATE || type == PreviewCommandType::RETURN_ANIMATION_TO_IDLE;
         }
         if (type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME || type == PreviewCommandType::GALLERY_LEFT || type == PreviewCommandType::GALLERY_RIGHT || type == PreviewCommandType::GALLERY_UP || type == PreviewCommandType::GALLERY_DOWN || type == PreviewCommandType::SELECT_GALLERY_CANDIDATE) { return false; }
         if (type == PreviewCommandType::PREVIOUS_HISTORY) { return m_HistoryIndex > 0u; }
@@ -2060,6 +2239,14 @@ namespace PixelShipGeneratorPreview
         m_PreviewSprite.setScale(static_cast<float>(scale), static_cast<float>(scale));
         m_PreviewSprite.setPosition(static_cast<float>(positionX), static_cast<float>(positionY));
 
+        m_RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        m_MovementTransitionPending = false;
+        m_TransientStatePreviewActive = false;
+        m_RuntimeMovementNormalizedTime = 0.0;
+        m_ResumeMovementNormalizedTime = 0.0;
+        m_StatePreviewFrames.clear();
+
         if (!regenerateAnimation())
         {
             return false;
@@ -2172,6 +2359,10 @@ namespace PixelShipGeneratorPreview
         data.MovementAnimation = &m_MovementAnimation;
         data.MovementAnimationSettings = &m_MovementAnimationSettings;
         data.MovementPhase = m_MovementAnimationPhase;
+        data.RuntimeMovementType = m_RuntimeMovementType;
+        data.PendingMovementType = m_PendingMovementType;
+        data.MovementTransitionPending = m_MovementTransitionPending;
+        data.TransientStatePreviewActive = m_TransientStatePreviewActive;
         data.FiringAnimation = &m_FiringAnimation;
         data.FiringAnimationSettings = &m_FiringAnimationSettings;
         data.HistoryIndex = m_HistoryIndex;
@@ -2274,6 +2465,12 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::saveSpritesheet()
     {
+        if (m_TransientStatePreviewActive)
+        {
+            setStatusMessage("Composed transition/event previews are runtime-only. Export the base movement/FIRE assets separately.");
+            return;
+        }
+
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         const std::string baseName = getSaveBaseName(recipe);
 
@@ -2366,6 +2563,7 @@ namespace PixelShipGeneratorPreview
 
     const std::vector<PixelShipGenerator::Image>& ShipGeneratorPreviewApp::getActiveAnimationFrames() const
     {
+        if (m_TransientStatePreviewActive) { return m_StatePreviewFrames; }
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
         {
             return m_IdleAnimation.Frames;
@@ -2387,6 +2585,7 @@ namespace PixelShipGeneratorPreview
 
     double ShipGeneratorPreviewApp::getActiveAnimationFrameDurationMilliseconds() const
     {
+        if (m_TransientStatePreviewActive) { return m_StatePreviewFrameDurationMilliseconds; }
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
         {
             return m_IdleAnimation.FrameDurationMilliseconds;
@@ -2401,6 +2600,7 @@ namespace PixelShipGeneratorPreview
 
     uint64_t ShipGeneratorPreviewApp::getActiveAnimationSeed() const
     {
+        if (m_TransientStatePreviewActive) { return m_FiringAnimation.Seed; }
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.Seed; }
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return m_FiringAnimation.Seed; }
         return m_MovementAnimation.Seed;
@@ -2408,6 +2608,7 @@ namespace PixelShipGeneratorPreview
 
     const PixelShipGenerator::AnimationSamplingPlan& ShipGeneratorPreviewApp::getActiveAnimationSampling() const
     {
+        if (m_TransientStatePreviewActive) { return m_FiringAnimation.Sampling; }
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
         {
             return m_IdleAnimation.Sampling;
@@ -2422,6 +2623,7 @@ namespace PixelShipGeneratorPreview
 
     uint32_t ShipGeneratorPreviewApp::getActiveAnimationDurationMilliseconds() const
     {
+        if (m_TransientStatePreviewActive) { return m_FiringAnimation.DurationMilliseconds; }
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
         {
             return m_IdleAnimation.DurationMilliseconds;
@@ -2712,6 +2914,39 @@ namespace PixelShipGeneratorPreview
             {
                 setDisplayedAnimationFrame(static_cast<uint32_t>(targetFrame));
             }
+            else if (m_TransientStatePreviewActive)
+            {
+                m_TransientStatePreviewActive = false;
+                m_StatePreviewFrames.clear();
+                m_AnimationFrameIndex = 0u;
+                m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
+
+                if (m_RuntimeMovementType != PixelShipGenerator::ShipAnimationType::IDLE)
+                {
+                    m_SelectedAnimationType = m_RuntimeMovementType;
+                    m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
+                    m_RuntimeMovementNormalizedTime = m_ResumeMovementNormalizedTime;
+                    if (regenerateAnimation())
+                    {
+                        const PixelShipGenerator::ShipMovementAnimationClip* sustain = getActiveMovementClip();
+                        if (sustain != nullptr && !sustain->Frames.empty())
+                        {
+                            const uint32_t index = static_cast<uint32_t>(std::floor(m_RuntimeMovementNormalizedTime * static_cast<double>(sustain->Frames.size()))) % static_cast<uint32_t>(sustain->Frames.size());
+                            m_PreviewMode = PreviewMode::ANIMATION;
+                            setDisplayedAnimationFrame(index);
+                        }
+                    }
+                }
+                else
+                {
+                    m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
+                    if (regenerateAnimation())
+                    {
+                        m_PreviewMode = PreviewMode::ANIMATION;
+                        setDisplayedAnimationFrame(0u);
+                    }
+                }
+            }
             else
             {
                 m_PreviewMode = PreviewMode::STATIC;
@@ -2725,7 +2960,13 @@ namespace PixelShipGeneratorPreview
 
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE || m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN)
         {
-            setDisplayedAnimationFrame((m_AnimationFrameIndex + elapsedFrames) % frameCount);
+            const uint32_t nextFrame = (m_AnimationFrameIndex + elapsedFrames) % frameCount;
+            setDisplayedAnimationFrame(nextFrame);
+            if (m_SelectedAnimationType == m_RuntimeMovementType && isMovementAnimationType(m_SelectedAnimationType))
+            {
+                const PixelShipGenerator::ShipMovementAnimationClip* sustain = getActiveMovementClip();
+                if (sustain != nullptr && nextFrame < sustain->NormalizedSampleTimes.size()) { m_RuntimeMovementNormalizedTime = sustain->NormalizedSampleTimes[nextFrame]; }
+            }
             updateWindowTitle();
             return;
         }
@@ -2742,10 +2983,13 @@ namespace PixelShipGeneratorPreview
                 const uint64_t leftoverFrames = targetFrame - frameCount;
                 m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
                 refreshAnimationTextures();
-                const uint32_t sustainCount = static_cast<uint32_t>(getActiveAnimationFrames().size());
+                const PixelShipGenerator::ShipMovementAnimationClip* sustain = getActiveMovementClip();
+                const uint32_t sustainCount = sustain != nullptr ? static_cast<uint32_t>(sustain->Frames.size()) : 0u;
                 if (sustainCount > 0u)
                 {
-                    setDisplayedAnimationFrame(static_cast<uint32_t>(leftoverFrames % sustainCount));
+                    const uint32_t nextFrame = static_cast<uint32_t>(leftoverFrames % sustainCount);
+                    setDisplayedAnimationFrame(nextFrame);
+                    if (sustain != nullptr && nextFrame < sustain->NormalizedSampleTimes.size()) { m_RuntimeMovementNormalizedTime = sustain->NormalizedSampleTimes[nextFrame]; }
                 }
             }
             updateWindowTitle();
@@ -2755,6 +2999,37 @@ namespace PixelShipGeneratorPreview
         if (targetFrame < frameCount)
         {
             setDisplayedAnimationFrame(static_cast<uint32_t>(targetFrame));
+        }
+        else if (m_MovementTransitionPending)
+        {
+            const PixelShipGenerator::ShipAnimationType target = m_PendingMovementType;
+            m_MovementTransitionPending = false;
+            m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+            m_AnimationFrameIndex = 0u;
+            m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
+            m_RuntimeMovementNormalizedTime = 0.0;
+
+            if (target == PixelShipGenerator::ShipAnimationType::IDLE)
+            {
+                m_RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+                m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
+                if (regenerateAnimation())
+                {
+                    m_PreviewMode = PreviewMode::ANIMATION;
+                    setDisplayedAnimationFrame(0u);
+                }
+            }
+            else
+            {
+                m_RuntimeMovementType = target;
+                m_SelectedAnimationType = target;
+                m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+                if (regenerateAnimation())
+                {
+                    m_PreviewMode = PreviewMode::ANIMATION;
+                    setDisplayedAnimationFrame(0u);
+                }
+            }
         }
         else
         {
@@ -2817,10 +3092,18 @@ namespace PixelShipGeneratorPreview
             if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE)
             {
                 title += " | Weapon: " + std::to_string(m_FiringAnimation.Target.WeaponComponentIndex);
+                if (m_TransientStatePreviewActive)
+                {
+                    title += " | Underlying: " + getAnimationTypeDisplayName(m_RuntimeMovementType);
+                }
             }
             else if (m_SelectedAnimationType != PixelShipGenerator::ShipAnimationType::IDLE)
             {
                 title += " | Phase: " + getMovementPhaseDisplayName(m_MovementAnimationPhase);
+                if (m_MovementTransitionPending)
+                {
+                    title += " | Next: " + getAnimationTypeDisplayName(m_PendingMovementType);
+                }
             }
             title += " | Frame " + std::to_string(m_AnimationFrameIndex + 1u) + "/" + std::to_string(animationFrames.size());
             title += " | AnimationSeed: " + std::to_string(getActiveAnimationSeed());

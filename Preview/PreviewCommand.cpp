@@ -56,6 +56,8 @@ namespace PixelShipGeneratorPreview
             { PreviewCommandType::CYCLE_ANIMATION_TYPE, "Animation Type", "O", "Cycle IDLE, MOVE LEFT, MOVE RIGHT, MOVE UP, MOVE DOWN, and FIRE animation playback.", PreviewCommandGroup::ANIMATION },
             { PreviewCommandType::CYCLE_MOVEMENT_PHASE, "Movement Phase", "L", "Cycle ENTER, SUSTAIN, and EXIT for the selected movement animation.", PreviewCommandGroup::ANIMATION },
             { PreviewCommandType::CYCLE_FIRING_TARGET, "Firing Target", "U", "Cycle the semantic weapon component/group targeted by FIRE.", PreviewCommandGroup::ANIMATION },
+            { PreviewCommandType::APPLY_ANIMATION_STATE, "Apply State", "J", "Apply the selected IDLE/MOVE/FIRE state using Task-71 transition and pose-composition semantics.", PreviewCommandGroup::ANIMATION },
+            { PreviewCommandType::RETURN_ANIMATION_TO_IDLE, "Return Idle", "SHIFT+J", "Exit the current sustained movement through its existing Exit clip and resume IDLE from neutral.", PreviewCommandGroup::ANIMATION },
             { PreviewCommandType::TOGGLE_ANIMATION, "Animation", "I", "Toggle static and selected-animation playback; resume playback from frame inspection.", PreviewCommandGroup::ANIMATION },
             { PreviewCommandType::TOGGLE_FRAME_INSPECTION, "Frame Inspect", "K", "Enter or leave selected-animation frame inspection.", PreviewCommandGroup::ANIMATION },
             { PreviewCommandType::PREVIOUS_FRAME, "Previous Frame", "LEFT / P / BACKSPACE", "Show the previous animation frame while inspecting frames.", PreviewCommandGroup::ANIMATION },
