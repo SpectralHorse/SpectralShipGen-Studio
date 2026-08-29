@@ -18,6 +18,7 @@
 #include "ShipIdleAnimation.h"
 #include "ShipIdleAnimator.h"
 #include "ShipLateralMovementAnimator.h"
+#include "ShipLongitudinalMovementAnimator.h"
 #include "ShipMovementAnimation.h"
 
 #include "AttributeRerollStudio.h"
@@ -153,6 +154,7 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::ShipGenerator m_Generator;
         PixelShipGenerator::ShipIdleAnimator m_IdleAnimator;
         PixelShipGenerator::ShipLateralMovementAnimator m_LateralMovementAnimator;
+        PixelShipGenerator::ShipLongitudinalMovementAnimator m_LongitudinalMovementAnimator;
         std::mt19937_64 m_SeedGenerator;
         PreviewRenderer m_Renderer;
         PreviewCommandPanel m_CommandPanel;

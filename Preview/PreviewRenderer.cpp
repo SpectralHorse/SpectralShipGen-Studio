@@ -388,6 +388,8 @@ namespace
         case PixelShipGenerator::ShipAnimationType::IDLE: return "IDLE";
         case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
         case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
+        case PixelShipGenerator::ShipAnimationType::MOVE_UP: return "MOVE UP";
+        case PixelShipGenerator::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
         default: return "UNSUPPORTED";
         }
     }
@@ -1230,11 +1232,13 @@ namespace PixelShipGeneratorPreview
                 drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(clip.Frames.size()), x, y);
                 drawLabelValue(window, "COMPONENTS", std::to_string(clip.Sampling.ActiveAnimatedComponentCount), x, y);
                 drawLabelValue(window, "MAX TRAVEL", std::to_string(data.MovementAnimation->Diagnostics.MaximumMechanicalTravelPixels) + " px", x, y);
+                drawLabelValue(window, "EXHAUST TRAVEL", std::to_string(data.MovementAnimation->Diagnostics.MaximumExhaustTravelPixels) + " px", x, y);
                 drawLabelValue(window, "PHASE GROUPS", std::to_string(data.MovementAnimation->Diagnostics.IndependentPhaseGroupCount), x, y);
                 drawLabelValue(window, "PLAYBACK", data.Mode == PreviewMode::ANIMATION ? "PLAY" : data.Mode == PreviewMode::FRAME_INSPECTION ? "PAUSED" : "STATIC", x, y);
                 drawLabelValue(window, "ENGINES", std::to_string(data.MovementAnimation->Diagnostics.ActiveEngineCount), x, y);
                 drawLabelValue(window, "WEAPONS", std::to_string(data.MovementAnimation->Diagnostics.ActiveWeaponCount), x, y);
                 drawLabelValue(window, "ATTACH", std::to_string(data.MovementAnimation->Diagnostics.ActiveAttachmentCount), x, y);
+                drawLabelValue(window, "BRAKES", std::to_string(data.MovementAnimation->Diagnostics.ActiveBrakingComponentCount), x, y);
             }
         }
 
@@ -1598,10 +1602,12 @@ namespace PixelShipGeneratorPreview
                 drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(clip.Frames.size()), rightX, rightY);
                 drawLabelValue(window, "COMPONENTS", std::to_string(clip.Sampling.ActiveAnimatedComponentCount), rightX, rightY);
                 drawLabelValue(window, "MAX TRAVEL", std::to_string(data.MovementAnimation->Diagnostics.MaximumMechanicalTravelPixels) + " px", rightX, rightY);
+                drawLabelValue(window, "EXHAUST TRAVEL", std::to_string(data.MovementAnimation->Diagnostics.MaximumExhaustTravelPixels) + " px", rightX, rightY);
                 drawLabelValue(window, "PHASE GROUPS", std::to_string(data.MovementAnimation->Diagnostics.IndependentPhaseGroupCount), rightX, rightY);
                 drawLabelValue(window, "ENGINES", std::to_string(data.MovementAnimation->Diagnostics.ActiveEngineCount), rightX, rightY);
                 drawLabelValue(window, "WEAPONS", std::to_string(data.MovementAnimation->Diagnostics.ActiveWeaponCount), rightX, rightY);
                 drawLabelValue(window, "ATTACH", std::to_string(data.MovementAnimation->Diagnostics.ActiveAttachmentCount), rightX, rightY);
+                drawLabelValue(window, "BRAKES", std::to_string(data.MovementAnimation->Diagnostics.ActiveBrakingComponentCount), rightX, rightY);
             }
         }
     }

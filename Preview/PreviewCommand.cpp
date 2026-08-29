@@ -53,7 +53,7 @@ namespace PixelShipGeneratorPreview
             { PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW, "Gen Stages", "F8", "Toggle captured hull-generation stage visualization.", PreviewCommandGroup::VIEW },
             { PreviewCommandType::PREVIOUS_GENERATION_STAGE, "Previous Stage", "[", "Show the previous captured generation stage.", PreviewCommandGroup::VIEW },
             { PreviewCommandType::NEXT_GENERATION_STAGE, "Next Stage", "]", "Show the next captured generation stage.", PreviewCommandGroup::VIEW },
-            { PreviewCommandType::CYCLE_ANIMATION_TYPE, "Animation Type", "O", "Cycle IDLE, MOVE LEFT, and MOVE RIGHT animation playback.", PreviewCommandGroup::ANIMATION },
+            { PreviewCommandType::CYCLE_ANIMATION_TYPE, "Animation Type", "O", "Cycle IDLE, MOVE LEFT, MOVE RIGHT, MOVE UP, and MOVE DOWN animation playback.", PreviewCommandGroup::ANIMATION },
             { PreviewCommandType::CYCLE_MOVEMENT_PHASE, "Movement Phase", "L", "Cycle ENTER, SUSTAIN, and EXIT for the selected movement animation.", PreviewCommandGroup::ANIMATION },
             { PreviewCommandType::TOGGLE_ANIMATION, "Animation", "I", "Toggle static and selected-animation playback; resume playback from frame inspection.", PreviewCommandGroup::ANIMATION },
             { PreviewCommandType::TOGGLE_FRAME_INSPECTION, "Frame Inspect", "K", "Enter or leave selected-animation frame inspection.", PreviewCommandGroup::ANIMATION },

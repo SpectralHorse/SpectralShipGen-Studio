@@ -162,6 +162,8 @@ namespace
         case PixelShipGenerator::ShipAnimationType::IDLE: return "IDLE";
         case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
         case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
+        case PixelShipGenerator::ShipAnimationType::MOVE_UP: return "MOVE UP";
+        case PixelShipGenerator::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
         default: return "UNSUPPORTED";
         }
     }
@@ -173,6 +175,8 @@ namespace
         case PixelShipGenerator::ShipAnimationType::IDLE: return "idle";
         case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "move_left";
         case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "move_right";
+        case PixelShipGenerator::ShipAnimationType::MOVE_UP: return "move_up";
+        case PixelShipGenerator::ShipAnimationType::MOVE_DOWN: return "move_down";
         default: return "animation";
         }
     }
@@ -660,11 +664,13 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::cycleAnimationType()
     {
-        constexpr std::array<PixelShipGenerator::ShipAnimationType, 3u> Types =
+        constexpr std::array<PixelShipGenerator::ShipAnimationType, 5u> Types =
         {
             PixelShipGenerator::ShipAnimationType::IDLE,
             PixelShipGenerator::ShipAnimationType::MOVE_LEFT,
-            PixelShipGenerator::ShipAnimationType::MOVE_RIGHT
+            PixelShipGenerator::ShipAnimationType::MOVE_RIGHT,
+            PixelShipGenerator::ShipAnimationType::MOVE_UP,
+            PixelShipGenerator::ShipAnimationType::MOVE_DOWN
         };
 
         const auto iterator = std::find(Types.begin(), Types.end(), m_SelectedAnimationType);
@@ -2048,6 +2054,10 @@ namespace PixelShipGeneratorPreview
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_LEFT || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_RIGHT)
         {
             m_MovementAnimation = m_LateralMovementAnimator.generate(m_GeneratedShip, m_SelectedAnimationType, m_MovementAnimationSettings);
+        }
+        else if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_UP || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_DOWN)
+        {
+            m_MovementAnimation = m_LongitudinalMovementAnimator.generate(m_GeneratedShip, m_SelectedAnimationType, m_MovementAnimationSettings);
         }
 
         m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
