@@ -69,7 +69,9 @@ namespace PixelShipGeneratorTests
         }
 
         const std::filesystem::path csvPath = std::filesystem::temp_directory_path() / "pixel_ship_generator_diagnostics_app_regression.csv";
+        const std::filesystem::path runPath = std::filesystem::temp_directory_path() / "pixel_ship_generator_diagnostics_app_regression.shipdiag.json";
         std::filesystem::remove(csvPath);
+        std::filesystem::remove(runPath);
 
         {
             DiagnosticsAppController controller;
@@ -90,8 +92,15 @@ namespace PixelShipGeneratorTests
             std::string header;
             std::getline(csv, header);
             if (!expect(header.find("generation_time_mean_ms") != std::string::npos, "CSV should use Task-64 backend schema")) { return 1; }
+            if (!expect(controller.saveRun(runPath, error), "completed result should save .shipdiag.json")) { return 1; }
+            controller.reset();
+            if (!expect(controller.loadRun(runPath, error), "saved .shipdiag.json should load back into controller")) { return 1; }
+            const auto loadedSnapshot = controller.getSnapshot();
+            if (!expect(loadedSnapshot.State == DiagnosticsAppRunState::COMPLETED && loadedSnapshot.HasResult, "loaded completed run should restore completed state")) { return 1; }
+            if (!expect(loadedSnapshot.CompletedSamples == 4u && loadedSnapshot.FinalSummary.GenerationTimeMilliseconds.Count == 4u, "loaded run summary/sample ownership invalid")) { return 1; }
         }
         std::filesystem::remove(csvPath);
+        std::filesystem::remove(runPath);
 
         {
             DiagnosticsAppController controller;

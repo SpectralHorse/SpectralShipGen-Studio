@@ -67,6 +67,8 @@ namespace PixelShipGeneratorDiagnosticsApp
         DiagnosticsAppSnapshot getSnapshot() const;
         std::shared_ptr<const PixelShipGeneratorDiagnostics::DiagnosticsResult> getResult() const;
         bool exportCsv(const std::filesystem::path& path, std::string& errorMessage) const;
+        bool saveRun(const std::filesystem::path& path, std::string& errorMessage) const;
+        bool loadRun(const std::filesystem::path& path, std::string& errorMessage);
         bool hasActiveWorker() const;
 
     private:

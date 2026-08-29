@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "DiagnosticsResultSerializer.h"
+
 namespace PixelShipGeneratorDiagnosticsApp
 {
     const char* getDiagnosticsAppRunStateName(DiagnosticsAppRunState state)
@@ -188,6 +190,61 @@ namespace PixelShipGeneratorDiagnosticsApp
             errorMessage = "Failed while writing diagnostics CSV: " + path.string();
             return false;
         }
+        errorMessage.clear();
+        return true;
+    }
+
+
+    bool DiagnosticsAppController::saveRun(const std::filesystem::path& path, std::string& errorMessage) const
+    {
+        std::shared_ptr<const PixelShipGeneratorDiagnostics::DiagnosticsResult> result;
+        {
+            std::lock_guard<std::mutex> lock(m_Mutex);
+            result = m_Result;
+        }
+        if (!result)
+        {
+            errorMessage = "No completed or partial diagnostics result is available.";
+            return false;
+        }
+        return PixelShipGeneratorDiagnostics::saveDiagnosticsResultJson(path, *result, errorMessage);
+    }
+
+    bool DiagnosticsAppController::loadRun(const std::filesystem::path& path, std::string& errorMessage)
+    {
+        joinFinishedWorker();
+        {
+            std::lock_guard<std::mutex> lock(m_Mutex);
+            if (m_State == DiagnosticsAppRunState::RUNNING || m_State == DiagnosticsAppRunState::CANCELLING)
+            {
+                errorMessage = "Cancel the active diagnostics run before loading another result.";
+                return false;
+            }
+        }
+        PixelShipGeneratorDiagnostics::DiagnosticsResultLoadResult loaded = PixelShipGeneratorDiagnostics::loadDiagnosticsResultJson(path);
+        if (!loaded.Success)
+        {
+            errorMessage = loaded.Error;
+            return false;
+        }
+        auto result = std::make_shared<PixelShipGeneratorDiagnostics::DiagnosticsResult>(std::move(loaded.Result));
+        std::lock_guard<std::mutex> lock(m_Mutex);
+        m_Result = std::move(result);
+        m_Progress = {};
+        m_Progress.TotalWorkItems = m_Result->ScheduledWorkItems;
+        m_Progress.CompletedWorkItems = m_Result->CompletedWorkItems;
+        m_Progress.ProgressPercent = m_Result->ScheduledWorkItems == 0u ? 100.0 : 100.0 * static_cast<double>(m_Result->CompletedWorkItems) / static_cast<double>(m_Result->ScheduledWorkItems);
+        m_Progress.ElapsedNanoseconds = m_Result->ElapsedNanoseconds;
+        m_LiveSummary = {};
+        m_LiveSummary.SampleCount = m_Result->CompletedWorkItems;
+        m_LiveSummary.AverageGenerationMilliseconds = m_Result->OverallSummary.GenerationTimeMilliseconds.Mean;
+        m_LiveSummary.AverageHullAttempts = m_Result->OverallSummary.HullAttempts.Mean;
+        m_LiveSummary.HullRetryRatePercent = m_Result->OverallSummary.HullRetryRatePercent;
+        m_LiveSummary.NegativeSpaceAttemptRatePercent = m_Result->OverallSummary.StructuralNegativeSpaceAttemptRatePercent;
+        m_LiveSummary.NegativeSpaceSuccessRatePercent = m_Result->OverallSummary.StructuralNegativeSpaceSuccessRatePercent;
+        m_State = m_Result->Cancelled ? DiagnosticsAppRunState::CANCELLED : (m_Result->Completed ? DiagnosticsAppRunState::COMPLETED : DiagnosticsAppRunState::ERROR);
+        m_ErrorMessage = m_State == DiagnosticsAppRunState::ERROR ? "Loaded diagnostics result is incomplete and not marked cancelled." : std::string();
+        m_StatusMessage = "Loaded diagnostics run: " + path.string();
         errorMessage.clear();
         return true;
     }
