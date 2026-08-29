@@ -11,24 +11,18 @@
 #include <vector>
 
 #include "GeneratedShip.h"
-#include "ShipAnimationStateCoordinator.h"
 #include "ShipFactionType.h"
-#include "ShipFiringAnimation.h"
-#include "ShipFiringAnimator.h"
 #include "ShipGenerationDebugInfo.h"
 #include "ShipGenerationProfile.h"
 #include "ShipGenerator.h"
-#include "ShipIdleAnimation.h"
-#include "ShipIdleAnimator.h"
-#include "ShipLateralMovementAnimator.h"
-#include "ShipLongitudinalMovementAnimator.h"
-#include "ShipMovementAnimation.h"
 
 #include "AttributeRerollStudio.h"
 #include "GenerationCalibration.h"
 #include "GenerationCalibrationSerializer.h"
 #include "PreviewCommand.h"
 #include "PreviewCommandPanel.h"
+#include "PreviewAnimationSession.h"
+#include "PreviewCollectionSession.h"
 #include "PreviewRenderer.h"
 #include "PreviewState.h"
 
@@ -88,14 +82,9 @@ namespace PixelShipGeneratorPreview
         void generateFromMasterSeed();
         void generateNew();
         bool generateShipFromRecipe(const PreviewGenerationRecipe& recipe, PixelShipGenerator::GeneratedShip& outShip, PixelShipGenerator::ShipGenerationDebugInfo* debugInfo = nullptr);
-        std::optional<std::size_t> findFavoriteIndex(const PreviewGenerationRecipe& recipe) const;
         std::string getAnimationEffectDisplay() const;
         const std::vector<PixelShipGenerator::Image>& getActiveAnimationFrames() const;
-        double getActiveAnimationFrameDurationMilliseconds() const;
         uint64_t getActiveAnimationSeed() const;
-        const PixelShipGenerator::AnimationSamplingPlan& getActiveAnimationSampling() const;
-        uint32_t getActiveAnimationDurationMilliseconds() const;
-        const PixelShipGenerator::ShipMovementAnimationClip* getActiveMovementClip() const;
         std::optional<PreviewCommand> getKeyboardCommand(sf::Keyboard::Key key, bool shift) const;
         void handleKeyPressed(const sf::Event::KeyEvent& event);
         void handleMouseMoved(const sf::Event::MouseMoveEvent& event);
@@ -159,14 +148,11 @@ namespace PixelShipGeneratorPreview
     private:
         sf::RenderWindow m_Window;
         PixelShipGenerator::ShipGenerator m_Generator;
-        PixelShipGenerator::ShipIdleAnimator m_IdleAnimator;
-        PixelShipGenerator::ShipAnimationStateCoordinator m_AnimationStateCoordinator;
-        PixelShipGenerator::ShipFiringAnimator m_FiringAnimator;
-        PixelShipGenerator::ShipLateralMovementAnimator m_LateralMovementAnimator;
-        PixelShipGenerator::ShipLongitudinalMovementAnimator m_LongitudinalMovementAnimator;
         std::mt19937_64 m_SeedGenerator;
         PreviewRenderer m_Renderer;
         PreviewCommandPanel m_CommandPanel;
+        PreviewAnimationSession m_AnimationSession;
+        PreviewCollectionSession m_Collections{ PreviewGenerationRecipe{} };
 
         PreviewMode m_PreviewMode = PreviewMode::STATIC;
         PreviewDiagnosticState m_Diagnostics;
@@ -185,35 +171,11 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::GenerationWeightGroup m_CalibrationGroup = PixelShipGenerator::GenerationWeightGroup::ENGINE_LAYOUT;
         bool m_CalibrationShowValues = true;
         bool m_CalibrationContextFilterEnabled = false;
-        std::vector<PreviewGenerationRecipe> m_History;
-        std::vector<PixelShipGenerator::ShipDimensions> m_ResolutionBookmarks;
-        std::size_t m_HistoryIndex = 0u;
         bool m_AspectRatioLocked = true;
 
         PixelShipGenerator::GeneratedShip m_GeneratedShip;
         PixelShipGenerator::ShipGenerationDebugInfo m_GenerationDebugInfo;
-        PixelShipGenerator::ShipIdleAnimationSettings m_IdleAnimationSettings;
-        PixelShipGenerator::ShipIdleAnimation m_IdleAnimation;
-        PixelShipGenerator::ShipMovementAnimationSettings m_MovementAnimationSettings;
-        PixelShipGenerator::ShipMovementAnimation m_MovementAnimation;
-        PixelShipGenerator::ShipFiringAnimationSettings m_FiringAnimationSettings;
-        PixelShipGenerator::ShipFiringAnimation m_FiringAnimation;
-        std::vector<PixelShipGenerator::ShipFiringAnimationTarget> m_FiringTargets;
-        uint32_t m_SelectedFiringTargetIndex = 0u;
-        PixelShipGenerator::ShipAnimationType m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
-        PixelShipGenerator::ShipMovementAnimationPhase m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
-        uint32_t m_AnimationFrameIndex = 0u;
         sf::Clock m_AnimationClock;
-        double m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
-
-        PixelShipGenerator::ShipAnimationType m_RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
-        PixelShipGenerator::ShipAnimationType m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
-        bool m_MovementTransitionPending = false;
-        bool m_TransientStatePreviewActive = false;
-        double m_RuntimeMovementNormalizedTime = 0.0;
-        double m_ResumeMovementNormalizedTime = 0.0;
-        double m_StatePreviewFrameDurationMilliseconds = 0.0;
-        std::vector<PixelShipGenerator::Image> m_StatePreviewFrames;
 
         sf::Image m_PreviewImage;
         sf::Texture m_PreviewTexture;
