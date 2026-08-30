@@ -8,14 +8,15 @@
 
 namespace PixelShipGeneratorPreview
 {
-    inline constexpr uint32_t UserPresetLibraryFormatVersion = 1u;
-    inline constexpr uint32_t UserPresetFileFormatVersion = 1u;
+    inline constexpr uint32_t UserPresetLibraryFormatVersion = 2u;
+    inline constexpr uint32_t UserPresetFileFormatVersion = 2u;
 
     enum class UserPresetCategory : uint32_t
     {
         STRUCTURAL = 0u,
         FACTION,
         PALETTE,
+        FULL_CONFIGURATION,
         USER_PRESET_CATEGORY_END
     };
 
@@ -47,6 +48,7 @@ namespace PixelShipGeneratorPreview
     std::string serializeUserPresetFile(const RuntimeStructuralPreset& preset);
     std::string serializeUserPresetFile(const RuntimeFactionPreset& preset);
     std::string serializeUserPresetFile(const RuntimePalettePreset& preset);
+    std::string serializeUserPresetFile(const RuntimeConfigurationBundle& preset);
     bool exportUserPreset(const RuntimeCustomPresetWorkspace& workspace, UserPresetCategory category, RuntimeCustomPresetId id, const std::filesystem::path& path, std::string& error);
 
     UserPresetImportResult importUserPreset(RuntimeCustomPresetWorkspace& workspace, UserPresetCategory expectedCategory, const std::string& jsonText);

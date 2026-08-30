@@ -50,6 +50,19 @@ namespace
         return PixelShipGeneratorApplication::wrapPixelText(text, maximumCharactersPerLine);
     }
 
+    std::string fitDebugTextToWidth(std::string text, float maximumWidth, uint32_t scale)
+    {
+        if (maximumWidth <= 0.0f || text.empty()) { return {}; }
+        if (getDebugTextWidth(text, scale) <= maximumWidth) { return text; }
+
+        const std::string ellipsis = "...";
+        const float ellipsisWidth = getDebugTextWidth(ellipsis, scale);
+        if (ellipsisWidth > maximumWidth) { return {}; }
+
+        while (!text.empty() && getDebugTextWidth(text, scale) + ellipsisWidth > maximumWidth) { text.pop_back(); }
+        return text + ellipsis;
+    }
+
     std::string getCommandPanelButtonLabel(PixelShipGeneratorPreview::PreviewCommandType type)
     {
         using PixelShipGeneratorPreview::PreviewCommandType;
@@ -58,10 +71,16 @@ namespace
         case PreviewCommandType::PREVIOUS_STYLE:
         case PreviewCommandType::PREVIOUS_FACTION:
         case PreviewCommandType::PREVIOUS_PALETTE:
+        case PreviewCommandType::PREVIOUS_CONFIGURATION_BUNDLE:
+        case PreviewCommandType::PROFILES_PREVIOUS_SECTION:
+        case PreviewCommandType::PROFILES_PREVIOUS_ITEM:
         case PreviewCommandType::PREVIOUS_RESOLUTION: return "<";
         case PreviewCommandType::NEXT_STYLE:
         case PreviewCommandType::NEXT_FACTION:
         case PreviewCommandType::NEXT_PALETTE:
+        case PreviewCommandType::NEXT_CONFIGURATION_BUNDLE:
+        case PreviewCommandType::PROFILES_NEXT_SECTION:
+        case PreviewCommandType::PROFILES_NEXT_ITEM:
         case PreviewCommandType::NEXT_RESOLUTION: return ">";
         case PreviewCommandType::GALLERY_LEFT: return "LEFT";
         case PreviewCommandType::GALLERY_RIGHT: return "RIGHT";
@@ -656,8 +675,9 @@ namespace PixelShipGeneratorPreview
         {
             drawDebugText(window, selector.Label, selector.ValueBounds.left - 120.0f, selector.ValueBounds.top + 6.0f, sf::Color(160, 165, 180), TextScale);
             drawPanel(window, selector.ValueBounds.left, selector.ValueBounds.top, selector.ValueBounds.width, selector.ValueBounds.height, sf::Color(24, 26, 32), sf::Color(58, 62, 72));
-            const float valueWidth = getDebugTextWidth(selector.Value, TextScale);
-            drawDebugText(window, selector.Value, selector.ValueBounds.left + std::max(4.0f, (selector.ValueBounds.width - valueWidth) * 0.5f), selector.ValueBounds.top + 6.0f, sf::Color(232, 234, 240), TextScale);
+            const std::string value = fitDebugTextToWidth(selector.Value, selector.ValueBounds.width - 8.0f, TextScale);
+            const float valueWidth = getDebugTextWidth(value, TextScale);
+            drawDebugText(window, value, selector.ValueBounds.left + std::max(4.0f, (selector.ValueBounds.width - valueWidth) * 0.5f), selector.ValueBounds.top + 6.0f, sf::Color(232, 234, 240), TextScale);
         }
 
         const auto drawDimensionSlider = [&](const PreviewCommandPanelSlider& slider)
@@ -713,11 +733,12 @@ namespace PixelShipGeneratorPreview
         drawPanel(window, panel.Left, panel.Top, panel.Width, panel.Height, sf::Color(18, 19, 24, 252), sf::Color(82, 88, 104));
         const bool factionEditor = editor.getProfileKind() == ConfigurationEditorProfileKind::FACTION;
         const bool paletteEditor = editor.getProfileKind() == ConfigurationEditorProfileKind::PALETTE;
-        const char* editorTitle = paletteEditor ? "PALETTE CONFIGURATION EDITOR" : factionEditor ? "FACTION PROFILE EDITOR" : "STRUCTURAL PROFILE EDITOR";
-        const char* editorSubtitle = paletteEditor ? "PUBLIC ShipPaletteConfiguration / GENERATED + FIXED" : factionEditor ? "PUBLIC ShipFactionProfile / USER PRESETS" : "PUBLIC ShipGenerationProfile / USER PRESETS";
+        const bool bundleEditor = editor.getProfileKind() == ConfigurationEditorProfileKind::FULL_CONFIGURATION;
+        const char* editorTitle = bundleEditor ? "FULL CONFIGURATION BUNDLE" : paletteEditor ? "PALETTE CONFIGURATION EDITOR" : factionEditor ? "FACTION PROFILE EDITOR" : "STRUCTURAL PROFILE EDITOR";
+        const char* editorSubtitle = bundleEditor ? "APPLICATION BUNDLE / STRUCTURAL + FACTION + PALETTE" : paletteEditor ? "PUBLIC ShipPaletteConfiguration / GENERATED + FIXED" : factionEditor ? "PUBLIC ShipFactionProfile / USER PRESETS" : "PUBLIC ShipGenerationProfile / USER PRESETS";
         drawDebugText(window, editorTitle, panel.Left + 18.0f, panel.Top + 12.0f, sf::Color(240, 215, 105), TextScale);
         drawDebugText(window, editorSubtitle, panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), SmallTextScale);
-        drawDebugText(window, "PgDn structural | Shift+PgDn faction | Ctrl+PgDn palette", panel.Left + panel.Width - 390.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);
+        drawDebugText(window, "Ctrl+D duplicate | Ctrl+O import | Ctrl+E export", panel.Left + panel.Width - 360.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);
 
         drawPanel(window, viewport.Left - 6.0f, viewport.Top - 4.0f, viewport.Width + 12.0f, viewport.Height + 8.0f, sf::Color(13, 14, 18, 248), sf::Color(48, 52, 62));
 
@@ -844,7 +865,20 @@ namespace PixelShipGeneratorPreview
                     }
                 }
             };
-        if (paletteEditor)
+        if (bundleEditor)
+        {
+            for (const ConfigurationBundleComponentControl& component : editor.getBundleComponentControls())
+            {
+                if (!visible(component.RowBounds)) { continue; }
+                drawDebugText(window, component.Label, component.RowBounds.Left + 6.0f, component.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                const float valueLeft = component.RowBounds.Left + 150.0f;
+                const float valueWidth = std::max(0.0f, component.ReplaceBounds.Left - valueLeft - 8.0f);
+                const std::string value = fitDebugTextToWidth(component.Value.empty() ? "CUSTOM" : component.Value, valueWidth, SmallTextScale);
+                drawDebugText(window, value, valueLeft, component.RowBounds.Top + 9.0f, sf::Color(232, 234, 240), SmallTextScale);
+                drawSmallButton(component.ReplaceBounds, "USE CURRENT");
+            }
+        }
+        else if (paletteEditor)
         {
             for (const auto& section : editor.getPaletteProfileSections())
             {
@@ -911,7 +945,8 @@ namespace PixelShipGeneratorPreview
         }
 
         const std::string dirty = editor.hasUnsavedChanges() ? "UNAPPLIED CHANGES" : "NO CHANGES";
-        drawDebugText(window, dirty + "  |  " + std::to_string(editor.getBoundValueCount()) + " PROFILE VALUES", panel.Left + 18.0f, panel.Top + panel.Height - 22.0f, editor.hasUnsavedChanges() ? sf::Color(235, 195, 100) : sf::Color(120, 175, 140), SmallTextScale);
+        const char* valueLabel = bundleEditor ? "COMPONENTS" : "PROFILE VALUES";
+        drawDebugText(window, dirty + "  |  " + std::to_string(editor.getBoundValueCount()) + " " + valueLabel, panel.Left + 18.0f, panel.Top + panel.Height - 22.0f, editor.hasUnsavedChanges() ? sf::Color(235, 195, 100) : sf::Color(120, 175, 140), SmallTextScale);
     }
 
     void PreviewRenderer::renderCalibration(sf::RenderWindow& window, const PreviewRenderData& data) const

@@ -20,6 +20,19 @@ namespace PixelShipGeneratorPreview
 
     inline constexpr std::size_t PreviewWorkspaceCount = static_cast<std::size_t>(PreviewWorkspace::PREVIEW_WORKSPACE_END);
 
+    enum class ProfilesSection : uint32_t
+    {
+        STRUCTURAL = 0u,
+        FACTION,
+        PALETTE,
+        FULL_CONFIGURATION,
+        PROFILES_SECTION_END
+    };
+
+    inline constexpr std::size_t ProfilesSectionCount = static_cast<std::size_t>(ProfilesSection::PROFILES_SECTION_END);
+    const char* getProfilesSectionName(ProfilesSection section);
+    ProfilesSection getWrappedProfilesSection(ProfilesSection section, int32_t delta);
+
     enum class PreviewMode : uint32_t
     {
         STATIC = 0u,

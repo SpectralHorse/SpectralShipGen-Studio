@@ -261,6 +261,11 @@ namespace
         return getAvailableOutputPath("preset_" + getFileSafePresetName(displayName), ".shipgenpreset.json");
     }
 
+    std::filesystem::path getAvailableConfigurationBundlePath(const std::string& displayName)
+    {
+        return getAvailableOutputPath("configuration_" + getFileSafePresetName(displayName), ".shipgenbundle.json");
+    }
+
     std::string getFrameNumberString(uint32_t frameIndex)
     {
         return frameIndex + 1u < 10u ? "0" + std::to_string(frameIndex + 1u) : std::to_string(frameIndex + 1u);
@@ -316,6 +321,7 @@ namespace
         case ConfigurationEditorProfileKind::STRUCTURAL: return UserPresetCategory::STRUCTURAL;
         case ConfigurationEditorProfileKind::FACTION: return UserPresetCategory::FACTION;
         case ConfigurationEditorProfileKind::PALETTE: return UserPresetCategory::PALETTE;
+        case ConfigurationEditorProfileKind::FULL_CONFIGURATION: return UserPresetCategory::FULL_CONFIGURATION;
         default: return UserPresetCategory::USER_PRESET_CATEGORY_END;
         }
     }
@@ -455,6 +461,69 @@ namespace PixelShipGeneratorPreview
         if (selectableCount == 0u) { return; }
         const std::size_t currentIndex = findPaletteProfileSelectionIndex(entries, getCurrentRecipe(), m_SelectedBuiltInPalettePreset, m_SelectedPalettePresetId);
         selectPaletteProfileEntry(entries[getWrappedPreviewSelectorIndex(currentIndex, delta, selectableCount)]);
+    }
+
+    void ShipGeneratorPreviewApp::changeConfigurationBundle(int32_t delta)
+    {
+        const auto& bundles = m_CustomPresetWorkspace.getConfigurationBundles();
+        if (bundles.empty()) { m_SelectedConfigurationBundleId.reset(); return; }
+
+        const std::size_t entryCount = bundles.size() + 1u; // Individual Components + saved bundles.
+        std::size_t currentIndex = 0u;
+        if (m_SelectedConfigurationBundleId.has_value())
+        {
+            const auto iterator = std::find_if(bundles.begin(), bundles.end(), [&](const RuntimeConfigurationBundle& entry) { return entry.Id == *m_SelectedConfigurationBundleId; });
+            if (iterator != bundles.end()) { currentIndex = static_cast<std::size_t>(std::distance(bundles.begin(), iterator)) + 1u; }
+        }
+
+        const std::size_t nextIndex = getWrappedPreviewSelectorIndex(currentIndex, delta, entryCount);
+        if (nextIndex == 0u)
+        {
+            m_SelectedConfigurationBundleId.reset();
+            setStatusMessage("Using individual configuration components.");
+            updateWindowTitle();
+            return;
+        }
+        applyRuntimeConfigurationBundle(bundles[nextIndex - 1u].Id);
+    }
+
+    void ShipGeneratorPreviewApp::changeProfilesSection(int32_t delta)
+    {
+        m_ProfilesSection = getWrappedProfilesSection(m_ProfilesSection, delta);
+        if (m_ProfilesSection == ProfilesSection::FULL_CONFIGURATION)
+        {
+            const auto& bundles = m_CustomPresetWorkspace.getConfigurationBundles();
+            if (bundles.empty()) { m_ProfilesSelectedBundleId.reset(); }
+            else if (!m_ProfilesSelectedBundleId.has_value() || m_CustomPresetWorkspace.findConfigurationBundle(*m_ProfilesSelectedBundleId) == nullptr)
+            {
+                m_ProfilesSelectedBundleId = bundles.front().Id;
+            }
+        }
+        setStatusMessage("Profiles section: " + std::string(getProfilesSectionName(m_ProfilesSection)));
+    }
+
+    void ShipGeneratorPreviewApp::changeProfilesItem(int32_t delta)
+    {
+        switch (m_ProfilesSection)
+        {
+        case ProfilesSection::STRUCTURAL: changeStyle(delta); break;
+        case ProfilesSection::FACTION: changeFaction(delta); break;
+        case ProfilesSection::PALETTE: changePalette(delta); break;
+        case ProfilesSection::FULL_CONFIGURATION:
+        {
+            const auto& bundles = m_CustomPresetWorkspace.getConfigurationBundles();
+            if (bundles.empty()) { m_ProfilesSelectedBundleId.reset(); return; }
+            std::size_t currentIndex = 0u;
+            if (m_ProfilesSelectedBundleId.has_value())
+            {
+                const auto iterator = std::find_if(bundles.begin(), bundles.end(), [&](const RuntimeConfigurationBundle& entry) { return entry.Id == *m_ProfilesSelectedBundleId; });
+                if (iterator != bundles.end()) { currentIndex = static_cast<std::size_t>(std::distance(bundles.begin(), iterator)); }
+            }
+            m_ProfilesSelectedBundleId = bundles[getWrappedPreviewSelectorIndex(currentIndex, delta, bundles.size())].Id;
+            break;
+        }
+        default: break;
+        }
     }
 
     void ShipGeneratorPreviewApp::changeResolution(int32_t delta)
@@ -1218,6 +1287,36 @@ namespace PixelShipGeneratorPreview
         updateWindowTitle();
     }
 
+    void ShipGeneratorPreviewApp::enterConfigurationBundleEditor()
+    {
+        if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
+        if (!m_ProfilesSelectedBundleId.has_value()) { enterConfigurationBundleEditorDefault(); return; }
+        const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(*m_ProfilesSelectedBundleId);
+        if (preset == nullptr) { m_ProfilesSelectedBundleId.reset(); enterConfigurationBundleEditorDefault(); return; }
+
+        m_ConfigurationEditorReturnMode = m_PreviewMode;
+        m_ConfigurationEditorTargetBundleId = preset->Id;
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
+        m_ConfigurationEditor.openConfigurationBundle(preset->Name, preset->Bundle);
+        m_ConfigurationEditor.setExistingCustomPreset(true);
+        m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
+        setDisplayedStaticFrame();
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::enterConfigurationBundleEditorDefault()
+    {
+        if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
+        m_ConfigurationEditorReturnMode = m_PreviewMode;
+        m_ConfigurationEditorTargetBundleId.reset();
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
+        m_ConfigurationEditor.openConfigurationBundle("Full Configuration", makeConfigurationBundle(getCurrentRecipe(), getCurrentStructuralProfileDisplayName(), getCurrentFactionProfileDisplayName(), getCurrentPaletteDisplayName()));
+        m_ConfigurationEditor.setExistingCustomPreset(false);
+        m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
+        setDisplayedStaticFrame();
+        updateWindowTitle();
+    }
+
     void ShipGeneratorPreviewApp::handleConfigurationEditorEvent(const ConfigurationEditorEvent& event)
     {
         const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
@@ -1225,7 +1324,27 @@ namespace PixelShipGeneratorPreview
         {
         case ConfigurationEditorAction::APPLY:
         {
+            if (kind == ConfigurationEditorProfileKind::FULL_CONFIGURATION)
+            {
+                RuntimeCustomPresetId id = 0u;
+                const std::optional<RuntimeCustomPresetId> editedId = m_ConfigurationEditorTargetBundleId;
+                if (editedId.has_value() && m_CustomPresetWorkspace.updateConfigurationBundle(*editedId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftConfigurationBundle())) { id = *editedId; }
+                else { id = m_CustomPresetWorkspace.addConfigurationBundle(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftConfigurationBundle()); }
+                const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(id);
+                const bool persisted = saveUserPresetLibraryState();
+                if (m_SelectedConfigurationBundleId == editedId) { m_SelectedConfigurationBundleId.reset(); }
+                m_ProfilesSelectedBundleId = id;
+                m_ConfigurationEditorTargetBundleId.reset();
+                m_ConfigurationEditor.close();
+                m_PreviewMode = PreviewMode::STATIC;
+                setDisplayedStaticFrame();
+                setStatusMessage("Saved configuration bundle: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()) + (persisted ? "" : " (persistence failed)"));
+                updateWindowTitle();
+                break;
+            }
+
             PreviewGenerationRecipe recipe = getCurrentRecipe();
+            m_SelectedConfigurationBundleId.reset();
             if (kind == ConfigurationEditorProfileKind::FACTION)
             {
                 RuntimeCustomPresetId id = 0u;
@@ -1280,7 +1399,21 @@ namespace PixelShipGeneratorPreview
         }
         case ConfigurationEditorAction::DUPLICATE:
         {
-            if (kind == ConfigurationEditorProfileKind::FACTION)
+            if (kind == ConfigurationEditorProfileKind::FULL_CONFIGURATION)
+            {
+                const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addConfigurationBundle(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftConfigurationBundle());
+                const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(id);
+                if (preset != nullptr)
+                {
+                    m_ProfilesSelectedBundleId = id;
+                    m_ConfigurationEditorTargetBundleId = id;
+                    m_ConfigurationEditor.openConfigurationBundle(preset->Name, preset->Bundle);
+                    m_ConfigurationEditor.setExistingCustomPreset(true);
+                    const bool persisted = saveUserPresetLibraryState();
+                    setStatusMessage("Editing duplicated configuration bundle: " + preset->Name + (persisted ? "" : " (persistence failed)"));
+                }
+            }
+            else if (kind == ConfigurationEditorProfileKind::FACTION)
             {
                 const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addFaction(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile());
                 const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
@@ -1309,10 +1442,21 @@ namespace PixelShipGeneratorPreview
         case ConfigurationEditorAction::IMPORT_PRESET:
             importConfigurationEditorPreset();
             break;
+        case ConfigurationEditorAction::REPLACE_BUNDLE_STRUCTURAL:
+        case ConfigurationEditorAction::REPLACE_BUNDLE_FACTION:
+        case ConfigurationEditorAction::REPLACE_BUNDLE_PALETTE:
+        {
+            const ConfigurationBundle current = makeConfigurationBundle(getCurrentRecipe(), getCurrentStructuralProfileDisplayName(), getCurrentFactionProfileDisplayName(), getCurrentPaletteDisplayName());
+            if (event.Action == ConfigurationEditorAction::REPLACE_BUNDLE_STRUCTURAL) { m_ConfigurationEditor.replaceBundleStructural(current.StructuralDisplayName, current.StructuralProfile); }
+            else if (event.Action == ConfigurationEditorAction::REPLACE_BUNDLE_FACTION) { m_ConfigurationEditor.replaceBundleFaction(current.FactionDisplayName, current.FactionProfile); }
+            else { m_ConfigurationEditor.replaceBundlePalette(current.PaletteDisplayName, current.PaletteConfiguration); }
+            break;
+        }
         case ConfigurationEditorAction::CANCEL:
             m_ConfigurationEditorTargetPresetId.reset();
             m_ConfigurationEditorTargetFactionPresetId.reset();
             m_ConfigurationEditorTargetPalettePresetId.reset();
+            m_ConfigurationEditorTargetBundleId.reset();
             m_ConfigurationEditor.close();
             m_PreviewMode = m_ConfigurationEditorReturnMode;
             if (m_PreviewMode == PreviewMode::ANIMATION) { m_AnimationClock.restart(); }
@@ -1333,7 +1477,21 @@ namespace PixelShipGeneratorPreview
         bool removed = false;
         std::string name;
 
-        if (kind == ConfigurationEditorProfileKind::FACTION && m_ConfigurationEditorTargetFactionPresetId.has_value())
+        if (kind == ConfigurationEditorProfileKind::FULL_CONFIGURATION && m_ConfigurationEditorTargetBundleId.has_value())
+        {
+            const RuntimeCustomPresetId id = *m_ConfigurationEditorTargetBundleId;
+            if (const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(id); preset != nullptr) { name = preset->Name; }
+            removed = m_CustomPresetWorkspace.removeConfigurationBundle(id);
+            if (m_SelectedConfigurationBundleId == id) { m_SelectedConfigurationBundleId.reset(); }
+            if (m_ProfilesSelectedBundleId == id)
+            {
+                m_ProfilesSelectedBundleId.reset();
+                const auto& bundles = m_CustomPresetWorkspace.getConfigurationBundles();
+                if (!bundles.empty()) { m_ProfilesSelectedBundleId = bundles.front().Id; }
+            }
+            m_ConfigurationEditorTargetBundleId.reset();
+        }
+        else if (kind == ConfigurationEditorProfileKind::FACTION && m_ConfigurationEditorTargetFactionPresetId.has_value())
         {
             const RuntimeCustomPresetId id = *m_ConfigurationEditorTargetFactionPresetId;
             if (const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id); preset != nullptr) { name = preset->Name; }
@@ -1379,7 +1537,8 @@ namespace PixelShipGeneratorPreview
         const UserPresetCategory category = userPresetCategory(kind);
         std::optional<RuntimeCustomPresetId> id;
         std::string name;
-        if (kind == ConfigurationEditorProfileKind::FACTION) { id = m_ConfigurationEditorTargetFactionPresetId; if (id.has_value()) { if (const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(*id); preset != nullptr) { name = preset->Name; } } }
+        if (kind == ConfigurationEditorProfileKind::FULL_CONFIGURATION) { id = m_ConfigurationEditorTargetBundleId; if (id.has_value()) { if (const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(*id); preset != nullptr) { name = preset->Name; } } }
+        else if (kind == ConfigurationEditorProfileKind::FACTION) { id = m_ConfigurationEditorTargetFactionPresetId; if (id.has_value()) { if (const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(*id); preset != nullptr) { name = preset->Name; } } }
         else if (kind == ConfigurationEditorProfileKind::PALETTE) { id = m_ConfigurationEditorTargetPalettePresetId; if (id.has_value()) { if (const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(*id); preset != nullptr) { name = preset->Name; } } }
         else { id = m_ConfigurationEditorTargetPresetId; if (id.has_value()) { if (const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(*id); preset != nullptr) { name = preset->Name; } } }
 
@@ -1389,7 +1548,7 @@ namespace PixelShipGeneratorPreview
             return;
         }
 
-        const std::filesystem::path path = getAvailableUserPresetPath(name);
+        const std::filesystem::path path = kind == ConfigurationEditorProfileKind::FULL_CONFIGURATION ? getAvailableConfigurationBundlePath(name) : getAvailableUserPresetPath(name);
         std::string error;
         if (!exportUserPreset(m_CustomPresetWorkspace, category, *id, path, error))
         {
@@ -1416,7 +1575,14 @@ namespace PixelShipGeneratorPreview
         }
 
         const bool persisted = saveUserPresetLibraryState();
-        if (kind == ConfigurationEditorProfileKind::FACTION)
+        if (kind == ConfigurationEditorProfileKind::FULL_CONFIGURATION)
+        {
+            m_ConfigurationEditorTargetBundleId = imported.ImportedId;
+            m_ProfilesSelectedBundleId = imported.ImportedId;
+            const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(imported.ImportedId);
+            if (preset != nullptr) { m_ConfigurationEditor.openConfigurationBundle(preset->Name, preset->Bundle); }
+        }
+        else if (kind == ConfigurationEditorProfileKind::FACTION)
         {
             m_ConfigurationEditorTargetFactionPresetId = imported.ImportedId;
             const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(imported.ImportedId);
@@ -1437,6 +1603,61 @@ namespace PixelShipGeneratorPreview
         m_ConfigurationEditor.setExistingCustomPreset(true);
         setStatusMessage("Imported user preset: " + imported.DisplayName + (imported.DisplayNameDisambiguated ? " (name disambiguated)" : "") + (persisted ? "" : " (persistence failed)"));
         updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::newProfilesItem()
+    {
+        switch (m_ProfilesSection)
+        {
+        case ProfilesSection::STRUCTURAL: enterConfigurationEditorDefault(); break;
+        case ProfilesSection::FACTION: enterFactionConfigurationEditorDefault(); break;
+        case ProfilesSection::PALETTE: enterPaletteConfigurationEditorDefault(); break;
+        case ProfilesSection::FULL_CONFIGURATION: enterConfigurationBundleEditorDefault(); break;
+        default: break;
+        }
+    }
+
+    void ShipGeneratorPreviewApp::editSelectedProfilesItem()
+    {
+        switch (m_ProfilesSection)
+        {
+        case ProfilesSection::STRUCTURAL: enterConfigurationEditor(); break;
+        case ProfilesSection::FACTION: enterFactionConfigurationEditor(); break;
+        case ProfilesSection::PALETTE: enterPaletteConfigurationEditor(); break;
+        case ProfilesSection::FULL_CONFIGURATION: enterConfigurationBundleEditor(); break;
+        default: break;
+        }
+    }
+
+    void ShipGeneratorPreviewApp::duplicateSelectedProfilesItem()
+    {
+        editSelectedProfilesItem();
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { handleConfigurationEditorEvent({ ConfigurationEditorAction::DUPLICATE }); }
+    }
+
+    void ShipGeneratorPreviewApp::deleteSelectedProfilesItem()
+    {
+        editSelectedProfilesItem();
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { handleConfigurationEditorEvent({ ConfigurationEditorAction::DELETE_PRESET }); }
+    }
+
+    void ShipGeneratorPreviewApp::importSelectedProfilesItem()
+    {
+        newProfilesItem();
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { handleConfigurationEditorEvent({ ConfigurationEditorAction::IMPORT_PRESET }); }
+    }
+
+    void ShipGeneratorPreviewApp::exportSelectedProfilesItem()
+    {
+        editSelectedProfilesItem();
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { handleConfigurationEditorEvent({ ConfigurationEditorAction::EXPORT_PRESET }); }
+    }
+
+    void ShipGeneratorPreviewApp::useSelectedProfilesItem()
+    {
+        if (m_ProfilesSection != ProfilesSection::FULL_CONFIGURATION || !m_ProfilesSelectedBundleId.has_value()) { return; }
+        applyRuntimeConfigurationBundle(*m_ProfilesSelectedBundleId);
+        setStatusMessage("Full Configuration applied. Switch to Generate to use the updated components.");
     }
 
     void ShipGeneratorPreviewApp::enterGalleryMode()
@@ -1589,6 +1810,7 @@ namespace PixelShipGeneratorPreview
         m_GalleryState.Grid.Items.clear();
         m_Collections.clearGallery();
         m_FavoritesState.Grid.HoveredIndex = -1;
+        m_SelectedConfigurationBundleId.reset();
         if (document.Recipe == getCurrentRecipe()) { regenerate(); }
         else { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); m_SelectedBuiltInPalettePreset.reset(); m_SelectedPalettePresetId.reset(); appendHistoryEntry(document.Recipe); }
 
@@ -1666,6 +1888,9 @@ namespace PixelShipGeneratorPreview
         state.StyleValue = getCurrentStructuralProfileDisplayName();
         state.FactionValue = getCurrentFactionProfileDisplayName();
         state.PaletteValue = getCurrentPaletteDisplayName();
+        state.ConfigurationBundleValue = getCurrentConfigurationBundleDisplayName();
+        state.ProfilesSectionValue = getProfilesSectionName(m_ProfilesSection);
+        state.ProfilesItemValue = getProfilesItemDisplayName();
         state.CurrentDimensions = getCurrentRecipe().Dimensions;
         state.AspectRatioLocked = m_AspectRatioLocked;
         state.ResolutionBookmarkCount = static_cast<uint32_t>(std::min<std::size_t>(m_Collections.getResolutionBookmarks().size(), state.ResolutionBookmarks.size()));
@@ -1741,6 +1966,19 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::NEXT_FACTION: changeFaction(1); break;
         case PreviewCommandType::PREVIOUS_PALETTE: changePalette(-1); break;
         case PreviewCommandType::NEXT_PALETTE: changePalette(1); break;
+        case PreviewCommandType::PREVIOUS_CONFIGURATION_BUNDLE: changeConfigurationBundle(-1); break;
+        case PreviewCommandType::NEXT_CONFIGURATION_BUNDLE: changeConfigurationBundle(1); break;
+        case PreviewCommandType::PROFILES_PREVIOUS_SECTION: changeProfilesSection(-1); break;
+        case PreviewCommandType::PROFILES_NEXT_SECTION: changeProfilesSection(1); break;
+        case PreviewCommandType::PROFILES_PREVIOUS_ITEM: changeProfilesItem(-1); break;
+        case PreviewCommandType::PROFILES_NEXT_ITEM: changeProfilesItem(1); break;
+        case PreviewCommandType::PROFILES_NEW_DEFAULT: newProfilesItem(); break;
+        case PreviewCommandType::PROFILES_EDIT_SELECTED: editSelectedProfilesItem(); break;
+        case PreviewCommandType::PROFILES_DUPLICATE_SELECTED: duplicateSelectedProfilesItem(); break;
+        case PreviewCommandType::PROFILES_DELETE_SELECTED: deleteSelectedProfilesItem(); break;
+        case PreviewCommandType::PROFILES_IMPORT_SELECTED: importSelectedProfilesItem(); break;
+        case PreviewCommandType::PROFILES_EXPORT_SELECTED: exportSelectedProfilesItem(); break;
+        case PreviewCommandType::PROFILES_USE_SELECTED: useSelectedProfilesItem(); break;
         case PreviewCommandType::OPEN_STRUCTURAL_EDITOR: enterConfigurationEditor(); break;
         case PreviewCommandType::OPEN_FACTION_EDITOR: enterFactionConfigurationEditor(); break;
         case PreviewCommandType::OPEN_PALETTE_EDITOR: enterPaletteConfigurationEditor(); break;
@@ -1913,6 +2151,14 @@ namespace PixelShipGeneratorPreview
             if (key == sf::Keyboard::Space) { return PreviewCommand{ shift ? PreviewCommandType::OPEN_GALLERY : PreviewCommandType::GENERATE_NEW, 0u }; }
             if (key == sf::Keyboard::Left) { return PreviewCommand{ PreviewCommandType::PREVIOUS_HISTORY, 0u }; }
             if (key == sf::Keyboard::Right) { return PreviewCommand{ PreviewCommandType::NEXT_HISTORY, 0u }; }
+            return std::nullopt;
+        }
+
+        if (workspace == PreviewWorkspace::PROFILES)
+        {
+            if (control && key == sf::Keyboard::D) { return PreviewCommand{ PreviewCommandType::PROFILES_DUPLICATE_SELECTED, 0u }; }
+            if (control && key == sf::Keyboard::O) { return PreviewCommand{ PreviewCommandType::PROFILES_IMPORT_SELECTED, 0u }; }
+            if (control && key == sf::Keyboard::E) { return PreviewCommand{ PreviewCommandType::PROFILES_EXPORT_SELECTED, 0u }; }
             return std::nullopt;
         }
 
@@ -2279,6 +2525,42 @@ namespace PixelShipGeneratorPreview
             return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::PROFILES && m_PreviewMode == PreviewMode::STATIC;
         }
 
+        if (type == PreviewCommandType::PREVIOUS_CONFIGURATION_BUNDLE || type == PreviewCommandType::NEXT_CONFIGURATION_BUNDLE)
+        {
+            return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE && m_PreviewMode != PreviewMode::CONFIGURATION_EDITOR && !m_CustomPresetWorkspace.getConfigurationBundles().empty();
+        }
+
+        if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::PROFILES && m_PreviewMode == PreviewMode::STATIC)
+        {
+            const bool fullConfiguration = m_ProfilesSection == ProfilesSection::FULL_CONFIGURATION;
+            const bool hasSelectedBundle = m_ProfilesSelectedBundleId.has_value() && m_CustomPresetWorkspace.findConfigurationBundle(*m_ProfilesSelectedBundleId) != nullptr;
+            const bool selectedCustom = m_ProfilesSection == ProfilesSection::STRUCTURAL ? (m_SelectedStructuralPresetId.has_value() && m_CustomPresetWorkspace.findStructural(*m_SelectedStructuralPresetId) != nullptr)
+                : m_ProfilesSection == ProfilesSection::FACTION ? (m_SelectedFactionPresetId.has_value() && m_CustomPresetWorkspace.findFaction(*m_SelectedFactionPresetId) != nullptr)
+                : m_ProfilesSection == ProfilesSection::PALETTE ? (m_SelectedPalettePresetId.has_value() && m_CustomPresetWorkspace.findPalette(*m_SelectedPalettePresetId) != nullptr)
+                : hasSelectedBundle;
+            switch (type)
+            {
+            case PreviewCommandType::PROFILES_PREVIOUS_SECTION:
+            case PreviewCommandType::PROFILES_NEXT_SECTION:
+            case PreviewCommandType::PROFILES_NEW_DEFAULT:
+            case PreviewCommandType::PROFILES_IMPORT_SELECTED:
+                return true;
+            case PreviewCommandType::PROFILES_PREVIOUS_ITEM:
+            case PreviewCommandType::PROFILES_NEXT_ITEM:
+                return !fullConfiguration || !m_CustomPresetWorkspace.getConfigurationBundles().empty();
+            case PreviewCommandType::PROFILES_EDIT_SELECTED:
+            case PreviewCommandType::PROFILES_DUPLICATE_SELECTED:
+                return !fullConfiguration || hasSelectedBundle;
+            case PreviewCommandType::PROFILES_DELETE_SELECTED:
+            case PreviewCommandType::PROFILES_EXPORT_SELECTED:
+                return selectedCustom;
+            case PreviewCommandType::PROFILES_USE_SELECTED:
+                return fullConfiguration && hasSelectedBundle;
+            default:
+                break;
+            }
+        }
+
         if (m_PreviewMode == PreviewMode::FAVORITES)
         {
             if (type == PreviewCommandType::CLOSE_FAVORITES) { return true; }
@@ -2413,6 +2695,7 @@ namespace PixelShipGeneratorPreview
         m_SelectedFactionPresetId.reset();
         m_SelectedBuiltInPalettePreset.reset();
         m_SelectedPalettePresetId.reset();
+        m_SelectedConfigurationBundleId.reset();
         appendHistoryEntry(recipe);
     }
 
@@ -2470,7 +2753,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::next()
     {
-        if (m_Collections.moveHistoryNext()) { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); m_SelectedBuiltInPalettePreset.reset(); m_SelectedPalettePresetId.reset(); regenerate(); }
+        if (m_Collections.moveHistoryNext()) { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); m_SelectedBuiltInPalettePreset.reset(); m_SelectedPalettePresetId.reset(); m_SelectedConfigurationBundleId.reset(); regenerate(); }
     }
 
     void ShipGeneratorPreviewApp::pinCurrentShip()
@@ -2501,7 +2784,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::previous()
     {
-        if (m_Collections.moveHistoryPrevious()) { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); m_SelectedBuiltInPalettePreset.reset(); m_SelectedPalettePresetId.reset(); regenerate(); }
+        if (m_Collections.moveHistoryPrevious()) { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); m_SelectedBuiltInPalettePreset.reset(); m_SelectedPalettePresetId.reset(); m_SelectedConfigurationBundleId.reset(); regenerate(); }
     }
 
     void ShipGeneratorPreviewApp::removeCurrentFromFavorites()
@@ -3072,6 +3355,7 @@ namespace PixelShipGeneratorPreview
         }
 
         m_SelectedFactionPresetId.reset();
+        m_SelectedConfigurationBundleId.reset();
         recipe.FactionSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
         recipe.Faction = faction;
         regenerate();
@@ -3121,6 +3405,7 @@ namespace PixelShipGeneratorPreview
         }
 
         m_SelectedStructuralPresetId.reset();
+        m_SelectedConfigurationBundleId.reset();
         recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
         recipe.Style = style;
         regenerate();
@@ -3135,6 +3420,7 @@ namespace PixelShipGeneratorPreview
         recipe.Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
         recipe.StructuralProfile = preset->Profile;
         m_SelectedStructuralPresetId = id;
+        m_SelectedConfigurationBundleId.reset();
         regenerate();
         setStatusMessage("Selected runtime structural profile: " + preset->Name);
     }
@@ -3152,6 +3438,11 @@ namespace PixelShipGeneratorPreview
 
     std::string ShipGeneratorPreviewApp::getCurrentStructuralProfileDisplayName() const
     {
+        if (m_SelectedConfigurationBundleId.has_value())
+        {
+            const RuntimeConfigurationBundle* bundle = m_CustomPresetWorkspace.findConfigurationBundle(*m_SelectedConfigurationBundleId);
+            if (bundle != nullptr && !bundle->Bundle.StructuralDisplayName.empty()) { return bundle->Bundle.StructuralDisplayName; }
+        }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getStyleName(recipe.Style); }
         if (m_SelectedStructuralPresetId.has_value())
@@ -3171,6 +3462,7 @@ namespace PixelShipGeneratorPreview
         recipe.Faction = PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END;
         recipe.FactionProfile = preset->Profile;
         m_SelectedFactionPresetId = id;
+        m_SelectedConfigurationBundleId.reset();
         regenerate();
         setStatusMessage("Selected runtime faction profile: " + preset->Name);
     }
@@ -3188,6 +3480,11 @@ namespace PixelShipGeneratorPreview
 
     std::string ShipGeneratorPreviewApp::getCurrentFactionProfileDisplayName() const
     {
+        if (m_SelectedConfigurationBundleId.has_value())
+        {
+            const RuntimeConfigurationBundle* bundle = m_CustomPresetWorkspace.findConfigurationBundle(*m_SelectedConfigurationBundleId);
+            if (bundle != nullptr && !bundle->Bundle.FactionDisplayName.empty()) { return bundle->Bundle.FactionDisplayName; }
+        }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         if (recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getFactionDisplayName(recipe.Faction); }
         if (m_SelectedFactionPresetId.has_value())
@@ -3206,6 +3503,7 @@ namespace PixelShipGeneratorPreview
         recipe.PaletteConfiguration = preset->Configuration;
         m_SelectedBuiltInPalettePreset.reset();
         m_SelectedPalettePresetId = id;
+        m_SelectedConfigurationBundleId.reset();
         regenerate();
         setStatusMessage("Selected runtime palette: " + preset->Name);
     }
@@ -3219,6 +3517,7 @@ namespace PixelShipGeneratorPreview
             recipe.PaletteConfiguration = {};
             m_SelectedBuiltInPalettePreset.reset();
             m_SelectedPalettePresetId.reset();
+            m_SelectedConfigurationBundleId.reset();
             regenerate();
             setStatusMessage("Selected faction-default palette language.");
             break;
@@ -3227,6 +3526,7 @@ namespace PixelShipGeneratorPreview
             recipe.PaletteConfiguration.Generated = PixelShipGenerator::getBuiltInPalettePresetProfile(entry.PalettePreset);
             m_SelectedBuiltInPalettePreset = entry.PalettePreset;
             m_SelectedPalettePresetId.reset();
+            m_SelectedConfigurationBundleId.reset();
             regenerate();
             setStatusMessage("Selected built-in palette language: " + entry.Label);
             break;
@@ -3243,6 +3543,11 @@ namespace PixelShipGeneratorPreview
 
     std::string ShipGeneratorPreviewApp::getCurrentPaletteDisplayName() const
     {
+        if (m_SelectedConfigurationBundleId.has_value())
+        {
+            const RuntimeConfigurationBundle* bundle = m_CustomPresetWorkspace.findConfigurationBundle(*m_SelectedConfigurationBundleId);
+            if (bundle != nullptr && !bundle->Bundle.PaletteDisplayName.empty()) { return bundle->Bundle.PaletteDisplayName; }
+        }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         if (recipe.PaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED) { return "FACTION DEFAULT"; }
         if (m_SelectedPalettePresetId.has_value())
@@ -3252,6 +3557,48 @@ namespace PixelShipGeneratorPreview
         }
         if (m_SelectedBuiltInPalettePreset.has_value()) { return std::string(PixelShipGenerator::getBuiltInPalettePresetId(*m_SelectedBuiltInPalettePreset)); }
         return recipe.PaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FIXED ? "CUSTOM FIXED" : "CUSTOM GENERATED";
+    }
+
+    std::string ShipGeneratorPreviewApp::getCurrentConfigurationBundleDisplayName() const
+    {
+        if (m_SelectedConfigurationBundleId.has_value())
+        {
+            const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(*m_SelectedConfigurationBundleId);
+            if (preset != nullptr) { return preset->Name; }
+        }
+        return "INDIVIDUAL COMPONENTS";
+    }
+
+    std::string ShipGeneratorPreviewApp::getProfilesItemDisplayName() const
+    {
+        switch (m_ProfilesSection)
+        {
+        case ProfilesSection::STRUCTURAL: return getCurrentStructuralProfileDisplayName();
+        case ProfilesSection::FACTION: return getCurrentFactionProfileDisplayName();
+        case ProfilesSection::PALETTE: return getCurrentPaletteDisplayName();
+        case ProfilesSection::FULL_CONFIGURATION:
+            if (m_ProfilesSelectedBundleId.has_value())
+            {
+                const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(*m_ProfilesSelectedBundleId);
+                if (preset != nullptr) { return preset->Name; }
+            }
+            return "NO SAVED BUNDLES";
+        default: return "";
+        }
+    }
+
+    void ShipGeneratorPreviewApp::applyRuntimeConfigurationBundle(RuntimeCustomPresetId id)
+    {
+        const RuntimeConfigurationBundle* preset = m_CustomPresetWorkspace.findConfigurationBundle(id);
+        if (preset == nullptr) { return; }
+        applyConfigurationBundle(preset->Bundle, getCurrentRecipe());
+        m_SelectedStructuralPresetId.reset();
+        m_SelectedFactionPresetId.reset();
+        m_SelectedBuiltInPalettePreset.reset();
+        m_SelectedPalettePresetId.reset();
+        m_SelectedConfigurationBundleId = id;
+        regenerate();
+        setStatusMessage("Applied Full Configuration: " + preset->Name);
     }
 
     void ShipGeneratorPreviewApp::toggleAspectRatioLock()

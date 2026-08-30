@@ -47,8 +47,11 @@ namespace PixelShipGeneratorPreview
         void addFavoriteThumbnail(const PreviewGenerationRecipe& recipe, const sf::Texture& texture);
         void addResolutionBookmark();
         void appendHistoryEntry(const PreviewGenerationRecipe& recipe);
+        void changeConfigurationBundle(int32_t delta);
         void changeFaction(int32_t delta);
         void changePalette(int32_t delta);
+        void changeProfilesItem(int32_t delta);
+        void changeProfilesSection(int32_t delta);
         void changeResolution(int32_t delta);
         void changeStyle(int32_t delta);
         void clearPinnedShip();
@@ -88,6 +91,8 @@ namespace PixelShipGeneratorPreview
         void enterFactionConfigurationEditorDefault();
         void enterPaletteConfigurationEditor();
         void enterPaletteConfigurationEditorDefault();
+        void enterConfigurationBundleEditor();
+        void enterConfigurationBundleEditorDefault();
         void handleConfigurationEditorEvent(const ConfigurationEditorEvent& event);
         void deleteConfigurationEditorPreset();
         void exportConfigurationEditorPreset();
@@ -97,6 +102,13 @@ namespace PixelShipGeneratorPreview
         void enterFavoritesMode();
         void exportRecipe();
         void executeCommand(const PreviewCommand& command);
+        void newProfilesItem();
+        void editSelectedProfilesItem();
+        void duplicateSelectedProfilesItem();
+        void deleteSelectedProfilesItem();
+        void importSelectedProfilesItem();
+        void exportSelectedProfilesItem();
+        void useSelectedProfilesItem();
         void exitGalleryMode();
         void exitFavoritesMode();
         void generateFromMasterSeed();
@@ -162,6 +174,9 @@ namespace PixelShipGeneratorPreview
         void selectRuntimePalettePreset(RuntimeCustomPresetId id);
         void selectPaletteProfileEntry(const PaletteProfileSelectionEntry& entry);
         std::string getCurrentPaletteDisplayName() const;
+        std::string getCurrentConfigurationBundleDisplayName() const;
+        std::string getProfilesItemDisplayName() const;
+        void applyRuntimeConfigurationBundle(RuntimeCustomPresetId id);
         void setDimensions(const PixelShipGenerator::ShipDimensions& dimensions);
         void setHeight(uint32_t height);
         void setResolution(uint32_t resolution);
@@ -206,9 +221,13 @@ namespace PixelShipGeneratorPreview
         std::optional<RuntimeCustomPresetId> m_SelectedFactionPresetId;
         std::optional<PixelShipGenerator::ShipFactionType> m_SelectedBuiltInPalettePreset;
         std::optional<RuntimeCustomPresetId> m_SelectedPalettePresetId;
+        std::optional<RuntimeCustomPresetId> m_SelectedConfigurationBundleId;
+        std::optional<RuntimeCustomPresetId> m_ProfilesSelectedBundleId;
+        ProfilesSection m_ProfilesSection = ProfilesSection::STRUCTURAL;
         std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetPresetId;
         std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetFactionPresetId;
         std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetPalettePresetId;
+        std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetBundleId;
         PreviewDiagnosticState m_Diagnostics;
         GalleryState m_GalleryState;
         FavoritesState m_FavoritesState;

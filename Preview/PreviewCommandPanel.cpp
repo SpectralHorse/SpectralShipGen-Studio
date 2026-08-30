@@ -102,11 +102,17 @@ namespace PixelShipGeneratorPreview
         }
         else if (state.Mode == PreviewCommandPanelMode::GENERATE || state.Mode == PreviewCommandPanelMode::PROFILES)
         {
-            if (m_Selectors.size() >= 3u)
+            if (state.Mode == PreviewCommandPanelMode::GENERATE && m_Selectors.size() >= 4u)
             {
                 m_Selectors[0u].Value = state.StyleValue;
                 m_Selectors[1u].Value = state.FactionValue;
                 m_Selectors[2u].Value = state.PaletteValue;
+                m_Selectors[3u].Value = state.ConfigurationBundleValue;
+            }
+            else if (state.Mode == PreviewCommandPanelMode::PROFILES && m_Selectors.size() >= 2u)
+            {
+                m_Selectors[0u].Value = state.ProfilesSectionValue;
+                m_Selectors[1u].Value = state.ProfilesItemValue;
             }
 
             if (state.Mode == PreviewCommandPanelMode::GENERATE)
@@ -443,13 +449,14 @@ namespace PixelShipGeneratorPreview
 
         if (mode == PreviewCommandPanelMode::PROFILES)
         {
-            addGroupHeader("PROFILE SELECTION", y);
-            addSelector("PROFILE", { PreviewCommandType::PREVIOUS_STYLE, 0u }, { PreviewCommandType::NEXT_STYLE, 0u }, y);
-            addSelector("FACTION", { PreviewCommandType::PREVIOUS_FACTION, 0u }, { PreviewCommandType::NEXT_FACTION, 0u }, y);
-            addSelector("PALETTE", { PreviewCommandType::PREVIOUS_PALETTE, 0u }, { PreviewCommandType::NEXT_PALETTE, 0u }, y);
-            addGroupHeader("EDIT", y);
-            addFullButton({ PreviewCommandType::OPEN_STRUCTURAL_EDITOR, 0u }, y);
-            addPairButtons({ PreviewCommandType::OPEN_FACTION_EDITOR, 0u }, { PreviewCommandType::OPEN_PALETTE_EDITOR, 0u }, y);
+            addGroupHeader("PROFILE LIBRARY", y);
+            addSelector("TYPE", { PreviewCommandType::PROFILES_PREVIOUS_SECTION, 0u }, { PreviewCommandType::PROFILES_NEXT_SECTION, 0u }, y);
+            addSelector("SELECTED", { PreviewCommandType::PROFILES_PREVIOUS_ITEM, 0u }, { PreviewCommandType::PROFILES_NEXT_ITEM, 0u }, y);
+            addGroupHeader("ACTIONS", y);
+            addPairButtons({ PreviewCommandType::PROFILES_NEW_DEFAULT, 0u }, { PreviewCommandType::PROFILES_EDIT_SELECTED, 0u }, y);
+            addPairButtons({ PreviewCommandType::PROFILES_DUPLICATE_SELECTED, 0u }, { PreviewCommandType::PROFILES_DELETE_SELECTED, 0u }, y);
+            addPairButtons({ PreviewCommandType::PROFILES_IMPORT_SELECTED, 0u }, { PreviewCommandType::PROFILES_EXPORT_SELECTED, 0u }, y);
+            addFullButton({ PreviewCommandType::PROFILES_USE_SELECTED, 0u }, y);
             return;
         }
 
@@ -509,6 +516,7 @@ namespace PixelShipGeneratorPreview
         addSelector("PROFILE", { PreviewCommandType::PREVIOUS_STYLE, 0u }, { PreviewCommandType::NEXT_STYLE, 0u }, y, true);
         addSelector("FACTION", { PreviewCommandType::PREVIOUS_FACTION, 0u }, { PreviewCommandType::NEXT_FACTION, 0u }, y, true);
         addSelector("PALETTE", { PreviewCommandType::PREVIOUS_PALETTE, 0u }, { PreviewCommandType::NEXT_PALETTE, 0u }, y, true);
+        addSelector("FULL CFG", { PreviewCommandType::PREVIOUS_CONFIGURATION_BUNDLE, 0u }, { PreviewCommandType::NEXT_CONFIGURATION_BUNDLE, 0u }, y, true);
         addDimensionSliders(y);
         addDimensionControlButtons(y);
         addBookmarkButtons(y);

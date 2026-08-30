@@ -12,6 +12,7 @@
 #include "ShipPaletteConfiguration.h"
 #include "Validation.h"
 
+#include "ConfigurationBundle.h"
 #include "ConfigurationEditorControls.h"
 #include "ShipFactionProfileEditorBindings.h"
 #include "ShipGenerationProfileEditorBindings.h"
@@ -24,6 +25,7 @@ namespace PixelShipGeneratorPreview
         STRUCTURAL = 0u,
         FACTION,
         PALETTE,
+        FULL_CONFIGURATION,
         CONFIGURATION_EDITOR_PROFILE_KIND_END
     };
 
@@ -36,6 +38,9 @@ namespace PixelShipGeneratorPreview
         DELETE_PRESET,
         EXPORT_PRESET,
         IMPORT_PRESET,
+        REPLACE_BUNDLE_STRUCTURAL,
+        REPLACE_BUNDLE_FACTION,
+        REPLACE_BUNDLE_PALETTE,
         CONFIGURATION_EDITOR_ACTION_END
     };
 
@@ -50,6 +55,16 @@ namespace PixelShipGeneratorPreview
         std::string Label;
         ConfigurationEditorRect Bounds;
         bool Enabled = true;
+    };
+
+
+    struct ConfigurationBundleComponentControl
+    {
+        std::string Label;
+        std::string Value;
+        ConfigurationEditorRect RowBounds;
+        ConfigurationEditorRect ReplaceBounds;
+        ConfigurationEditorAction Action = ConfigurationEditorAction::CONFIGURATION_EDITOR_ACTION_END;
     };
 
     struct ConfigurationEditorSectionState
@@ -67,6 +82,7 @@ namespace PixelShipGeneratorPreview
         void openStructuralProfile(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
         void openFactionProfile(std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
         void openPaletteConfiguration(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
+        void openConfigurationBundle(std::string name, const ConfigurationBundle& bundle);
         void close();
         bool isOpen() const;
         ConfigurationEditorProfileKind getProfileKind() const;
@@ -92,6 +108,11 @@ namespace PixelShipGeneratorPreview
         const PixelShipGenerator::ShipFactionProfile& getInitialFactionProfile() const;
         const PixelShipGenerator::ShipPaletteConfiguration& getDraftPaletteConfiguration() const;
         const PixelShipGenerator::ShipPaletteConfiguration& getInitialPaletteConfiguration() const;
+        const ConfigurationBundle& getDraftConfigurationBundle() const;
+        const ConfigurationBundle& getInitialConfigurationBundle() const;
+        void replaceBundleStructural(std::string displayName, const PixelShipGenerator::ShipGenerationProfile& profile);
+        void replaceBundleFaction(std::string displayName, const PixelShipGenerator::ShipFactionProfile& profile);
+        void replaceBundlePalette(std::string displayName, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
         bool hasUnsavedChanges() const;
 
         float getScrollOffset() const;
@@ -105,6 +126,7 @@ namespace PixelShipGeneratorPreview
         bool isPaletteSectionVisible(const PaletteProfileEditorSection& section) const;
         const ConfigurationEditorSectionState& getValidationSection() const;
         const std::array<ConfigurationEditorActionButton, 7u>& getActionButtons() const;
+        const std::array<ConfigurationBundleComponentControl, 3u>& getBundleComponentControls() const;
         std::size_t getBoundValueCount() const;
 
         const StructuralIntegerFieldBinding* findIntegerField(std::string_view path) const;
@@ -148,6 +170,7 @@ namespace PixelShipGeneratorPreview
         bool isWithinContentViewport(float x, float y) const;
         bool activateSectionHeader(float x, float y);
         std::optional<ConfigurationEditorEvent> activateAction(float x, float y);
+        std::optional<ConfigurationEditorEvent> activateBundleComponentAction(float x, float y);
         void resetDraft();
         void cancelDragging();
         void collapseAllProfileSections();
@@ -162,6 +185,8 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::ShipFactionProfile m_DraftFactionProfile;
         PixelShipGenerator::ShipPaletteConfiguration m_InitialPaletteConfiguration;
         PixelShipGenerator::ShipPaletteConfiguration m_DraftPaletteConfiguration;
+        ConfigurationBundle m_InitialConfigurationBundle;
+        ConfigurationBundle m_DraftConfigurationBundle;
         PixelShipGenerator::ValidationResult m_ValidationResult;
         ConfigurationEditorRect m_PanelBounds = { 880.0f, 0.0f, 760.0f, 1000.0f };
         ConfigurationEditorRect m_ContentViewport;
@@ -175,6 +200,7 @@ namespace PixelShipGeneratorPreview
         ShipPaletteConfigurationEditorBindings m_PaletteBindings;
         ConfigurationEditorSectionState m_ValidationSection = { "VALIDATION", {}, true };
         std::array<ConfigurationEditorActionButton, 7u> m_ActionButtons = {};
+        std::array<ConfigurationBundleComponentControl, 3u> m_BundleComponentControls = {};
         bool m_ExistingCustomPreset = false;
     };
 }

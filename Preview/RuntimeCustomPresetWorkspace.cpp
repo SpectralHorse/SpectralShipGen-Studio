@@ -72,6 +72,14 @@ namespace PixelShipGeneratorPreview
         return id;
     }
 
+
+    RuntimeCustomPresetId RuntimeCustomPresetWorkspace::addConfigurationBundle(std::string name, const ConfigurationBundle& bundle)
+    {
+        const RuntimeCustomPresetId id = allocateId();
+        m_ConfigurationBundles.push_back({ id, makeUniqueConfigurationBundleName(name), bundle });
+        return id;
+    }
+
     bool RuntimeCustomPresetWorkspace::restoreStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
     {
         if (id == 0u || containsId(id)) { return false; }
@@ -92,6 +100,15 @@ namespace PixelShipGeneratorPreview
     {
         if (id == 0u || containsId(id)) { return false; }
         m_PalettePresets.push_back({ id, makeUniquePaletteName(name), configuration });
+        ensureNextIdAtLeast(id == std::numeric_limits<RuntimeCustomPresetId>::max() ? id : id + 1u);
+        return true;
+    }
+
+
+    bool RuntimeCustomPresetWorkspace::restoreConfigurationBundle(RuntimeCustomPresetId id, std::string name, const ConfigurationBundle& bundle)
+    {
+        if (id == 0u || containsId(id)) { return false; }
+        m_ConfigurationBundles.push_back({ id, makeUniqueConfigurationBundleName(name), bundle });
         ensureNextIdAtLeast(id == std::numeric_limits<RuntimeCustomPresetId>::max() ? id : id + 1u);
         return true;
     }
@@ -150,9 +167,29 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
+
+    bool RuntimeCustomPresetWorkspace::updateConfigurationBundle(RuntimeCustomPresetId id, std::string name, const ConfigurationBundle& bundle)
+    {
+        RuntimeConfigurationBundle* preset = findConfigurationBundle(id);
+        if (preset == nullptr) { return false; }
+        const std::string requested = name.empty() ? preset->Name : std::move(name);
+        std::string unique = requested;
+        if (unique != preset->Name)
+        {
+            const std::string original = preset->Name;
+            preset->Name.clear();
+            unique = makeUniqueConfigurationBundleName(requested);
+            preset->Name = original;
+        }
+        preset->Name = std::move(unique);
+        preset->Bundle = bundle;
+        return true;
+    }
+
     bool RuntimeCustomPresetWorkspace::removeStructural(RuntimeCustomPresetId id) { return removePreset(m_StructuralPresets, id); }
     bool RuntimeCustomPresetWorkspace::removeFaction(RuntimeCustomPresetId id) { return removePreset(m_FactionPresets, id); }
     bool RuntimeCustomPresetWorkspace::removePalette(RuntimeCustomPresetId id) { return removePreset(m_PalettePresets, id); }
+    bool RuntimeCustomPresetWorkspace::removeConfigurationBundle(RuntimeCustomPresetId id) { return removePreset(m_ConfigurationBundles, id); }
 
     std::optional<RuntimeCustomPresetId> RuntimeCustomPresetWorkspace::duplicateStructural(RuntimeCustomPresetId id)
     {
@@ -178,16 +215,28 @@ namespace PixelShipGeneratorPreview
         return addPalette(copy.Name, copy.Configuration);
     }
 
+
+    std::optional<RuntimeCustomPresetId> RuntimeCustomPresetWorkspace::duplicateConfigurationBundle(RuntimeCustomPresetId id)
+    {
+        const RuntimeConfigurationBundle* preset = findConfigurationBundle(id);
+        if (preset == nullptr) { return std::nullopt; }
+        const RuntimeConfigurationBundle copy = *preset;
+        return addConfigurationBundle(copy.Name, copy.Bundle);
+    }
+
     RuntimeStructuralPreset* RuntimeCustomPresetWorkspace::findStructural(RuntimeCustomPresetId id) { return findPreset(m_StructuralPresets, id); }
     RuntimeFactionPreset* RuntimeCustomPresetWorkspace::findFaction(RuntimeCustomPresetId id) { return findPreset(m_FactionPresets, id); }
     RuntimePalettePreset* RuntimeCustomPresetWorkspace::findPalette(RuntimeCustomPresetId id) { return findPreset(m_PalettePresets, id); }
+    RuntimeConfigurationBundle* RuntimeCustomPresetWorkspace::findConfigurationBundle(RuntimeCustomPresetId id) { return findPreset(m_ConfigurationBundles, id); }
     const RuntimeStructuralPreset* RuntimeCustomPresetWorkspace::findStructural(RuntimeCustomPresetId id) const { return findPreset(m_StructuralPresets, id); }
     const RuntimeFactionPreset* RuntimeCustomPresetWorkspace::findFaction(RuntimeCustomPresetId id) const { return findPreset(m_FactionPresets, id); }
     const RuntimePalettePreset* RuntimeCustomPresetWorkspace::findPalette(RuntimeCustomPresetId id) const { return findPreset(m_PalettePresets, id); }
+    const RuntimeConfigurationBundle* RuntimeCustomPresetWorkspace::findConfigurationBundle(RuntimeCustomPresetId id) const { return findPreset(m_ConfigurationBundles, id); }
 
     const std::vector<RuntimeStructuralPreset>& RuntimeCustomPresetWorkspace::getStructuralPresets() const { return m_StructuralPresets; }
     const std::vector<RuntimeFactionPreset>& RuntimeCustomPresetWorkspace::getFactionPresets() const { return m_FactionPresets; }
     const std::vector<RuntimePalettePreset>& RuntimeCustomPresetWorkspace::getPalettePresets() const { return m_PalettePresets; }
+    const std::vector<RuntimeConfigurationBundle>& RuntimeCustomPresetWorkspace::getConfigurationBundles() const { return m_ConfigurationBundles; }
 
     RuntimeCustomPresetId RuntimeCustomPresetWorkspace::getNextId() const { return m_NextId; }
 
@@ -199,10 +248,11 @@ namespace PixelShipGeneratorPreview
     std::string RuntimeCustomPresetWorkspace::makeUniqueStructuralName(const std::string& base) const { return makeUniqueName(m_StructuralPresets, base); }
     std::string RuntimeCustomPresetWorkspace::makeUniqueFactionName(const std::string& base) const { return makeUniqueName(m_FactionPresets, base); }
     std::string RuntimeCustomPresetWorkspace::makeUniquePaletteName(const std::string& base) const { return makeUniqueName(m_PalettePresets, base); }
+    std::string RuntimeCustomPresetWorkspace::makeUniqueConfigurationBundleName(const std::string& base) const { return makeUniqueName(m_ConfigurationBundles, base); }
 
     bool RuntimeCustomPresetWorkspace::containsId(RuntimeCustomPresetId id) const
     {
-        return findStructural(id) != nullptr || findFaction(id) != nullptr || findPalette(id) != nullptr;
+        return findStructural(id) != nullptr || findFaction(id) != nullptr || findPalette(id) != nullptr || findConfigurationBundle(id) != nullptr;
     }
 
     RuntimeCustomPresetId RuntimeCustomPresetWorkspace::allocateId()

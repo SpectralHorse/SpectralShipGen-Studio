@@ -4,6 +4,27 @@
 
 namespace PixelShipGeneratorPreview
 {
+    const char* getProfilesSectionName(ProfilesSection section)
+    {
+        switch (section)
+        {
+        case ProfilesSection::STRUCTURAL: return "Structural";
+        case ProfilesSection::FACTION: return "Faction";
+        case ProfilesSection::PALETTE: return "Palette";
+        case ProfilesSection::FULL_CONFIGURATION: return "Full Configuration";
+        default: return "Unknown";
+        }
+    }
+
+    ProfilesSection getWrappedProfilesSection(ProfilesSection section, int32_t delta)
+    {
+        const int32_t count = static_cast<int32_t>(ProfilesSectionCount);
+        int32_t index = static_cast<int32_t>(section) + delta;
+        while (index < 0) { index += count; }
+        while (index >= count) { index -= count; }
+        return static_cast<ProfilesSection>(index);
+    }
+
     namespace
     {
         constexpr std::array<PreviewWorkspaceData, PreviewWorkspaceCount> WorkspaceData = { {
@@ -33,9 +54,9 @@ namespace PixelShipGeneratorPreview
                 PreviewHelpEntry{ "GALLERY RMB", "Bookmark / unbookmark candidate" }
             }, 7u },
             PreviewHelpSection{ {
-                PreviewHelpEntry{ "CTRL+D", "Duplicate the open profile / palette" },
-                PreviewHelpEntry{ "CTRL+O", "Import the open preset category" },
-                PreviewHelpEntry{ "CTRL+E", "Export the open saved user preset" }
+                PreviewHelpEntry{ "CTRL+D", "Duplicate selected Profiles item" },
+                PreviewHelpEntry{ "CTRL+O", "Import active Profiles type" },
+                PreviewHelpEntry{ "CTRL+E", "Export selected saved item" }
             }, 3u },
             PreviewHelpSection{ {
                 PreviewHelpEntry{ "SPACE", "Generate configured reroll candidate" },

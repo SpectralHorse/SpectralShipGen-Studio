@@ -33,6 +33,11 @@ namespace PixelShipGeneratorPreview
             { ConfigurationEditorAction::EXPORT_PRESET, "EXPORT", {}, false },
             { ConfigurationEditorAction::IMPORT_PRESET, "IMPORT", {}, true }
         } };
+        m_BundleComponentControls = { {
+            { "STRUCTURAL", "", {}, {}, ConfigurationEditorAction::REPLACE_BUNDLE_STRUCTURAL },
+            { "FACTION", "", {}, {}, ConfigurationEditorAction::REPLACE_BUNDLE_FACTION },
+            { "PALETTE", "", {}, {}, ConfigurationEditorAction::REPLACE_BUNDLE_PALETTE }
+        } };
 
         collapseAllProfileSections();
         rebuildLayout();
@@ -92,6 +97,22 @@ namespace PixelShipGeneratorPreview
         rebuildLayout();
     }
 
+    void PreviewConfigurationEditor::openConfigurationBundle(std::string name, const ConfigurationBundle& bundle)
+    {
+        m_ExistingCustomPreset = false;
+        m_Open = true;
+        m_ProfileKind = ConfigurationEditorProfileKind::FULL_CONFIGURATION;
+        m_InitialName = std::move(name);
+        m_InitialConfigurationBundle = bundle;
+        m_DraftConfigurationBundle = bundle;
+        m_NameField.Label = "DISPLAY NAME";
+        m_NameField.Value = m_InitialName;
+        m_NameField.Focused = false;
+        m_ScrollOffset = 0.0f;
+        refreshValidation();
+        rebuildLayout();
+    }
+
     void PreviewConfigurationEditor::close()
     {
         m_Open = false;
@@ -123,7 +144,7 @@ namespace PixelShipGeneratorPreview
             };
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { updateSections(m_ProfileBindings.getSections()); }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { updateSections(m_FactionProfileBindings.getSections()); }
-        else
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE)
         {
             for (auto& section : m_PaletteBindings.getSections())
             {
@@ -168,7 +189,7 @@ namespace PixelShipGeneratorPreview
             };
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { pressSections(m_ProfileBindings.getSections()); }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { pressSections(m_FactionProfileBindings.getSections()); }
-        else
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE)
         {
             for (auto& section : m_PaletteBindings.getSections())
             {
@@ -184,6 +205,7 @@ namespace PixelShipGeneratorPreview
     {
         if (!m_Open) { return std::nullopt; }
         if (const auto action = activateAction(x, y); action.has_value()) { return action; }
+        if (const auto action = activateBundleComponentAction(x, y); action.has_value()) { return action; }
         if (!isWithinContentViewport(x, y))
         {
             cancelDragging();
@@ -205,7 +227,7 @@ namespace PixelShipGeneratorPreview
             };
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { releaseSections(m_ProfileBindings.getSections()); }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { releaseSections(m_FactionProfileBindings.getSections()); }
-        else
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE)
         {
             for (auto& section : m_PaletteBindings.getSections())
             {
@@ -261,13 +283,45 @@ namespace PixelShipGeneratorPreview
     const PixelShipGenerator::ShipFactionProfile& PreviewConfigurationEditor::getInitialFactionProfile() const { return m_InitialFactionProfile; }
     const PixelShipGenerator::ShipPaletteConfiguration& PreviewConfigurationEditor::getDraftPaletteConfiguration() const { return m_DraftPaletteConfiguration; }
     const PixelShipGenerator::ShipPaletteConfiguration& PreviewConfigurationEditor::getInitialPaletteConfiguration() const { return m_InitialPaletteConfiguration; }
+    const ConfigurationBundle& PreviewConfigurationEditor::getDraftConfigurationBundle() const { return m_DraftConfigurationBundle; }
+    const ConfigurationBundle& PreviewConfigurationEditor::getInitialConfigurationBundle() const { return m_InitialConfigurationBundle; }
+
+    void PreviewConfigurationEditor::replaceBundleStructural(std::string displayName, const PixelShipGenerator::ShipGenerationProfile& profile)
+    {
+        m_DraftConfigurationBundle.StructuralDisplayName = std::move(displayName);
+        m_DraftConfigurationBundle.StructuralProfile = profile;
+        refreshValidation();
+        rebuildLayout();
+    }
+
+    void PreviewConfigurationEditor::replaceBundleFaction(std::string displayName, const PixelShipGenerator::ShipFactionProfile& profile)
+    {
+        m_DraftConfigurationBundle.FactionDisplayName = std::move(displayName);
+        m_DraftConfigurationBundle.FactionProfile = profile;
+        refreshValidation();
+        rebuildLayout();
+    }
+
+    void PreviewConfigurationEditor::replaceBundlePalette(std::string displayName, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    {
+        m_DraftConfigurationBundle.PaletteDisplayName = std::move(displayName);
+        m_DraftConfigurationBundle.PaletteConfiguration = configuration;
+        refreshValidation();
+        rebuildLayout();
+    }
 
     bool PreviewConfigurationEditor::hasUnsavedChanges() const
     {
         if (m_NameField.Value != m_InitialName) { return true; }
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { return !m_ProfileBindings.equivalent(m_DraftProfile, m_InitialProfile); }
         if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { return !m_FactionProfileBindings.equivalent(m_DraftFactionProfile, m_InitialFactionProfile); }
-        return !m_PaletteBindings.equivalent(m_DraftPaletteConfiguration, m_InitialPaletteConfiguration);
+        if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE) { return !m_PaletteBindings.equivalent(m_DraftPaletteConfiguration, m_InitialPaletteConfiguration); }
+        return m_DraftConfigurationBundle.StructuralDisplayName != m_InitialConfigurationBundle.StructuralDisplayName ||
+            m_DraftConfigurationBundle.FactionDisplayName != m_InitialConfigurationBundle.FactionDisplayName ||
+            m_DraftConfigurationBundle.PaletteDisplayName != m_InitialConfigurationBundle.PaletteDisplayName ||
+            !m_ProfileBindings.equivalent(m_DraftConfigurationBundle.StructuralProfile, m_InitialConfigurationBundle.StructuralProfile) ||
+            !m_FactionProfileBindings.equivalent(m_DraftConfigurationBundle.FactionProfile, m_InitialConfigurationBundle.FactionProfile) ||
+            !m_PaletteBindings.equivalent(m_DraftConfigurationBundle.PaletteConfiguration, m_InitialConfigurationBundle.PaletteConfiguration);
     }
 
     float PreviewConfigurationEditor::getScrollOffset() const { return m_ScrollOffset; }
@@ -281,11 +335,13 @@ namespace PixelShipGeneratorPreview
     bool PreviewConfigurationEditor::isPaletteSectionVisible(const PaletteProfileEditorSection& section) const { return m_PaletteBindings.isSectionVisible(section); }
     const ConfigurationEditorSectionState& PreviewConfigurationEditor::getValidationSection() const { return m_ValidationSection; }
     const std::array<ConfigurationEditorActionButton, 7u>& PreviewConfigurationEditor::getActionButtons() const { return m_ActionButtons; }
+    const std::array<ConfigurationBundleComponentControl, 3u>& PreviewConfigurationEditor::getBundleComponentControls() const { return m_BundleComponentControls; }
     std::size_t PreviewConfigurationEditor::getBoundValueCount() const
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { return m_ProfileBindings.getBoundValueCount(); }
         if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { return m_FactionProfileBindings.getBoundValueCount(); }
-        return m_PaletteBindings.getBoundValueCount();
+        if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE) { return m_PaletteBindings.getBoundValueCount(); }
+        return 3u;
     }
 
     const StructuralIntegerFieldBinding* PreviewConfigurationEditor::findIntegerField(std::string_view path) const { return m_ProfileBindings.findInteger(path); }
@@ -333,12 +389,13 @@ namespace PixelShipGeneratorPreview
             if (sectionIndex >= sections.size()) { return; }
             sections[sectionIndex].Expanded = expanded;
         }
-        else
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE)
         {
             auto& sections = m_PaletteBindings.getSections();
             if (sectionIndex >= sections.size()) { return; }
             sections[sectionIndex].Expanded = expanded;
         }
+        else { return; }
         rebuildLayout();
     }
 
@@ -346,14 +403,14 @@ namespace PixelShipGeneratorPreview
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_ProfileBindings.load(m_DraftProfile); }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { m_FactionProfileBindings.load(m_DraftFactionProfile); }
-        else { m_PaletteBindings.load(m_DraftPaletteConfiguration); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE) { m_PaletteBindings.load(m_DraftPaletteConfiguration); }
     }
 
     void PreviewConfigurationEditor::syncDraftFromControls()
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_ProfileBindings.write(m_DraftProfile); }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { m_FactionProfileBindings.write(m_DraftFactionProfile); }
-        else { m_PaletteBindings.write(m_DraftPaletteConfiguration); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE) { m_PaletteBindings.write(m_DraftPaletteConfiguration); }
     }
 
     void PreviewConfigurationEditor::refreshValidation()
@@ -366,9 +423,13 @@ namespace PixelShipGeneratorPreview
         {
             setValidationResult(PixelShipGenerator::validateShipFactionProfile(m_DraftFactionProfile));
         }
-        else if (m_DraftPaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED)
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE && m_DraftPaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED)
         {
             setValidationResult(PixelShipGenerator::validateShipPaletteGenerationProfile(m_DraftPaletteConfiguration.Generated));
+        }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FULL_CONFIGURATION)
+        {
+            setValidationResult(validateConfigurationBundle(m_DraftConfigurationBundle));
         }
         else
         {
@@ -416,7 +477,7 @@ namespace PixelShipGeneratorPreview
             };
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { layoutSections(m_ProfileBindings.getSections()); }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { layoutSections(m_FactionProfileBindings.getSections()); }
-        else
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE)
         {
             constexpr float ColorRowHeight = 66.0f;
             for (auto& section : m_PaletteBindings.getSections())
@@ -433,6 +494,20 @@ namespace PixelShipGeneratorPreview
                 }
                 y += SectionGap;
             }
+        }
+
+        else
+        {
+            m_BundleComponentControls[0u].Value = m_DraftConfigurationBundle.StructuralDisplayName;
+            m_BundleComponentControls[1u].Value = m_DraftConfigurationBundle.FactionDisplayName;
+            m_BundleComponentControls[2u].Value = m_DraftConfigurationBundle.PaletteDisplayName;
+            for (ConfigurationBundleComponentControl& component : m_BundleComponentControls)
+            {
+                component.RowBounds = { contentLeft, y, contentWidth, RowHeight };
+                component.ReplaceBounds = { contentLeft + contentWidth - 130.0f, y + 3.0f, 124.0f, RowHeight - 6.0f };
+                y += RowHeight + 4.0f;
+            }
+            y += SectionGap;
         }
 
         m_ValidationSection.HeaderBounds = { contentLeft, y, contentWidth, SectionHeaderHeight };
@@ -538,11 +613,22 @@ namespace PixelShipGeneratorPreview
         return std::nullopt;
     }
 
+    std::optional<ConfigurationEditorEvent> PreviewConfigurationEditor::activateBundleComponentAction(float x, float y)
+    {
+        if (m_ProfileKind != ConfigurationEditorProfileKind::FULL_CONFIGURATION) { return std::nullopt; }
+        for (const ConfigurationBundleComponentControl& component : m_BundleComponentControls)
+        {
+            if (component.ReplaceBounds.contains(x, y)) { return ConfigurationEditorEvent{ component.Action }; }
+        }
+        return std::nullopt;
+    }
+
     void PreviewConfigurationEditor::resetDraft()
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_DraftProfile = m_InitialProfile; }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { m_DraftFactionProfile = m_InitialFactionProfile; }
-        else { m_DraftPaletteConfiguration = m_InitialPaletteConfiguration; }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE) { m_DraftPaletteConfiguration = m_InitialPaletteConfiguration; }
+        else { m_DraftConfigurationBundle = m_InitialConfigurationBundle; }
         m_NameField.Value = m_InitialName;
         configureControlsFromDraft();
         refreshValidation();

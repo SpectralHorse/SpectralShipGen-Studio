@@ -42,6 +42,7 @@ namespace
         if (id == "STRUCTURAL") { category = UserPresetCategory::STRUCTURAL; return true; }
         if (id == "FACTION") { category = UserPresetCategory::FACTION; return true; }
         if (id == "PALETTE") { category = UserPresetCategory::PALETTE; return true; }
+        if (id == "FULL_CONFIGURATION") { category = UserPresetCategory::FULL_CONFIGURATION; return true; }
         return false;
     }
 
@@ -71,6 +72,48 @@ namespace
         const Value* fixed = value.find("fixed");
         if (fixed == nullptr) { error = "Missing required field: " + path + ".fixed."; return false; }
         return RecipeProfileSerialization::deserialize(*fixed, configuration.Fixed, error, path + ".fixed");
+    }
+
+    Value serializeConfigurationBundle(const ConfigurationBundle& bundle)
+    {
+        Value result = Value::object();
+        Value metadata = Value::object();
+        metadata.Object["structural_display_name"] = Value::string(bundle.StructuralDisplayName);
+        metadata.Object["faction_display_name"] = Value::string(bundle.FactionDisplayName);
+        metadata.Object["palette_display_name"] = Value::string(bundle.PaletteDisplayName);
+        result.Object["component_metadata"] = std::move(metadata);
+        result.Object["structural"] = RecipeProfileSerialization::serialize(bundle.StructuralProfile);
+        result.Object["faction"] = RecipeProfileSerialization::serialize(bundle.FactionProfile);
+        result.Object["palette"] = serializePaletteConfiguration(bundle.PaletteConfiguration);
+        return result;
+    }
+
+    bool deserializeConfigurationBundle(const Value& value, ConfigurationBundle& bundle, std::string& error, const std::string& path)
+    {
+        if (value.ValueType != Type::Object) { error = path + " must be a JSON object."; return false; }
+        const Value* metadata = value.find("component_metadata");
+        if (metadata != nullptr && metadata->ValueType == Type::Object)
+        {
+            if (!RecipeJson::getString(*metadata, "structural_display_name", bundle.StructuralDisplayName, error, path + ".component_metadata") ||
+                !RecipeJson::getString(*metadata, "faction_display_name", bundle.FactionDisplayName, error, path + ".component_metadata") ||
+                !RecipeJson::getString(*metadata, "palette_display_name", bundle.PaletteDisplayName, error, path + ".component_metadata")) { return false; }
+        }
+        else
+        {
+            bundle.StructuralDisplayName = "Embedded Structural";
+            bundle.FactionDisplayName = "Embedded Faction";
+            bundle.PaletteDisplayName = "Embedded Palette";
+        }
+
+        const Value* structural = value.find("structural");
+        const Value* faction = value.find("faction");
+        const Value* palette = value.find("palette");
+        if (structural == nullptr) { error = "Missing required field: " + path + ".structural."; return false; }
+        if (faction == nullptr) { error = "Missing required field: " + path + ".faction."; return false; }
+        if (palette == nullptr) { error = "Missing required field: " + path + ".palette."; return false; }
+        if (!RecipeProfileSerialization::deserialize(*structural, bundle.StructuralProfile, error, path + ".structural")) { return false; }
+        if (!RecipeProfileSerialization::deserialize(*faction, bundle.FactionProfile, error, path + ".faction")) { return false; }
+        return deserializePaletteConfiguration(*palette, bundle.PaletteConfiguration, error, path + ".palette");
     }
 
     std::string validationError(const ValidationResult& validation, const std::string& prefix)
@@ -107,6 +150,12 @@ namespace
         return error.empty();
     }
 
+    bool validateBundle(const ConfigurationBundle& bundle, std::string& error)
+    {
+        error = validationError(validateConfigurationBundle(bundle), "Invalid full configuration bundle: ");
+        return error.empty();
+    }
+
     Value serializeStructuralEntry(const RuntimeStructuralPreset& preset)
     {
         Value entry = Value::object();
@@ -131,6 +180,15 @@ namespace
         entry.Object["id"] = Value::number(static_cast<uint64_t>(preset.Id));
         entry.Object["display_name"] = Value::string(preset.Name);
         entry.Object["configuration"] = serializePaletteConfiguration(preset.Configuration);
+        return entry;
+    }
+
+    Value serializeConfigurationBundleEntry(const RuntimeConfigurationBundle& preset)
+    {
+        Value entry = Value::object();
+        entry.Object["id"] = Value::number(static_cast<uint64_t>(preset.Id));
+        entry.Object["display_name"] = Value::string(preset.Name);
+        entry.Object["configuration"] = serializeConfigurationBundle(preset.Bundle);
         return entry;
     }
 
@@ -277,7 +335,7 @@ namespace
 
         uint32_t version = 0u;
         if (!RecipeJson::getUInt32(root, "format_version", version, result.Error, "preset")) { return result; }
-        if (version != UserPresetFileFormatVersion)
+        if (version != 1u && version != UserPresetFileFormatVersion)
         {
             result.Error = "Unsupported user preset file format version: " + std::to_string(version) + ".";
             return result;
@@ -333,13 +391,27 @@ namespace
             const RuntimeFactionPreset* preset = workspace.findFaction(result.ImportedId);
             result.DisplayName = preset == nullptr ? displayName : preset->Name;
         }
-        else
+        else if (result.Category == UserPresetCategory::PALETTE)
         {
             ShipPaletteConfiguration palette;
             if (!deserializePaletteConfiguration(*configuration, palette, result.Error, "preset.configuration") || !validatePalette(palette, result.Error)) { return result; }
             result.ImportedId = workspace.addPalette(displayName, palette);
             const RuntimePalettePreset* preset = workspace.findPalette(result.ImportedId);
             result.DisplayName = preset == nullptr ? displayName : preset->Name;
+        }
+        else if (result.Category == UserPresetCategory::FULL_CONFIGURATION)
+        {
+            if (version < 2u) { result.Error = "Full configuration bundles require user preset file format version 2."; return result; }
+            ConfigurationBundle bundle;
+            if (!deserializeConfigurationBundle(*configuration, bundle, result.Error, "preset.configuration") || !validateBundle(bundle, result.Error)) { return result; }
+            result.ImportedId = workspace.addConfigurationBundle(displayName, bundle);
+            const RuntimeConfigurationBundle* preset = workspace.findConfigurationBundle(result.ImportedId);
+            result.DisplayName = preset == nullptr ? displayName : preset->Name;
+        }
+        else
+        {
+            result.Error = "Unsupported user preset category.";
+            return result;
         }
 
         result.DisplayNameDisambiguated = result.DisplayName != requestedName;
@@ -357,6 +429,7 @@ namespace PixelShipGeneratorPreview
         case UserPresetCategory::STRUCTURAL: return "STRUCTURAL";
         case UserPresetCategory::FACTION: return "FACTION";
         case UserPresetCategory::PALETTE: return "PALETTE";
+        case UserPresetCategory::FULL_CONFIGURATION: return "FULL_CONFIGURATION";
         default: return "INVALID";
         }
     }
@@ -369,6 +442,7 @@ namespace PixelShipGeneratorPreview
         root.Object["structural_presets"] = serializePresetArray(workspace.getStructuralPresets(), serializeStructuralEntry);
         root.Object["faction_presets"] = serializePresetArray(workspace.getFactionPresets(), serializeFactionEntry);
         root.Object["palette_presets"] = serializePresetArray(workspace.getPalettePresets(), serializePaletteEntry);
+        root.Object["configuration_bundles"] = serializePresetArray(workspace.getConfigurationBundles(), serializeConfigurationBundleEntry);
         return RecipeJson::stringify(root);
     }
 
@@ -381,7 +455,7 @@ namespace PixelShipGeneratorPreview
 
         uint32_t version = 0u;
         if (!RecipeJson::getUInt32(parsed.Root, "format_version", version, result.Error, "library")) { return result; }
-        if (version != UserPresetLibraryFormatVersion)
+        if (version != 1u && version != UserPresetLibraryFormatVersion)
         {
             result.Error = "Unsupported user preset library format version: " + std::to_string(version) + ".";
             return result;
@@ -397,9 +471,11 @@ namespace PixelShipGeneratorPreview
         const Value* structural = nullptr;
         const Value* factions = nullptr;
         const Value* palettes = nullptr;
+        const Value* bundles = nullptr;
         if (!requireArray(parsed.Root, "structural_presets", structural, result.Error) ||
             !requireArray(parsed.Root, "faction_presets", factions, result.Error) ||
             !requireArray(parsed.Root, "palette_presets", palettes, result.Error)) { return result; }
+        if (version >= 2u && !requireArray(parsed.Root, "configuration_bundles", bundles, result.Error)) { return result; }
 
         for (std::size_t index = 0u; index < structural->Array.size(); ++index)
         {
@@ -449,6 +525,26 @@ namespace PixelShipGeneratorPreview
                 !result.Workspace.restorePalette(id, name, palette))
             {
                 ++result.SkippedEntryCount;
+            }
+        }
+
+        if (bundles != nullptr)
+        {
+            for (std::size_t index = 0u; index < bundles->Array.size(); ++index)
+            {
+                RuntimeCustomPresetId id = 0u;
+                std::string name;
+                const Value* configuration = nullptr;
+                std::string entryError;
+                ConfigurationBundle bundle;
+                const std::string path = "library.configuration_bundles[" + std::to_string(index) + "]";
+                if (!parseCommonEntry(bundles->Array[index], id, name, configuration, entryError, path) ||
+                    !deserializeConfigurationBundle(*configuration, bundle, entryError, path + ".configuration") ||
+                    !validateBundle(bundle, entryError) ||
+                    !result.Workspace.restoreConfigurationBundle(id, name, bundle))
+                {
+                    ++result.SkippedEntryCount;
+                }
             }
         }
 
@@ -507,6 +603,11 @@ namespace PixelShipGeneratorPreview
         return RecipeJson::stringify(createExportRoot(UserPresetCategory::PALETTE, preset.Id, preset.Name, serializePaletteConfiguration(preset.Configuration)));
     }
 
+    std::string serializeUserPresetFile(const RuntimeConfigurationBundle& preset)
+    {
+        return RecipeJson::stringify(createExportRoot(UserPresetCategory::FULL_CONFIGURATION, preset.Id, preset.Name, serializeConfigurationBundle(preset.Bundle)));
+    }
+
     bool exportUserPreset(const RuntimeCustomPresetWorkspace& workspace, UserPresetCategory category, RuntimeCustomPresetId id, const std::filesystem::path& path, std::string& error)
     {
         try
@@ -528,6 +629,12 @@ namespace PixelShipGeneratorPreview
             {
                 const RuntimePalettePreset* preset = workspace.findPalette(id);
                 if (preset == nullptr) { error = "Palette user preset was not found."; return false; }
+                serialized = serializeUserPresetFile(*preset);
+            }
+            else if (category == UserPresetCategory::FULL_CONFIGURATION)
+            {
+                const RuntimeConfigurationBundle* preset = workspace.findConfigurationBundle(id);
+                if (preset == nullptr) { error = "Full configuration bundle was not found."; return false; }
                 serialized = serializeUserPresetFile(*preset);
             }
             else

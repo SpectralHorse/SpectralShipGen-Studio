@@ -95,7 +95,7 @@ int PixelShipGeneratorTests::runPreviewUserPresetPersistenceRegression()
     std::filesystem::create_directories(directory, filesystemError);
 
     const UserPresetLibraryLoadResult missing = loadUserPresetLibrary(libraryPath);
-    if (!missing.Success || !missing.Workspace.getStructuralPresets().empty() || !missing.Workspace.getFactionPresets().empty() || !missing.Workspace.getPalettePresets().empty())
+    if (!missing.Success || !missing.Workspace.getStructuralPresets().empty() || !missing.Workspace.getFactionPresets().empty() || !missing.Workspace.getPalettePresets().empty() || !missing.Workspace.getConfigurationBundles().empty())
     {
         success = false;
         std::cerr << "Missing user preset library did not load as an empty first-run library.\n";
@@ -263,14 +263,14 @@ int PixelShipGeneratorTests::runPreviewUserPresetPersistenceRegression()
     }
 
     std::string unsupportedLibrary = serializeUserPresetLibrary(workspace);
-    replaceOnce(unsupportedLibrary, "\"format_version\": 1", "\"format_version\": 99");
+    replaceOnce(unsupportedLibrary, "\"format_version\": 2", "\"format_version\": 99");
     if (deserializeUserPresetLibrary(unsupportedLibrary).Success || deserializeUserPresetLibrary("{ this is not JSON").Success)
     {
         success = false;
         std::cerr << "Malformed/schema-version user preset library handling failed.\n";
     }
     std::string unsupportedImport = structuralExportText;
-    replaceOnce(unsupportedImport, "\"format_version\": 1", "\"format_version\": 99");
+    replaceOnce(unsupportedImport, "\"format_version\": 2", "\"format_version\": 99");
     if (importUserPreset(conflictWorkspace, UserPresetCategory::STRUCTURAL, unsupportedImport).Success)
     {
         success = false;
@@ -328,7 +328,7 @@ int PixelShipGeneratorTests::runPreviewUserPresetPersistenceRegression()
             }
 
             UserPresetLibraryLoadResult emptyRestart = loadUserPresetLibrary(libraryPath);
-            if (!emptyRestart.Success || !emptyRestart.Workspace.getStructuralPresets().empty() || !emptyRestart.Workspace.getFactionPresets().empty() || !emptyRestart.Workspace.getPalettePresets().empty())
+            if (!emptyRestart.Success || !emptyRestart.Workspace.getStructuralPresets().empty() || !emptyRestart.Workspace.getFactionPresets().empty() || !emptyRestart.Workspace.getPalettePresets().empty() || !emptyRestart.Workspace.getConfigurationBundles().empty())
             {
                 success = false;
                 std::cerr << "Deleted local presets unexpectedly reappeared after restart.\n";

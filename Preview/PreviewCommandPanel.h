@@ -90,6 +90,9 @@ namespace PixelShipGeneratorPreview
         std::string StyleValue;
         std::string FactionValue;
         std::string PaletteValue;
+        std::string ConfigurationBundleValue;
+        std::string ProfilesSectionValue;
+        std::string ProfilesItemValue;
         PreviewCommandPanelMode Mode = PreviewCommandPanelMode::GENERATE;
         std::array<bool, PixelShipGenerator::GenerationDomainCount> RerollStudioSelectedDomains = {};
         std::string CalibrationGroupValue;
