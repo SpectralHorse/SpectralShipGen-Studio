@@ -72,6 +72,11 @@ namespace PixelShipGeneratorPreview
                 button.Label = state.InspectionPresentationValue.empty() ? "Overlay / Isolate" : state.InspectionPresentationValue;
             }
 
+            if (button.Command.Type == PreviewCommandType::CYCLE_ANIMATION_TYPE && !state.AnimationTypeValue.empty()) { button.Label = "Clip: " + state.AnimationTypeValue; }
+            if (button.Command.Type == PreviewCommandType::CYCLE_ANIMATION_BASE_STATE && !state.AnimationBaseStateValue.empty()) { button.Label = "Base: " + state.AnimationBaseStateValue; }
+            if (button.Command.Type == PreviewCommandType::CYCLE_MOVEMENT_PHASE && !state.AnimationPhaseValue.empty()) { button.Label = "Phase: " + state.AnimationPhaseValue; }
+            if (button.Command.Type == PreviewCommandType::CYCLE_ANIMATION_PLAYBACK_SPEED && !state.AnimationPlaybackSpeedValue.empty()) { button.Label = "Speed: " + state.AnimationPlaybackSpeedValue; }
+
             if (button.Command.Type == PreviewCommandType::SELECT_RESOLUTION_BOOKMARK)
             {
                 const uint32_t slot = button.Command.Value;
@@ -150,6 +155,13 @@ namespace PixelShipGeneratorPreview
             }
         }
 
+        if (state.Mode == PreviewCommandPanelMode::ANIMATION)
+        {
+            m_AnimationTimelineSlider.Enabled = state.Enabled[static_cast<std::size_t>(PreviewCommandType::SET_ANIMATION_NORMALIZED_TIME)];
+            if (!m_AnimationTimelineSlider.Dragging) { m_AnimationTimelineSlider.Value = state.AnimationTimelineValue; }
+            m_AnimationTimelineSlider.DetailText = state.AnimationTimelineDetail;
+        }
+
         if (m_HoveredButtonIndex >= 0 && !m_Buttons[static_cast<std::size_t>(m_HoveredButtonIndex)].Enabled) { m_HoveredButtonIndex = -1; }
         if (m_PressedButtonIndex >= 0 && !m_Buttons[static_cast<std::size_t>(m_PressedButtonIndex)].Enabled) { m_PressedButtonIndex = -1; }
     }
@@ -164,6 +176,13 @@ namespace PixelShipGeneratorPreview
                 m_HoveredButtonIndex = -1;
                 return;
             }
+        }
+
+        if (m_AnimationTimelineSlider.Dragging)
+        {
+            m_AnimationTimelineSlider.Value = getSliderValueForPosition(m_AnimationTimelineSlider, position.x);
+            m_HoveredButtonIndex = -1;
+            return;
         }
 
         if (m_WidthSlider.Dragging)
@@ -209,6 +228,7 @@ namespace PixelShipGeneratorPreview
     {
         PreviewCommandPanelSlider* draggingSlider = nullptr;
         for (PreviewCommandPanelSlider& slider : m_CalibrationSliders) { if (slider.Dragging) { draggingSlider = &slider; break; } }
+        if (draggingSlider == nullptr && m_AnimationTimelineSlider.Dragging) { draggingSlider = &m_AnimationTimelineSlider; }
         if (draggingSlider == nullptr) { draggingSlider = m_WidthSlider.Dragging ? &m_WidthSlider : m_HeightSlider.Dragging ? &m_HeightSlider : nullptr; }
         if (draggingSlider != nullptr)
         {
@@ -233,6 +253,7 @@ namespace PixelShipGeneratorPreview
         m_PressedButtonIndex = -1;
         m_WidthSlider.Dragging = false;
         m_HeightSlider.Dragging = false;
+        m_AnimationTimelineSlider.Dragging = false;
         for (PreviewCommandPanelSlider& slider : m_CalibrationSliders) { slider.Dragging = false; }
     }
 
@@ -241,11 +262,12 @@ namespace PixelShipGeneratorPreview
     const PreviewCommandPanelSlider& PreviewCommandPanel::getWidthSlider() const { return m_WidthSlider; }
     const PreviewCommandPanelSlider& PreviewCommandPanel::getHeightSlider() const { return m_HeightSlider; }
     const std::vector<PreviewCommandPanelSlider>& PreviewCommandPanel::getCalibrationSliders() const { return m_CalibrationSliders; }
+    const PreviewCommandPanelSlider& PreviewCommandPanel::getAnimationTimelineSlider() const { return m_AnimationTimelineSlider; }
     const std::vector<PreviewCommandPanelGroupHeader>& PreviewCommandPanel::getGroupHeaders() const { return m_GroupHeaders; }
     PreviewCommandPanelMode PreviewCommandPanel::getMode() const { return m_Mode; }
     int32_t PreviewCommandPanel::getHoveredButtonIndex() const { return m_HoveredButtonIndex; }
     int32_t PreviewCommandPanel::getPressedButtonIndex() const { return m_PressedButtonIndex; }
-    bool PreviewCommandPanel::isDimensionSliderDragging() const { return m_WidthSlider.Dragging || m_HeightSlider.Dragging || std::any_of(m_CalibrationSliders.begin(), m_CalibrationSliders.end(), [](const PreviewCommandPanelSlider& slider) { return slider.Dragging; }); }
+    bool PreviewCommandPanel::isDimensionSliderDragging() const { return m_WidthSlider.Dragging || m_HeightSlider.Dragging || m_AnimationTimelineSlider.Dragging || std::any_of(m_CalibrationSliders.begin(), m_CalibrationSliders.end(), [](const PreviewCommandPanelSlider& slider) { return slider.Dragging; }); }
 
     const PreviewCommandData* PreviewCommandPanel::getHoveredCommandData() const
     {
@@ -358,6 +380,20 @@ namespace PixelShipGeneratorPreview
         addButton({ PreviewCommandType::TOGGLE_ASPECT_RATIO_LOCK, 0u }, x + (buttonWidth + PairSpacing) * 2.0f, y, buttonWidth, ButtonHeight, "1:1");
         addButton({ PreviewCommandType::ADD_RESOLUTION_BOOKMARK, 0u }, x + (buttonWidth + PairSpacing) * 3.0f, y, buttonWidth, ButtonHeight, "+BM");
         addButton({ PreviewCommandType::REMOVE_RESOLUTION_BOOKMARK, 0u }, x + (buttonWidth + PairSpacing) * 4.0f, y, buttonWidth, ButtonHeight, "-BM");
+        y += ButtonHeight + RowSpacing;
+    }
+
+    void PreviewCommandPanel::addAnimationTimelineSlider(float& y)
+    {
+        const float x = static_cast<float>(PreviewCommandPanelX) + PanelPadding;
+        const float width = static_cast<float>(PreviewCommandPanelWidth) - PanelPadding * 2.0f;
+        m_AnimationTimelineSlider.Label = "TIME";
+        m_AnimationTimelineSlider.ApplyCommand = PreviewCommandType::SET_ANIMATION_NORMALIZED_TIME;
+        m_AnimationTimelineSlider.Minimum = 0u;
+        m_AnimationTimelineSlider.Maximum = 1000u;
+        m_AnimationTimelineSlider.Step = 1u;
+        m_AnimationTimelineSlider.ValueBounds = sf::FloatRect(x, y, width, ButtonHeight);
+        m_AnimationTimelineSlider.TrackBounds = sf::FloatRect(x + 52.0f, y + 14.0f, std::max(1.0f, width - 112.0f), 4.0f);
         y += ButtonHeight + RowSpacing;
     }
 
@@ -511,14 +547,19 @@ namespace PixelShipGeneratorPreview
 
         if (mode == PreviewCommandPanelMode::ANIMATION)
         {
-            addGroupHeader("ANIMATION", y);
+            addGroupHeader("ANIMATION LAB", y);
             addPairButtons({ PreviewCommandType::CYCLE_ANIMATION_TYPE, 0u }, { PreviewCommandType::CYCLE_MOVEMENT_PHASE, 0u }, y);
             addFullButton({ PreviewCommandType::CYCLE_FIRING_TARGET, 0u }, y);
-            addPairButtons({ PreviewCommandType::APPLY_ANIMATION_STATE, 0u }, { PreviewCommandType::RETURN_ANIMATION_TO_IDLE, 0u }, y);
-            addFullButton({ PreviewCommandType::TOGGLE_ANIMATION, 0u }, y);
+            addGroupHeader("STATE COMPOSITION", y);
+            addFullButton({ PreviewCommandType::CYCLE_ANIMATION_BASE_STATE, 0u }, y);
+            addPairButtons({ PreviewCommandType::TRIGGER_ANIMATION_FIRE, 0u }, { PreviewCommandType::RETURN_ANIMATION_TO_IDLE, 0u }, y);
+            addGroupHeader("PLAYBACK", y);
+            addPairButtons({ PreviewCommandType::TOGGLE_ANIMATION, 0u }, { PreviewCommandType::CYCLE_ANIMATION_PLAYBACK_SPEED, 0u }, y);
+            addAnimationTimelineSlider(y);
             addPairButtons({ PreviewCommandType::PREVIOUS_FRAME, 0u }, { PreviewCommandType::NEXT_FRAME, 0u }, y);
             addGroupHeader("FILES", y);
             addPairButtons({ PreviewCommandType::SAVE_CURRENT, 0u }, { PreviewCommandType::SAVE_SPRITESHEET, 0u }, y);
+            addFullButton({ PreviewCommandType::OPEN_GENERATE_WORKSPACE, 0u }, y);
             return;
         }
 
@@ -570,6 +611,7 @@ namespace PixelShipGeneratorPreview
             for (PreviewCommandPanelSlider& slider : m_CalibrationSliders) { if (slider.ValueBounds.contains(position)) { return &slider; } }
             return nullptr;
         }
+        if (m_Mode == PreviewCommandPanelMode::ANIMATION) { return m_AnimationTimelineSlider.ValueBounds.contains(position) ? &m_AnimationTimelineSlider : nullptr; }
         if (m_Mode != PreviewCommandPanelMode::GENERATE) { return nullptr; }
         if (m_WidthSlider.ValueBounds.contains(position)) { return &m_WidthSlider; }
         if (m_HeightSlider.ValueBounds.contains(position)) { return &m_HeightSlider; }
@@ -583,6 +625,7 @@ namespace PixelShipGeneratorPreview
             for (const PreviewCommandPanelSlider& slider : m_CalibrationSliders) { if (slider.ValueBounds.contains(position)) { return &slider; } }
             return nullptr;
         }
+        if (m_Mode == PreviewCommandPanelMode::ANIMATION) { return m_AnimationTimelineSlider.ValueBounds.contains(position) ? &m_AnimationTimelineSlider : nullptr; }
         if (m_Mode != PreviewCommandPanelMode::GENERATE) { return nullptr; }
         if (m_WidthSlider.ValueBounds.contains(position)) { return &m_WidthSlider; }
         if (m_HeightSlider.ValueBounds.contains(position)) { return &m_HeightSlider; }
@@ -596,12 +639,12 @@ namespace PixelShipGeneratorPreview
         const float normalized = std::clamp((x - left) / width, 0.0f, 1.0f);
         const float range = static_cast<float>(slider.Maximum - slider.Minimum);
         const uint32_t raw = slider.Minimum + static_cast<uint32_t>(std::lround(normalized * range));
-        if (slider.ApplyCommand == PreviewCommandType::CALIBRATION_SET_WEIGHT)
+        const uint32_t step = std::max(1u, slider.Step);
+        const uint32_t snapped = slider.Minimum + ((raw - slider.Minimum + step / 2u) / step) * step;
+        if (slider.ApplyCommand == PreviewCommandType::SET_WIDTH || slider.ApplyCommand == PreviewCommandType::SET_HEIGHT)
         {
-            const uint32_t step = std::max(1u, slider.Step);
-            const uint32_t snapped = slider.Minimum + ((raw - slider.Minimum + step / 2u) / step) * step;
-            return std::clamp(snapped, slider.Minimum, slider.Maximum);
+            return std::clamp(clampPreviewDimensionValue(snapped), slider.Minimum, slider.Maximum);
         }
-        return std::clamp(clampPreviewDimensionValue(raw), slider.Minimum, slider.Maximum);
+        return std::clamp(snapped, slider.Minimum, slider.Maximum);
     }
 }

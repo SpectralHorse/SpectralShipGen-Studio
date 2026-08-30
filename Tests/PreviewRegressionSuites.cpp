@@ -13,6 +13,7 @@ namespace PixelShipGeneratorTests
             { "preview-session", "Preview Session Controllers", RegressionCategory::TOOLING, runPreviewSessionRegression, false },
             { "preview-workspaces", "Preview Workspaces & Input Routing", RegressionCategory::TOOLING, runPreviewWorkspaceRegression, false },
             { "preview-inspection", "Inspection Workspace & Ship Debug Visualization", RegressionCategory::TOOLING, runPreviewInspectionRegression, false },
+            { "animation-lab", "Animation Lab & Advanced State Inspection", RegressionCategory::TOOLING, runPreviewAnimationLabRegression, false },
             { "diagnostics-app", "Diagnostics Application Controller", RegressionCategory::TOOLING, runDiagnosticsAppRegression, false },
             { "configuration-editor", "Preview Configuration Editor", RegressionCategory::TOOLING, runPreviewConfigurationEditorRegression, false },
             { "faction-profile-editor", "Preview Faction Profile Editor", RegressionCategory::TOOLING, runPreviewFactionProfileEditorRegression, false },

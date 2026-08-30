@@ -38,16 +38,20 @@ namespace PixelShipGeneratorPreview
         PreviewAnimationActionResult resetForGeneratedShip(const PixelShipGenerator::GeneratedShip& ship);
         PreviewAnimationActionResult regenerateSelectedAnimation(const PixelShipGenerator::GeneratedShip& ship);
         PreviewAnimationActionResult cycleAnimationType(const PixelShipGenerator::GeneratedShip& ship);
+        PreviewAnimationActionResult cycleBaseMovementState(const PixelShipGenerator::GeneratedShip& ship);
+        PreviewAnimationActionResult cyclePlaybackSpeed();
         PreviewAnimationActionResult cycleMovementPhase();
         PreviewAnimationActionResult cycleFiringTarget(const PixelShipGenerator::GeneratedShip& ship);
         PreviewAnimationActionResult applySelectedState(const PixelShipGenerator::GeneratedShip& ship);
         PreviewAnimationActionResult returnToIdle(const PixelShipGenerator::GeneratedShip& ship);
         PreviewAnimationActionResult beginComposedFiringEvent(const PixelShipGenerator::GeneratedShip& ship);
+        PreviewAnimationActionResult triggerFiringEvent(const PixelShipGenerator::GeneratedShip& ship);
         PreviewAnimationAdvanceResult advancePlayback(const PixelShipGenerator::GeneratedShip& ship, double elapsedMicroseconds);
 
         void resetPlaybackAccumulator();
         bool moveFrame(int32_t delta);
         void setFrameIndex(uint32_t frameIndex);
+        bool setNormalizedTime(double normalizedTime);
 
         const std::vector<PixelShipGenerator::Image>& getActiveFrames() const;
         const PixelShipGenerator::ShipMovementAnimationClip* getActiveMovementClip() const;
@@ -55,6 +59,11 @@ namespace PixelShipGeneratorPreview
         uint64_t getActiveSeed() const;
         const PixelShipGenerator::AnimationSamplingPlan& getActiveSampling() const;
         uint32_t getActiveDurationMilliseconds() const;
+        double getActiveNormalizedTime() const;
+        double getPlaybackSpeed() const { return m_PlaybackSpeed; }
+        bool isActiveLooping() const;
+        uint32_t getActiveAnimatedComponentCount() const;
+        std::string getSemanticPhaseDisplay() const;
         std::string getEffectDisplay() const;
 
         PixelShipGenerator::ShipAnimationType getSelectedAnimationType() const { return m_SelectedAnimationType; }
@@ -81,6 +90,7 @@ namespace PixelShipGeneratorPreview
     private:
         static bool isMovementAnimationType(PixelShipGenerator::ShipAnimationType type);
         static double wrapNormalizedAnimationTime(double normalizedTime);
+        const std::vector<double>& getActiveNormalizedSampleTimes() const;
         PreviewAnimationActionResult generateSelected(const PixelShipGenerator::GeneratedShip& ship);
 
         PixelShipGenerator::ShipIdleAnimator m_IdleAnimator;
@@ -110,6 +120,7 @@ namespace PixelShipGeneratorPreview
         double m_RuntimeMovementNormalizedTime = 0.0;
         double m_ResumeMovementNormalizedTime = 0.0;
         double m_StatePreviewFrameDurationMilliseconds = 0.0;
+        double m_PlaybackSpeed = 1.0;
         std::vector<PixelShipGenerator::Image> m_StatePreviewFrames;
     };
 }

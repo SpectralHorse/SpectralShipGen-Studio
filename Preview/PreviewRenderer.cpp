@@ -49,6 +49,13 @@ namespace
         return PixelShipGeneratorApplication::wrapPixelText(text, maximumCharactersPerLine);
     }
 
+    std::string getFixedString(double value, uint32_t precision)
+    {
+        std::ostringstream stream;
+        stream << std::fixed << std::setprecision(static_cast<int>(precision)) << value;
+        return stream.str();
+    }
+
     std::string fitDebugTextToWidth(std::string text, float maximumWidth, uint32_t scale)
     {
         if (maximumWidth <= 0.0f || text.empty()) { return {}; }
@@ -466,6 +473,10 @@ namespace PixelShipGeneratorPreview
         {
             renderInspectionEmptyState(window);
         }
+        else if (data.Workspace == PreviewWorkspace::ANIMATION && data.Ship == nullptr)
+        {
+            renderAnimationEmptyState(window);
+        }
         else if (data.Workspace == PreviewWorkspace::INSPECT && data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid && data.CurrentStaticTexture != nullptr && data.PinnedTexture != nullptr && data.Recipe != nullptr)
         {
             renderComparison(window, data);
@@ -477,7 +488,7 @@ namespace PixelShipGeneratorPreview
 
         const bool singlePreviewMode = data.Mode == PreviewMode::STATIC || data.Mode == PreviewMode::ANIMATION || data.Mode == PreviewMode::FRAME_INSPECTION || data.Mode == PreviewMode::CONFIGURATION_EDITOR;
         const bool comparisonVisible = data.Workspace == PreviewWorkspace::INSPECT && data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid;
-        if (singlePreviewMode && !comparisonVisible && data.NativePreviewTexture != nullptr && data.Recipe != nullptr && (data.Workspace != PreviewWorkspace::INSPECT || data.Ship != nullptr))
+        if (singlePreviewMode && !comparisonVisible && data.NativePreviewTexture != nullptr && data.Recipe != nullptr && (data.Workspace != PreviewWorkspace::INSPECT || data.Ship != nullptr) && (data.Workspace != PreviewWorkspace::ANIMATION || data.Ship != nullptr))
         {
             renderNativePreview(window, data);
         }
@@ -589,7 +600,9 @@ namespace PixelShipGeneratorPreview
             {
                 drawPanel(window, slider.ValueBounds.left, slider.ValueBounds.top, slider.ValueBounds.width, slider.ValueBounds.height, slider.Enabled ? sf::Color(24, 26, 32) : sf::Color(20, 21, 25), sf::Color(58, 62, 72));
                 drawDebugText(window, slider.Label, slider.ValueBounds.left + 5.0f, slider.ValueBounds.top + 4.0f, sf::Color(160, 165, 180), SmallTextScale);
-                const std::string valueText = std::to_string(slider.Value);
+                const std::string valueText = slider.ApplyCommand == PreviewCommandType::SET_ANIMATION_NORMALIZED_TIME
+                    ? getFixedString(static_cast<double>(slider.Value) / 1000.0, 3u)
+                    : std::to_string(slider.Value);
                 const float valueWidth = getDebugTextWidth(valueText, SmallTextScale);
                 drawDebugText(window, valueText, slider.TrackBounds.left + std::max(0.0f, (slider.TrackBounds.width - valueWidth) * 0.5f), slider.ValueBounds.top + 3.0f, slider.Enabled ? sf::Color(232, 234, 240) : sf::Color(90, 94, 105), SmallTextScale);
                 if (!slider.DetailText.empty())
@@ -618,6 +631,10 @@ namespace PixelShipGeneratorPreview
         {
             drawDimensionSlider(commandPanel.getWidthSlider());
             drawDimensionSlider(commandPanel.getHeightSlider());
+        }
+        else if (commandPanel.getMode() == PreviewCommandPanelMode::ANIMATION)
+        {
+            drawDimensionSlider(commandPanel.getAnimationTimelineSlider());
         }
 
         const float descriptionY = static_cast<float>(PreviewWindowHeight) - 66.0f;
@@ -1204,6 +1221,20 @@ namespace PixelShipGeneratorPreview
 
         drawLabelValue(window, "MODE", getPreviewModeName(data.Mode), x, y);
 
+        if (data.Workspace == PreviewWorkspace::ANIMATION)
+        {
+            y += 4.0f;
+            drawSectionHeader(window, "ANIMATION LAB", x, y);
+            drawLabelValue(window, "BASE", getAnimationTypeDisplayName(data.RuntimeMovementType), x, y);
+            drawLabelValue(window, "TRANSIENT", data.TransientStatePreviewActive ? "FIRE" : "NONE", x, y);
+            drawLabelValue(window, "TIME", getFixedString(data.AnimationNormalizedTime, 3u), x, y);
+            drawLabelValue(window, "PHASE", data.AnimationSemanticPhase.empty() ? "-" : data.AnimationSemanticPhase, x, y);
+            drawLabelValue(window, "PLAYBACK", data.Mode == PreviewMode::ANIMATION ? "PLAY" : "PAUSED", x, y);
+            drawLabelValue(window, "SPEED", getFixedString(data.AnimationPlaybackSpeed, data.AnimationPlaybackSpeed < 1.0 ? 2u : 1u) + "x", x, y);
+            drawLabelValue(window, "LOOP", data.AnimationLooping ? "LOOP" : "ONE-SHOT", x, y);
+            drawLabelValue(window, "ANIMATED", std::to_string(data.AnimationAnimatedComponentCount), x, y);
+        }
+
         if (data.Mode == PreviewMode::CALIBRATION && data.CalibrationSession != nullptr)
         {
             const CalibrationGroupStatistics statistics = calculateCalibrationGroupStatistics(*data.CalibrationSession, data.CalibrationGroup, data.CalibrationFilter);
@@ -1442,6 +1473,13 @@ namespace PixelShipGeneratorPreview
         drawDebugText(window, "INSPECT", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 42.0f, sf::Color(240, 215, 105), TextScale);
         drawDebugText(window, "No current ship to inspect.", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 74.0f, sf::Color(210, 215, 225), TextScale);
         drawDebugText(window, "Generate or load a ship, then return to Inspect.", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 98.0f, sf::Color(150, 180, 205), SmallTextScale);
+    }
+
+    void PreviewRenderer::renderAnimationEmptyState(sf::RenderWindow& window) const
+    {
+        drawDebugText(window, "ANIMATION LAB", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 42.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, "No current ship to animate.", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 74.0f, sf::Color(210, 215, 225), TextScale);
+        drawDebugText(window, "Generate or load a ship, then return to Animation.", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 98.0f, sf::Color(150, 180, 205), SmallTextScale);
     }
 
     void PreviewRenderer::renderInspectionStatePanel(sf::RenderWindow& window, const PreviewRenderData& data, float x, float& y) const

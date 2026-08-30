@@ -61,9 +61,13 @@ namespace PixelShipGeneratorPreview
         PreviewCommandPanelState createCommandPanelState() const;
         PixelShipGenerator::Image createDiagnosticImage() const;
         void cycleAnimationType();
+        void cycleAnimationBaseState();
+        void cycleAnimationPlaybackSpeed();
         void cycleDiagnosticView();
         void cycleMovementPhase();
         void cycleFiringTarget();
+        void triggerAnimationFire();
+        void setAnimationNormalizedTime(uint32_t value);
         void applySelectedAnimationState();
         void returnAnimationToIdle();
         bool beginComposedFiringEvent();

@@ -164,6 +164,15 @@ namespace
         }
     }
 
+    std::string getPlaybackSpeedDisplay(double speed)
+    {
+        if (speed <= 0.25) { return "0.25x"; }
+        if (speed <= 0.5) { return "0.5x"; }
+        if (speed <= 1.0) { return "1x"; }
+        if (speed <= 2.0) { return "2x"; }
+        return "4x";
+    }
+
     std::string getAnimationTypeFileToken(PixelShipGenerator::ShipAnimationType type)
     {
         switch (type)
@@ -630,6 +639,30 @@ namespace PixelShipGeneratorPreview
         updateWindowTitle();
     }
 
+    void ShipGeneratorPreviewApp::cycleAnimationBaseState()
+    {
+        const PreviewAnimationActionResult result = m_AnimationSession.cycleBaseMovementState(m_GeneratedShip);
+        if (!result.Success)
+        {
+            if (!result.StatusMessage.empty()) { setStatusMessage(result.StatusMessage); }
+            return;
+        }
+        if (result.ActiveFramesChanged && !refreshAnimationTextures()) { return; }
+        if (result.StartPlayback) { enterAnimationPlayback(); }
+        if (!result.StatusMessage.empty()) { setStatusMessage(result.StatusMessage); }
+        updateCommandPanelState();
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::cycleAnimationPlaybackSpeed()
+    {
+        const PreviewAnimationActionResult result = m_AnimationSession.cyclePlaybackSpeed();
+        if (!result.StatusMessage.empty()) { setStatusMessage("Playback speed: " + getPlaybackSpeedDisplay(m_AnimationSession.getPlaybackSpeed())); }
+        m_AnimationClock.restart();
+        updateCommandPanelState();
+        updateWindowTitle();
+    }
+
     void ShipGeneratorPreviewApp::cycleMovementPhase()
     {
         const PreviewAnimationActionResult result = m_AnimationSession.cycleMovementPhase();
@@ -653,6 +686,34 @@ namespace PixelShipGeneratorPreview
         if (result.ActiveFramesChanged && !refreshAnimationTextures()) { return; }
         if (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) { setDisplayedAnimationFrame(0u); }
         if (!result.StatusMessage.empty()) { setStatusMessage(result.StatusMessage); }
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::triggerAnimationFire()
+    {
+        const PreviewAnimationActionResult result = m_AnimationSession.triggerFiringEvent(m_GeneratedShip);
+        if (!result.Success)
+        {
+            if (!result.StatusMessage.empty()) { setStatusMessage(result.StatusMessage); }
+            updateCommandPanelState();
+            updateWindowTitle();
+            return;
+        }
+        if (result.ActiveFramesChanged && !refreshAnimationTextures()) { return; }
+        if (result.StartPlayback) { enterAnimationPlayback(); }
+        if (!result.StatusMessage.empty()) { setStatusMessage(result.StatusMessage); }
+        updateCommandPanelState();
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::setAnimationNormalizedTime(uint32_t value)
+    {
+        if (!m_AnimationSession.setNormalizedTime(static_cast<double>(std::min(value, 1000u)) / 1000.0)) { return; }
+        m_PreviewMode = PreviewMode::FRAME_INSPECTION;
+        setDisplayedAnimationFrame(m_AnimationSession.getFrameIndex());
+        m_AnimationSession.resetPlaybackAccumulator();
+        m_AnimationClock.restart();
+        updateCommandPanelState();
         updateWindowTitle();
     }
 
@@ -1739,6 +1800,12 @@ namespace PixelShipGeneratorPreview
         state.InspectionGroupValue = getPreviewInspectionGroupName(m_Diagnostics.InspectionGroup);
         state.InspectionViewValue = getDiagnosticViewModeName(m_Diagnostics.ViewMode);
         state.InspectionPresentationValue = getPreviewInspectionPresentationName(m_Diagnostics.InspectionPresentation);
+        state.AnimationTypeValue = getAnimationTypeDisplayName(m_AnimationSession.getSelectedAnimationType());
+        state.AnimationBaseStateValue = m_AnimationSession.getRuntimeMovementType() == PixelShipGenerator::ShipAnimationType::IDLE ? "NEUTRAL" : getAnimationTypeDisplayName(m_AnimationSession.getRuntimeMovementType());
+        state.AnimationPhaseValue = m_AnimationSession.getSemanticPhaseDisplay();
+        state.AnimationPlaybackSpeedValue = getPlaybackSpeedDisplay(m_AnimationSession.getPlaybackSpeed());
+        state.AnimationTimelineValue = static_cast<uint32_t>(std::lround(std::clamp(m_AnimationSession.getActiveNormalizedTime(), 0.0, 1.0) * 1000.0));
+        state.AnimationTimelineDetail = std::to_string(m_AnimationSession.getFrameIndex() + 1u) + "/" + std::to_string(m_AnimationSession.getActiveFrames().size());
         state.CurrentDimensions = getCurrentRecipe().Dimensions;
         state.AspectRatioLocked = m_AspectRatioLocked;
         state.ResolutionBookmarkCount = static_cast<uint32_t>(std::min<std::size_t>(m_Collections.getResolutionBookmarks().size(), state.ResolutionBookmarks.size()));
@@ -1872,8 +1939,12 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::PREVIOUS_GENERATION_STAGE: moveGenerationStage(-1); break;
         case PreviewCommandType::NEXT_GENERATION_STAGE: moveGenerationStage(1); break;
         case PreviewCommandType::CYCLE_ANIMATION_TYPE: cycleAnimationType(); break;
+        case PreviewCommandType::CYCLE_ANIMATION_BASE_STATE: cycleAnimationBaseState(); break;
         case PreviewCommandType::CYCLE_MOVEMENT_PHASE: cycleMovementPhase(); break;
         case PreviewCommandType::CYCLE_FIRING_TARGET: cycleFiringTarget(); break;
+        case PreviewCommandType::TRIGGER_ANIMATION_FIRE: triggerAnimationFire(); break;
+        case PreviewCommandType::CYCLE_ANIMATION_PLAYBACK_SPEED: cycleAnimationPlaybackSpeed(); break;
+        case PreviewCommandType::SET_ANIMATION_NORMALIZED_TIME: setAnimationNormalizedTime(command.Value); break;
         case PreviewCommandType::APPLY_ANIMATION_STATE: applySelectedAnimationState(); break;
         case PreviewCommandType::RETURN_ANIMATION_TO_IDLE: returnAnimationToIdle(); break;
         case PreviewCommandType::TOGGLE_ANIMATION:
@@ -2188,6 +2259,10 @@ namespace PixelShipGeneratorPreview
             return;
         }
         m_CommandPanel.onMouseMove(position);
+        if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::ANIMATION && m_CommandPanel.getAnimationTimelineSlider().Dragging)
+        {
+            setAnimationNormalizedTime(m_CommandPanel.getAnimationTimelineSlider().Value);
+        }
 
         if (m_PreviewMode == PreviewMode::GALLERY) { m_GalleryState.Grid.HoveredIndex = findPreviewThumbnailItemAtPosition(position, m_GalleryState.Grid); }
         if (m_PreviewMode == PreviewMode::FAVORITES) { m_FavoritesState.Grid.HoveredIndex = findPreviewThumbnailItemAtPosition(position, m_FavoritesState.Grid); }
@@ -2311,7 +2386,7 @@ namespace PixelShipGeneratorPreview
 
         if (type == PreviewCommandType::TOGGLE_HELP) { return true; }
         const bool inspectWorkspace = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT;
-        if (inspectWorkspace && type == PreviewCommandType::OPEN_GENERATE_WORKSPACE) { return true; }
+        if ((inspectWorkspace || m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::ANIMATION) && type == PreviewCommandType::OPEN_GENERATE_WORKSPACE) { return true; }
         if (inspectWorkspace && type == PreviewCommandType::OPEN_REROLL_STUDIO) { return hasCurrentShip(); }
         if (inspectWorkspace && type == PreviewCommandType::ADD_CURRENT_TO_FAVORITES) { return hasCurrentShip() && !isCurrentFavorite(); }
         if (inspectWorkspace && type == PreviewCommandType::PIN_CURRENT) { return hasCurrentShip(); }
@@ -2495,7 +2570,11 @@ namespace PixelShipGeneratorPreview
             return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? !m_AnimationSession.getIdleAnimation().Frames.empty() : !getActiveAnimationFrames().empty();
         }
         if (type == PreviewCommandType::TOGGLE_FRAME_INSPECTION) { return !getActiveAnimationFrames().empty(); }
-        if (type == PreviewCommandType::CYCLE_ANIMATION_TYPE) { return true; }
+        if (type == PreviewCommandType::CYCLE_ANIMATION_TYPE) { return hasCurrentShip(); }
+        if (type == PreviewCommandType::CYCLE_ANIMATION_BASE_STATE) { return hasCurrentShip(); }
+        if (type == PreviewCommandType::TRIGGER_ANIMATION_FIRE) { return hasCurrentShip(); }
+        if (type == PreviewCommandType::CYCLE_ANIMATION_PLAYBACK_SPEED) { return hasCurrentShip() && !getActiveAnimationFrames().empty(); }
+        if (type == PreviewCommandType::SET_ANIMATION_NORMALIZED_TIME) { return hasCurrentShip() && !getActiveAnimationFrames().empty(); }
         if (type == PreviewCommandType::CYCLE_MOVEMENT_PHASE) { return m_AnimationSession.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::IDLE && m_AnimationSession.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::FIRE; }
         if (type == PreviewCommandType::CYCLE_FIRING_TARGET) { return m_AnimationSession.getSelectedAnimationType() == PixelShipGenerator::ShipAnimationType::FIRE && m_AnimationSession.getFiringTargets().size() > 1u; }
         if (type == PreviewCommandType::APPLY_ANIMATION_STATE) { return true; }
@@ -2503,7 +2582,7 @@ namespace PixelShipGeneratorPreview
 
         if (m_PreviewMode == PreviewMode::FRAME_INSPECTION)
         {
-            return type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME || type == PreviewCommandType::CYCLE_ANIMATION_TYPE || type == PreviewCommandType::CYCLE_MOVEMENT_PHASE || type == PreviewCommandType::CYCLE_FIRING_TARGET || type == PreviewCommandType::APPLY_ANIMATION_STATE || type == PreviewCommandType::RETURN_ANIMATION_TO_IDLE;
+            return type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME || type == PreviewCommandType::CYCLE_ANIMATION_TYPE || type == PreviewCommandType::CYCLE_ANIMATION_BASE_STATE || type == PreviewCommandType::CYCLE_MOVEMENT_PHASE || type == PreviewCommandType::CYCLE_FIRING_TARGET || type == PreviewCommandType::TRIGGER_ANIMATION_FIRE || type == PreviewCommandType::CYCLE_ANIMATION_PLAYBACK_SPEED || type == PreviewCommandType::SET_ANIMATION_NORMALIZED_TIME || type == PreviewCommandType::APPLY_ANIMATION_STATE || type == PreviewCommandType::RETURN_ANIMATION_TO_IDLE;
         }
         if (type == PreviewCommandType::PREVIOUS_FRAME || type == PreviewCommandType::NEXT_FRAME || type == PreviewCommandType::GALLERY_LEFT || type == PreviewCommandType::GALLERY_RIGHT || type == PreviewCommandType::GALLERY_UP || type == PreviewCommandType::GALLERY_DOWN || type == PreviewCommandType::SELECT_GALLERY_CANDIDATE) { return false; }
         if (type == PreviewCommandType::PREVIOUS_HISTORY) { return m_Collections.getHistoryIndex() > 0u; }
@@ -3039,6 +3118,11 @@ namespace PixelShipGeneratorPreview
         data.HistoryIndex = m_Collections.getHistoryIndex();
         data.HistoryCount = m_Collections.getHistoryCount();
         data.AnimationFrameIndex = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? m_GenerateIdleFrameIndex : m_AnimationSession.getFrameIndex();
+        data.AnimationNormalizedTime = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::ANIMATION ? m_AnimationSession.getActiveNormalizedTime() : 0.0;
+        data.AnimationPlaybackSpeed = m_AnimationSession.getPlaybackSpeed();
+        data.AnimationLooping = m_AnimationSession.isActiveLooping();
+        data.AnimationAnimatedComponentCount = m_AnimationSession.getActiveAnimatedComponentCount();
+        data.AnimationSemanticPhase = m_AnimationSession.getSemanticPhaseDisplay();
         data.CommandPanel = m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR ? nullptr : &m_CommandPanel;
         data.ConfigurationEditor = m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR ? &m_ConfigurationEditor : nullptr;
         data.CurrentIsFavorite = isCurrentFavorite();
@@ -3744,7 +3828,11 @@ namespace PixelShipGeneratorPreview
             setDisplayedAnimationFrame(m_AnimationSession.getFrameIndex());
         }
 
-        if (result.ActiveFramesChanged || result.FrameChanged || result.ReturnToStatic) { updateWindowTitle(); }
+        if (result.ActiveFramesChanged || result.FrameChanged || result.ReturnToStatic)
+        {
+            updateCommandPanelState();
+            updateWindowTitle();
+        }
     }
 
     void ShipGeneratorPreviewApp::updateCommandPanelState()
@@ -3789,6 +3877,7 @@ namespace PixelShipGeneratorPreview
         else if (workspace == PreviewWorkspace::ANIMATION)
         {
             if (targetMode != PreviewMode::ANIMATION && targetMode != PreviewMode::FRAME_INSPECTION) { targetMode = PreviewMode::FRAME_INSPECTION; }
+            if (!hasCurrentShip()) { setStatusMessage("No current ship to animate. Return to Generate first."); }
         }
         else if (!isPreviewModeOwnedByWorkspace(workspace, targetMode))
         {
@@ -3874,6 +3963,9 @@ namespace PixelShipGeneratorPreview
                 }
             }
             title += " | Frame " + std::to_string(m_AnimationSession.getFrameIndex() + 1u) + "/" + std::to_string(animationFrames.size());
+            title += " | t=" + std::to_string(m_AnimationSession.getActiveNormalizedTime());
+            title += " | " + m_AnimationSession.getSemanticPhaseDisplay();
+            title += " | Speed " + getPlaybackSpeedDisplay(m_AnimationSession.getPlaybackSpeed());
             title += " | AnimationSeed: " + std::to_string(getActiveAnimationSeed());
             title += " | FX: " + getAnimationEffectDisplay();
         }

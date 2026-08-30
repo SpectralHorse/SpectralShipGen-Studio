@@ -59,6 +59,11 @@ namespace PixelShipGeneratorPreview
         std::size_t HistoryIndex = 0u;
         std::size_t HistoryCount = 0u;
         uint32_t AnimationFrameIndex = 0u;
+        double AnimationNormalizedTime = 0.0;
+        double AnimationPlaybackSpeed = 1.0;
+        bool AnimationLooping = false;
+        uint32_t AnimationAnimatedComponentCount = 0u;
+        std::string AnimationSemanticPhase;
         bool CurrentIsFavorite = false;
         const std::string* StatusMessage = nullptr;
         const CalibrationCandidatePair* CalibrationPair = nullptr;
@@ -93,6 +98,7 @@ namespace PixelShipGeneratorPreview
         void renderPersistentStatePanel(sf::RenderWindow& window, const PreviewRenderData& data) const;
         void renderInspectionStatePanel(sf::RenderWindow& window, const PreviewRenderData& data, float x, float& y) const;
         void renderInspectionEmptyState(sf::RenderWindow& window) const;
+        void renderAnimationEmptyState(sf::RenderWindow& window) const;
         void renderWorkspaceNavigation(sf::RenderWindow& window, const PreviewWorkspaceNavigation& navigation) const;
         void renderHelpOverlay(sf::RenderWindow& window, PreviewWorkspace workspace) const;
         void renderGenerationInspector(sf::RenderWindow& window, const PreviewRenderData& data) const;

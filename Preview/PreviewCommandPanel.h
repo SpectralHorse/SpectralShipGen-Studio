@@ -96,6 +96,12 @@ namespace PixelShipGeneratorPreview
         std::string InspectionGroupValue;
         std::string InspectionViewValue;
         std::string InspectionPresentationValue;
+        std::string AnimationTypeValue;
+        std::string AnimationBaseStateValue;
+        std::string AnimationPhaseValue;
+        std::string AnimationPlaybackSpeedValue;
+        uint32_t AnimationTimelineValue = 0u;
+        std::string AnimationTimelineDetail;
         PreviewCommandPanelMode Mode = PreviewCommandPanelMode::GENERATE;
         std::array<bool, PixelShipGenerator::GenerationDomainCount> RerollStudioSelectedDomains = {};
         std::string CalibrationGroupValue;
@@ -119,6 +125,7 @@ namespace PixelShipGeneratorPreview
         const PreviewCommandPanelSlider& getWidthSlider() const;
         const PreviewCommandPanelSlider& getHeightSlider() const;
         const std::vector<PreviewCommandPanelSlider>& getCalibrationSliders() const;
+        const PreviewCommandPanelSlider& getAnimationTimelineSlider() const;
         const std::vector<PreviewCommandPanelGroupHeader>& getGroupHeaders() const;
         PreviewCommandPanelMode getMode() const;
         int32_t getHoveredButtonIndex() const;
@@ -137,6 +144,7 @@ namespace PixelShipGeneratorPreview
         void addDimensionSliders(float& y);
         void addDimensionControlButtons(float& y);
         void addCalibrationWeightSliders(float& y);
+        void addAnimationTimelineSlider(float& y);
         void addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain domain, float x, float y, float width, float height);
         void buildLayout(PreviewCommandPanelMode mode = PreviewCommandPanelMode::GENERATE);
         int32_t findButtonIndex(sf::Vector2f position) const;
@@ -150,6 +158,7 @@ namespace PixelShipGeneratorPreview
         PreviewCommandPanelSlider m_WidthSlider;
         PreviewCommandPanelSlider m_HeightSlider;
         std::vector<PreviewCommandPanelSlider> m_CalibrationSliders;
+        PreviewCommandPanelSlider m_AnimationTimelineSlider;
         std::vector<PreviewCommandPanelGroupHeader> m_GroupHeaders;
         PreviewCommandPanelMode m_Mode = PreviewCommandPanelMode::GENERATE;
         int32_t m_HoveredButtonIndex = -1;

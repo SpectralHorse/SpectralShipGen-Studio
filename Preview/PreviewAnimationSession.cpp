@@ -33,6 +33,18 @@ namespace PixelShipGeneratorPreview
             }
         }
 
+        std::string getFiringPhaseDisplayName(PixelShipGenerator::ShipFiringAnimationPhase phase)
+        {
+            switch (phase)
+            {
+            case PixelShipGenerator::ShipFiringAnimationPhase::REST: return "REST";
+            case PixelShipGenerator::ShipFiringAnimationPhase::PRE_FIRE: return "PREFIRE";
+            case PixelShipGenerator::ShipFiringAnimationPhase::RECOIL: return "RECOIL";
+            case PixelShipGenerator::ShipFiringAnimationPhase::RECOVERY: return "RECOVERY";
+            default: return "UNKNOWN";
+            }
+        }
+
         std::string getWeaponTypeDisplayName(PixelShipGenerator::ShipWeaponType type)
         {
             switch (type)
@@ -128,7 +140,39 @@ namespace PixelShipGeneratorPreview
         m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
         m_AnimationFrameIndex = 0u;
         PreviewAnimationActionResult result = generateSelected(ship);
-        result.StatusMessage = "Animation type: " + getAnimationTypeDisplayName(m_SelectedAnimationType);
+        if (result.StatusMessage.empty()) { result.StatusMessage = "Animation type: " + getAnimationTypeDisplayName(m_SelectedAnimationType); }
+        return result;
+    }
+
+    PreviewAnimationActionResult PreviewAnimationSession::cycleBaseMovementState(const PixelShipGenerator::GeneratedShip& ship)
+    {
+        constexpr std::array<PixelShipGenerator::ShipAnimationType, 5u> BaseStates = {
+            PixelShipGenerator::ShipAnimationType::IDLE,
+            PixelShipGenerator::ShipAnimationType::MOVE_LEFT,
+            PixelShipGenerator::ShipAnimationType::MOVE_RIGHT,
+            PixelShipGenerator::ShipAnimationType::MOVE_UP,
+            PixelShipGenerator::ShipAnimationType::MOVE_DOWN
+        };
+        const PixelShipGenerator::ShipAnimationType reference = m_MovementTransitionPending ? m_PendingMovementType : m_RuntimeMovementType;
+        const auto iterator = std::find(BaseStates.begin(), BaseStates.end(), reference);
+        const std::size_t currentIndex = iterator == BaseStates.end() ? 0u : static_cast<std::size_t>(std::distance(BaseStates.begin(), iterator));
+        const PixelShipGenerator::ShipAnimationType target = BaseStates[(currentIndex + 1u) % BaseStates.size()];
+        m_SelectedAnimationType = target;
+        m_AnimationFrameIndex = 0u;
+        PreviewAnimationActionResult result = target == PixelShipGenerator::ShipAnimationType::IDLE ? returnToIdle(ship) : applySelectedState(ship);
+        if (result.Success) { result.StatusMessage = "Base movement: " + getAnimationTypeDisplayName(target); }
+        return result;
+    }
+
+    PreviewAnimationActionResult PreviewAnimationSession::cyclePlaybackSpeed()
+    {
+        constexpr std::array<double, 5u> Speeds = { 0.25, 0.5, 1.0, 2.0, 4.0 };
+        auto iterator = std::find(Speeds.begin(), Speeds.end(), m_PlaybackSpeed);
+        const std::size_t currentIndex = iterator == Speeds.end() ? 2u : static_cast<std::size_t>(std::distance(Speeds.begin(), iterator));
+        m_PlaybackSpeed = Speeds[(currentIndex + 1u) % Speeds.size()];
+        m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
+        PreviewAnimationActionResult result;
+        result.StatusMessage = "Playback speed: " + std::to_string(m_PlaybackSpeed) + "x";
         return result;
     }
 
@@ -312,13 +356,20 @@ namespace PixelShipGeneratorPreview
         return result;
     }
 
+    PreviewAnimationActionResult PreviewAnimationSession::triggerFiringEvent(const PixelShipGenerator::GeneratedShip& ship)
+    {
+        m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::FIRE;
+        m_AnimationFrameIndex = 0u;
+        return beginComposedFiringEvent(ship);
+    }
+
     PreviewAnimationAdvanceResult PreviewAnimationSession::advancePlayback(const PixelShipGenerator::GeneratedShip& ship, double elapsedMicroseconds)
     {
         PreviewAnimationAdvanceResult result;
         const std::vector<PixelShipGenerator::Image>& frames = getActiveFrames();
         if (frames.empty()) { return result; }
         const double frameDurationMicroseconds = std::max(1.0, getActiveFrameDurationMilliseconds() * 1000.0);
-        m_AnimationPlaybackAccumulatorMicroseconds += std::max(0.0, elapsedMicroseconds);
+        m_AnimationPlaybackAccumulatorMicroseconds += std::max(0.0, elapsedMicroseconds) * m_PlaybackSpeed;
         if (m_AnimationPlaybackAccumulatorMicroseconds < frameDurationMicroseconds) { return result; }
 
         const uint32_t elapsedFrames = std::max(1u, static_cast<uint32_t>(m_AnimationPlaybackAccumulatorMicroseconds / frameDurationMicroseconds));
@@ -462,6 +513,34 @@ namespace PixelShipGeneratorPreview
         m_AnimationFrameIndex = frames.empty() ? 0u : std::min(frameIndex, static_cast<uint32_t>(frames.size() - 1u));
     }
 
+    const std::vector<double>& PreviewAnimationSession::getActiveNormalizedSampleTimes() const
+    {
+        if (m_TransientStatePreviewActive) { return m_FiringAnimation.NormalizedSampleTimes; }
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.NormalizedSampleTimes; }
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return m_FiringAnimation.NormalizedSampleTimes; }
+        const auto* clip = getActiveMovementClip();
+        if (clip != nullptr) { return clip->NormalizedSampleTimes; }
+        static const std::vector<double> EmptyTimes;
+        return EmptyTimes;
+    }
+
+    bool PreviewAnimationSession::setNormalizedTime(double normalizedTime)
+    {
+        const std::vector<double>& sampleTimes = getActiveNormalizedSampleTimes();
+        if (sampleTimes.empty()) { return false; }
+        const double target = std::clamp(normalizedTime, 0.0, 1.0);
+        auto iterator = std::lower_bound(sampleTimes.begin(), sampleTimes.end(), target);
+        std::size_t index = iterator == sampleTimes.end() ? sampleTimes.size() - 1u : static_cast<std::size_t>(std::distance(sampleTimes.begin(), iterator));
+        if (index > 0u && std::abs(sampleTimes[index - 1u] - target) <= std::abs(sampleTimes[index] - target)) { --index; }
+        m_AnimationFrameIndex = static_cast<uint32_t>(index);
+        if (!m_TransientStatePreviewActive && m_SelectedAnimationType == m_RuntimeMovementType && isMovementAnimationType(m_SelectedAnimationType) && m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN)
+        {
+            m_RuntimeMovementNormalizedTime = sampleTimes[index];
+        }
+        m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
+        return true;
+    }
+
     const PixelShipGenerator::ShipMovementAnimationClip* PreviewAnimationSession::getActiveMovementClip() const
     {
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE || m_MovementAnimation.Type != m_SelectedAnimationType) { return nullptr; }
@@ -509,6 +588,40 @@ namespace PixelShipGeneratorPreview
         if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.DurationMilliseconds; }
         const auto* clip = getActiveMovementClip();
         return clip != nullptr ? clip->DurationMilliseconds : 0u;
+    }
+
+    double PreviewAnimationSession::getActiveNormalizedTime() const
+    {
+        const std::vector<double>& sampleTimes = getActiveNormalizedSampleTimes();
+        return m_AnimationFrameIndex < sampleTimes.size() ? sampleTimes[m_AnimationFrameIndex] : 0.0;
+    }
+
+    bool PreviewAnimationSession::isActiveLooping() const
+    {
+        if (m_TransientStatePreviewActive || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return false; }
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return true; }
+        const auto* clip = getActiveMovementClip();
+        return clip != nullptr && clip->Looping;
+    }
+
+    uint32_t PreviewAnimationSession::getActiveAnimatedComponentCount() const
+    {
+        return getActiveSampling().ActiveAnimatedComponentCount;
+    }
+
+    std::string PreviewAnimationSession::getSemanticPhaseDisplay() const
+    {
+        if (m_TransientStatePreviewActive || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE)
+        {
+            return getFiringPhaseDisplayName(PixelShipGenerator::getFiringAnimationPhase(getActiveNormalizedTime()));
+        }
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return "LOOP"; }
+        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_UP || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_DOWN)
+        {
+            if (m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::ENTER) { return "ENTER / ACCEL"; }
+            if (m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::EXIT) { return "EXIT / BRAKE"; }
+        }
+        return getMovementPhaseDisplayName(m_MovementAnimationPhase);
     }
 
     std::string PreviewAnimationSession::getEffectDisplay() const
