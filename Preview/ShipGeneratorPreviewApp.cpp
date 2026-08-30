@@ -17,6 +17,7 @@
 #include "PreviewCommand.h"
 #include "PreviewFavoritesPersistence.h"
 #include "PreviewPreferences.h"
+#include "UserPresetPersistence.h"
 #include "ShipGenerationRecipeSerializer.h"
 #include "PreviewThumbnailGrid.h"
 #include "ShipGenerationSeeds.h"
@@ -25,9 +26,12 @@
 
 namespace
 {
+    using namespace PixelShipGeneratorPreview;
+
     constexpr uint32_t GalleryCandidateMaximumAttempts = 16u;
     const std::filesystem::path PreviewPreferencesPath = "pixel_ship_generator_preview_preferences.json";
     const std::filesystem::path PreviewFavoritesPath = "pixel_ship_generator_preview_favorites.json";
+    const std::filesystem::path UserPresetLibraryPath = "pixel_ship_generator_preview_user_presets.json";
     const std::filesystem::path CalibrationSessionPath = "generation_calibration_session.json";
     const std::filesystem::path CalibrationReportPath = "generation_calibration_report.csv";
     const std::filesystem::path CalibrationTuningProfilePath = "generation_tuning_profile.json";
@@ -250,6 +254,27 @@ namespace
         return getAvailableOutputPath(baseName, ".shipgen.json");
     }
 
+    std::string getFileSafePresetName(const std::string& displayName)
+    {
+        std::string name = displayName;
+        for (char& character : name)
+        {
+            const unsigned char value = static_cast<unsigned char>(character);
+            if (value < 32u || character == '<' || character == '>' || character == ':' || character == '"' ||
+                character == '/' || character == '\\' || character == '|' || character == '?' || character == '*')
+            {
+                character = '_';
+            }
+        }
+        while (!name.empty() && (name.back() == ' ' || name.back() == '.')) { name.pop_back(); }
+        return name.empty() ? "user_preset" : name;
+    }
+
+    std::filesystem::path getAvailableUserPresetPath(const std::string& displayName)
+    {
+        return getAvailableOutputPath("preset_" + getFileSafePresetName(displayName), ".shipgenpreset.json");
+    }
+
     std::string getFrameNumberString(uint32_t frameIndex)
     {
         return frameIndex + 1u < 10u ? "0" + std::to_string(frameIndex + 1u) : std::to_string(frameIndex + 1u);
@@ -282,6 +307,31 @@ namespace
         }
         path = std::filesystem::path(input);
         return true;
+    }
+
+    bool readUserPresetPathFromConsole(std::filesystem::path& path)
+    {
+        std::cout << "Enter .shipgenpreset.json path: ";
+        std::string input;
+        std::getline(std::cin >> std::ws, input);
+        if (input.empty())
+        {
+            std::cerr << "User preset path cannot be empty.\n";
+            return false;
+        }
+        path = std::filesystem::path(input);
+        return true;
+    }
+
+    UserPresetCategory userPresetCategory(ConfigurationEditorProfileKind kind)
+    {
+        switch (kind)
+        {
+        case ConfigurationEditorProfileKind::STRUCTURAL: return UserPresetCategory::STRUCTURAL;
+        case ConfigurationEditorProfileKind::FACTION: return UserPresetCategory::FACTION;
+        case ConfigurationEditorProfileKind::PALETTE: return UserPresetCategory::PALETTE;
+        default: return UserPresetCategory::USER_PRESET_CATEGORY_END;
+        }
     }
 
     bool isSupportedPreviewRecipeResolution(const PixelShipGeneratorPreview::PreviewGenerationRecipe& recipe)
@@ -342,6 +392,7 @@ namespace PixelShipGeneratorPreview
         m_Collections = PreviewCollectionSession(initialRecipe);
         m_CalibrationSession = createGenerationCalibrationSession(m_SeedGenerator());
         loadPreviewAppPreferences();
+        loadUserPresetLibraryState();
         loadFavoriteCollection();
     }
 
@@ -1023,6 +1074,7 @@ namespace PixelShipGeneratorPreview
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
         m_ConfigurationEditor.openStructuralProfile(std::move(name), profile);
+        m_ConfigurationEditor.setExistingCustomPreset(m_ConfigurationEditorTargetPresetId.has_value());
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
         setDisplayedStaticFrame();
         updateWindowTitle();
@@ -1075,6 +1127,7 @@ namespace PixelShipGeneratorPreview
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
         m_ConfigurationEditor.openFactionProfile(std::move(name), profile);
+        m_ConfigurationEditor.setExistingCustomPreset(m_ConfigurationEditorTargetFactionPresetId.has_value());
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
         setDisplayedStaticFrame();
         updateWindowTitle();
@@ -1137,6 +1190,7 @@ namespace PixelShipGeneratorPreview
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
         m_ConfigurationEditor.openPaletteConfiguration(std::move(name), configuration);
+        m_ConfigurationEditor.setExistingCustomPreset(m_ConfigurationEditorTargetPalettePresetId.has_value());
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
         setDisplayedStaticFrame();
         updateWindowTitle();
@@ -1175,6 +1229,7 @@ namespace PixelShipGeneratorPreview
                 if (m_ConfigurationEditorTargetFactionPresetId.has_value() && m_CustomPresetWorkspace.updateFaction(*m_ConfigurationEditorTargetFactionPresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile())) { id = *m_ConfigurationEditorTargetFactionPresetId; }
                 else { id = m_CustomPresetWorkspace.addFaction(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile()); }
                 const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
+                const bool persisted = saveUserPresetLibraryState();
                 recipe.FactionSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
                 recipe.Faction = PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END;
                 recipe.FactionProfile = m_ConfigurationEditor.getDraftFactionProfile();
@@ -1183,7 +1238,7 @@ namespace PixelShipGeneratorPreview
                 m_ConfigurationEditor.close();
                 m_PreviewMode = PreviewMode::STATIC;
                 appendHistoryEntry(recipe);
-                setStatusMessage("Applied runtime faction profile: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
+                setStatusMessage("Applied user faction profile: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()) + (persisted ? "" : " (persistence failed)"));
             }
             else if (kind == ConfigurationEditorProfileKind::PALETTE)
             {
@@ -1191,6 +1246,7 @@ namespace PixelShipGeneratorPreview
                 if (m_ConfigurationEditorTargetPalettePresetId.has_value() && m_CustomPresetWorkspace.updatePalette(*m_ConfigurationEditorTargetPalettePresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftPaletteConfiguration())) { id = *m_ConfigurationEditorTargetPalettePresetId; }
                 else { id = m_CustomPresetWorkspace.addPalette(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftPaletteConfiguration()); }
                 const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(id);
+                const bool persisted = saveUserPresetLibraryState();
                 recipe.PaletteConfiguration = m_ConfigurationEditor.getDraftPaletteConfiguration();
                 m_SelectedBuiltInPalettePreset.reset();
                 m_SelectedPalettePresetId = id;
@@ -1198,7 +1254,7 @@ namespace PixelShipGeneratorPreview
                 m_ConfigurationEditor.close();
                 m_PreviewMode = PreviewMode::STATIC;
                 appendHistoryEntry(recipe);
-                setStatusMessage("Applied runtime palette: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
+                setStatusMessage("Applied user palette: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()) + (persisted ? "" : " (persistence failed)"));
             }
             else
             {
@@ -1206,6 +1262,7 @@ namespace PixelShipGeneratorPreview
                 if (m_ConfigurationEditorTargetPresetId.has_value() && m_CustomPresetWorkspace.updateStructural(*m_ConfigurationEditorTargetPresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile())) { id = *m_ConfigurationEditorTargetPresetId; }
                 else { id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile()); }
                 const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
+                const bool persisted = saveUserPresetLibraryState();
                 recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
                 recipe.Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
                 recipe.StructuralProfile = m_ConfigurationEditor.getDraftProfile();
@@ -1214,7 +1271,7 @@ namespace PixelShipGeneratorPreview
                 m_ConfigurationEditor.close();
                 m_PreviewMode = PreviewMode::STATIC;
                 appendHistoryEntry(recipe);
-                setStatusMessage("Applied runtime structural profile: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
+                setStatusMessage("Applied user structural profile: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()) + (persisted ? "" : " (persistence failed)"));
             }
             break;
         }
@@ -1224,22 +1281,31 @@ namespace PixelShipGeneratorPreview
             {
                 const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addFaction(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile());
                 const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
-                if (preset != nullptr) { m_ConfigurationEditorTargetFactionPresetId = id; m_ConfigurationEditor.openFactionProfile(preset->Name, preset->Profile); setStatusMessage("Editing duplicated runtime faction: " + preset->Name); }
+                if (preset != nullptr) { m_ConfigurationEditorTargetFactionPresetId = id; m_ConfigurationEditor.openFactionProfile(preset->Name, preset->Profile); m_ConfigurationEditor.setExistingCustomPreset(true); const bool persisted = saveUserPresetLibraryState(); setStatusMessage("Editing duplicated user faction: " + preset->Name + (persisted ? "" : " (persistence failed)")); }
             }
             else if (kind == ConfigurationEditorProfileKind::PALETTE)
             {
                 const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addPalette(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftPaletteConfiguration());
                 const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(id);
-                if (preset != nullptr) { m_ConfigurationEditorTargetPalettePresetId = id; m_ConfigurationEditor.openPaletteConfiguration(preset->Name, preset->Configuration); setStatusMessage("Editing duplicated runtime palette: " + preset->Name); }
+                if (preset != nullptr) { m_ConfigurationEditorTargetPalettePresetId = id; m_ConfigurationEditor.openPaletteConfiguration(preset->Name, preset->Configuration); m_ConfigurationEditor.setExistingCustomPreset(true); const bool persisted = saveUserPresetLibraryState(); setStatusMessage("Editing duplicated user palette: " + preset->Name + (persisted ? "" : " (persistence failed)")); }
             }
             else
             {
                 const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile());
                 const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
-                if (preset != nullptr) { m_ConfigurationEditorTargetPresetId = id; m_ConfigurationEditor.openStructuralProfile(preset->Name, preset->Profile); setStatusMessage("Editing duplicated runtime profile: " + preset->Name); }
+                if (preset != nullptr) { m_ConfigurationEditorTargetPresetId = id; m_ConfigurationEditor.openStructuralProfile(preset->Name, preset->Profile); m_ConfigurationEditor.setExistingCustomPreset(true); const bool persisted = saveUserPresetLibraryState(); setStatusMessage("Editing duplicated user profile: " + preset->Name + (persisted ? "" : " (persistence failed)")); }
             }
             break;
         }
+        case ConfigurationEditorAction::DELETE_PRESET:
+            deleteConfigurationEditorPreset();
+            break;
+        case ConfigurationEditorAction::EXPORT_PRESET:
+            exportConfigurationEditorPreset();
+            break;
+        case ConfigurationEditorAction::IMPORT_PRESET:
+            importConfigurationEditorPreset();
+            break;
         case ConfigurationEditorAction::CANCEL:
             m_ConfigurationEditorTargetPresetId.reset();
             m_ConfigurationEditorTargetFactionPresetId.reset();
@@ -1256,6 +1322,118 @@ namespace PixelShipGeneratorPreview
         default:
             break;
         }
+    }
+
+    void ShipGeneratorPreviewApp::deleteConfigurationEditorPreset()
+    {
+        const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
+        bool removed = false;
+        std::string name;
+
+        if (kind == ConfigurationEditorProfileKind::FACTION && m_ConfigurationEditorTargetFactionPresetId.has_value())
+        {
+            const RuntimeCustomPresetId id = *m_ConfigurationEditorTargetFactionPresetId;
+            if (const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id); preset != nullptr) { name = preset->Name; }
+            removed = m_CustomPresetWorkspace.removeFaction(id);
+            if (m_SelectedFactionPresetId == id) { m_SelectedFactionPresetId.reset(); }
+            m_ConfigurationEditorTargetFactionPresetId.reset();
+        }
+        else if (kind == ConfigurationEditorProfileKind::PALETTE && m_ConfigurationEditorTargetPalettePresetId.has_value())
+        {
+            const RuntimeCustomPresetId id = *m_ConfigurationEditorTargetPalettePresetId;
+            if (const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(id); preset != nullptr) { name = preset->Name; }
+            removed = m_CustomPresetWorkspace.removePalette(id);
+            if (m_SelectedPalettePresetId == id) { m_SelectedPalettePresetId.reset(); }
+            m_ConfigurationEditorTargetPalettePresetId.reset();
+        }
+        else if (kind == ConfigurationEditorProfileKind::STRUCTURAL && m_ConfigurationEditorTargetPresetId.has_value())
+        {
+            const RuntimeCustomPresetId id = *m_ConfigurationEditorTargetPresetId;
+            if (const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id); preset != nullptr) { name = preset->Name; }
+            removed = m_CustomPresetWorkspace.removeStructural(id);
+            if (m_SelectedStructuralPresetId == id) { m_SelectedStructuralPresetId.reset(); }
+            m_ConfigurationEditorTargetPresetId.reset();
+        }
+
+        if (!removed)
+        {
+            setStatusMessage("Delete ignored: built-in and unsaved presets are immutable/non-persistent.");
+            return;
+        }
+
+        const bool persisted = saveUserPresetLibraryState();
+        m_ConfigurationEditor.close();
+        m_PreviewMode = m_ConfigurationEditorReturnMode;
+        if (m_PreviewMode == PreviewMode::ANIMATION) { m_AnimationClock.restart(); }
+        if (m_PreviewMode == PreviewMode::STATIC) { setDisplayedStaticFrame(); }
+        setStatusMessage("Deleted user preset: " + name + (persisted ? "" : " (persistence failed)"));
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::exportConfigurationEditorPreset()
+    {
+        const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
+        const UserPresetCategory category = userPresetCategory(kind);
+        std::optional<RuntimeCustomPresetId> id;
+        std::string name;
+        if (kind == ConfigurationEditorProfileKind::FACTION) { id = m_ConfigurationEditorTargetFactionPresetId; if (id.has_value()) { if (const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(*id); preset != nullptr) { name = preset->Name; } } }
+        else if (kind == ConfigurationEditorProfileKind::PALETTE) { id = m_ConfigurationEditorTargetPalettePresetId; if (id.has_value()) { if (const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(*id); preset != nullptr) { name = preset->Name; } } }
+        else { id = m_ConfigurationEditorTargetPresetId; if (id.has_value()) { if (const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(*id); preset != nullptr) { name = preset->Name; } } }
+
+        if (!id.has_value() || name.empty())
+        {
+            setStatusMessage("Export requires a saved user preset. Duplicate or Apply first.");
+            return;
+        }
+
+        const std::filesystem::path path = getAvailableUserPresetPath(name);
+        std::string error;
+        if (!exportUserPreset(m_CustomPresetWorkspace, category, *id, path, error))
+        {
+            std::cerr << error << '\n';
+            setStatusMessage("User preset export failed: " + error);
+            return;
+        }
+        setStatusMessage("Exported user preset: " + path.string());
+        std::cout << "Exported user preset: " << path.string() << '\n';
+    }
+
+    void ShipGeneratorPreviewApp::importConfigurationEditorPreset()
+    {
+        std::filesystem::path path;
+        if (!readUserPresetPathFromConsole(path)) { return; }
+
+        const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
+        const UserPresetImportResult imported = PixelShipGeneratorPreview::importUserPreset(m_CustomPresetWorkspace, userPresetCategory(kind), path);
+        if (!imported.Success)
+        {
+            std::cerr << imported.Error << '\n';
+            setStatusMessage("User preset import failed: " + imported.Error);
+            return;
+        }
+
+        const bool persisted = saveUserPresetLibraryState();
+        if (kind == ConfigurationEditorProfileKind::FACTION)
+        {
+            m_ConfigurationEditorTargetFactionPresetId = imported.ImportedId;
+            const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(imported.ImportedId);
+            if (preset != nullptr) { m_ConfigurationEditor.openFactionProfile(preset->Name, preset->Profile); }
+        }
+        else if (kind == ConfigurationEditorProfileKind::PALETTE)
+        {
+            m_ConfigurationEditorTargetPalettePresetId = imported.ImportedId;
+            const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(imported.ImportedId);
+            if (preset != nullptr) { m_ConfigurationEditor.openPaletteConfiguration(preset->Name, preset->Configuration); }
+        }
+        else
+        {
+            m_ConfigurationEditorTargetPresetId = imported.ImportedId;
+            const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(imported.ImportedId);
+            if (preset != nullptr) { m_ConfigurationEditor.openStructuralProfile(preset->Name, preset->Profile); }
+        }
+        m_ConfigurationEditor.setExistingCustomPreset(true);
+        setStatusMessage("Imported user preset: " + imported.DisplayName + (imported.DisplayNameDisambiguated ? " (name disambiguated)" : "") + (persisted ? "" : " (persistence failed)"));
+        updateWindowTitle();
     }
 
     void ShipGeneratorPreviewApp::enterGalleryMode()
@@ -2198,6 +2376,29 @@ namespace PixelShipGeneratorPreview
         appendHistoryEntry(recipe);
     }
 
+    void ShipGeneratorPreviewApp::loadUserPresetLibraryState()
+    {
+        UserPresetLibraryLoadResult result = loadUserPresetLibrary(UserPresetLibraryPath);
+        if (!result.Success)
+        {
+            std::cerr << "User preset library load failed: " << result.Error << '\n';
+            return;
+        }
+        m_CustomPresetWorkspace = std::move(result.Workspace);
+        if (result.SkippedEntryCount > 0u)
+        {
+            std::cerr << "User preset library skipped " << result.SkippedEntryCount << " invalid entr" << (result.SkippedEntryCount == 1u ? "y" : "ies") << ".\n";
+        }
+    }
+
+    bool ShipGeneratorPreviewApp::saveUserPresetLibraryState()
+    {
+        std::string error;
+        if (saveUserPresetLibrary(m_CustomPresetWorkspace, UserPresetLibraryPath, error)) { return true; }
+        std::cerr << "User preset library save failed: " << error << '\n';
+        return false;
+    }
+
     void ShipGeneratorPreviewApp::loadFavoriteCollection()
     {
         const PreviewFavoritesLoadResult result = loadPreviewFavorites(PreviewFavoritesPath);
@@ -3125,7 +3326,7 @@ namespace PixelShipGeneratorPreview
             const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
             const std::size_t runtimeCount = kind == ConfigurationEditorProfileKind::FACTION ? m_CustomPresetWorkspace.getFactionPresets().size() : kind == ConfigurationEditorProfileKind::PALETTE ? m_CustomPresetWorkspace.getPalettePresets().size() : m_CustomPresetWorkspace.getStructuralPresets().size();
             const char* editorName = kind == ConfigurationEditorProfileKind::FACTION ? "Faction Editor" : kind == ConfigurationEditorProfileKind::PALETTE ? "Palette Editor" : "Structural Editor";
-            m_Window.setTitle("Pixel Ship Generator | " + std::string(editorName) + " | " + m_ConfigurationEditor.getName() + " | Runtime presets: " + std::to_string(runtimeCount));
+            m_Window.setTitle("Pixel Ship Generator | " + std::string(editorName) + " | " + m_ConfigurationEditor.getName() + " | User presets: " + std::to_string(runtimeCount));
             return;
         }
 

@@ -7,6 +7,7 @@ namespace PixelShipGeneratorTests
         std::vector<RegressionSuite> suites = {
             { "preview-preferences", "Preview Preferences", RegressionCategory::PERSISTENCE, runPreviewPreferencesRegression, false },
             { "preview-favorites", "Preview Favorites Persistence", RegressionCategory::PERSISTENCE, runPreviewFavoritesPersistenceRegression, false },
+            { "user-presets", "User Preset Library", RegressionCategory::PERSISTENCE, runPreviewUserPresetPersistenceRegression, false },
             { "preview-session", "Preview Session Controllers", RegressionCategory::TOOLING, runPreviewSessionRegression, false },
             { "diagnostics-app", "Diagnostics Application Controller", RegressionCategory::TOOLING, runDiagnosticsAppRegression, false },
             { "configuration-editor", "Preview Configuration Editor", RegressionCategory::TOOLING, runPreviewConfigurationEditorRegression, false },

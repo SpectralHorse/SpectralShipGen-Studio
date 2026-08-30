@@ -85,6 +85,9 @@ namespace PixelShipGeneratorPreview
         void enterPaletteConfigurationEditor();
         void enterPaletteConfigurationEditorDefault();
         void handleConfigurationEditorEvent(const ConfigurationEditorEvent& event);
+        void deleteConfigurationEditorPreset();
+        void exportConfigurationEditorPreset();
+        void importConfigurationEditorPreset();
         void enterGalleryMode();
         void enterGalleryModeFromKnownSeed();
         void enterFavoritesMode();
@@ -118,6 +121,7 @@ namespace PixelShipGeneratorPreview
         void loadFavorite(uint32_t index);
         void loadFavoriteCollection();
         void loadPreviewAppPreferences();
+        void loadUserPresetLibraryState();
         void next();
         void pinCurrentShip();
         void previous();
@@ -137,6 +141,7 @@ namespace PixelShipGeneratorPreview
         void saveCurrent();
         void saveFavoriteCollection();
         void savePreviewAppPreferences();
+        bool saveUserPresetLibraryState();
         void saveSpritesheet();
         void selectGalleryCandidate(uint32_t index);
         void selectResolutionBookmark(uint32_t index);

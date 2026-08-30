@@ -1,6 +1,8 @@
 #include "RuntimeCustomPresetWorkspace.h"
 
 #include <algorithm>
+#include <limits>
+#include <stdexcept>
 #include <utility>
 
 namespace PixelShipGeneratorPreview
@@ -68,6 +70,30 @@ namespace PixelShipGeneratorPreview
         const RuntimeCustomPresetId id = allocateId();
         m_PalettePresets.push_back({ id, makeUniquePaletteName(name), configuration });
         return id;
+    }
+
+    bool RuntimeCustomPresetWorkspace::restoreStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
+    {
+        if (id == 0u || containsId(id)) { return false; }
+        m_StructuralPresets.push_back({ id, makeUniqueStructuralName(name), profile });
+        ensureNextIdAtLeast(id == std::numeric_limits<RuntimeCustomPresetId>::max() ? id : id + 1u);
+        return true;
+    }
+
+    bool RuntimeCustomPresetWorkspace::restoreFaction(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipFactionProfile& profile)
+    {
+        if (id == 0u || containsId(id)) { return false; }
+        m_FactionPresets.push_back({ id, makeUniqueFactionName(name), profile });
+        ensureNextIdAtLeast(id == std::numeric_limits<RuntimeCustomPresetId>::max() ? id : id + 1u);
+        return true;
+    }
+
+    bool RuntimeCustomPresetWorkspace::restorePalette(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    {
+        if (id == 0u || containsId(id)) { return false; }
+        m_PalettePresets.push_back({ id, makeUniquePaletteName(name), configuration });
+        ensureNextIdAtLeast(id == std::numeric_limits<RuntimeCustomPresetId>::max() ? id : id + 1u);
+        return true;
     }
 
     bool RuntimeCustomPresetWorkspace::updateStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
@@ -163,12 +189,29 @@ namespace PixelShipGeneratorPreview
     const std::vector<RuntimeFactionPreset>& RuntimeCustomPresetWorkspace::getFactionPresets() const { return m_FactionPresets; }
     const std::vector<RuntimePalettePreset>& RuntimeCustomPresetWorkspace::getPalettePresets() const { return m_PalettePresets; }
 
+    RuntimeCustomPresetId RuntimeCustomPresetWorkspace::getNextId() const { return m_NextId; }
+
+    void RuntimeCustomPresetWorkspace::ensureNextIdAtLeast(RuntimeCustomPresetId nextId)
+    {
+        if (nextId != 0u && nextId > m_NextId) { m_NextId = nextId; }
+    }
+
     std::string RuntimeCustomPresetWorkspace::makeUniqueStructuralName(const std::string& base) const { return makeUniqueName(m_StructuralPresets, base); }
     std::string RuntimeCustomPresetWorkspace::makeUniqueFactionName(const std::string& base) const { return makeUniqueName(m_FactionPresets, base); }
     std::string RuntimeCustomPresetWorkspace::makeUniquePaletteName(const std::string& base) const { return makeUniqueName(m_PalettePresets, base); }
 
+    bool RuntimeCustomPresetWorkspace::containsId(RuntimeCustomPresetId id) const
+    {
+        return findStructural(id) != nullptr || findFaction(id) != nullptr || findPalette(id) != nullptr;
+    }
+
     RuntimeCustomPresetId RuntimeCustomPresetWorkspace::allocateId()
     {
-        return m_NextId++;
+        while (m_NextId != 0u && containsId(m_NextId)) { ++m_NextId; }
+        if (m_NextId == 0u) { throw std::overflow_error("Runtime custom preset ID space exhausted."); }
+        const RuntimeCustomPresetId id = m_NextId;
+        ++m_NextId;
+        if (m_NextId == 0u) { m_NextId = id; }
+        return id;
     }
 }

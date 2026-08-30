@@ -34,14 +34,20 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::ShipPaletteConfiguration Configuration;
     };
 
-    // Session-only authoring workspace used by the Preview editors. Persistence,
-    // import and export of reusable user presets belong to the later preset-library task.
+    // Preview-side owner for editable user presets. Built-ins remain in Core; this
+    // workspace owns only application-local custom entries and their stable local IDs.
     class RuntimeCustomPresetWorkspace
     {
     public:
         RuntimeCustomPresetId addStructural(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
         RuntimeCustomPresetId addFaction(std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
         RuntimeCustomPresetId addPalette(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
+
+        // Persistence restore path. IDs are retained across restarts and remain globally
+        // unique across the three custom preset categories.
+        bool restoreStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
+        bool restoreFaction(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
+        bool restorePalette(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
 
         bool updateStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
         bool updateFaction(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
@@ -65,10 +71,14 @@ namespace PixelShipGeneratorPreview
         const std::vector<RuntimeFactionPreset>& getFactionPresets() const;
         const std::vector<RuntimePalettePreset>& getPalettePresets() const;
 
+        RuntimeCustomPresetId getNextId() const;
+        void ensureNextIdAtLeast(RuntimeCustomPresetId nextId);
+
     private:
         std::string makeUniqueStructuralName(const std::string& base) const;
         std::string makeUniqueFactionName(const std::string& base) const;
         std::string makeUniquePaletteName(const std::string& base) const;
+        bool containsId(RuntimeCustomPresetId id) const;
         RuntimeCustomPresetId allocateId();
 
     private:

@@ -710,7 +710,7 @@ namespace PixelShipGeneratorPreview
         const bool factionEditor = editor.getProfileKind() == ConfigurationEditorProfileKind::FACTION;
         const bool paletteEditor = editor.getProfileKind() == ConfigurationEditorProfileKind::PALETTE;
         const char* editorTitle = paletteEditor ? "PALETTE CONFIGURATION EDITOR" : factionEditor ? "FACTION PROFILE EDITOR" : "STRUCTURAL PROFILE EDITOR";
-        const char* editorSubtitle = paletteEditor ? "PUBLIC ShipPaletteConfiguration / GENERATED + FIXED" : factionEditor ? "PUBLIC ShipFactionProfile / RUNTIME CUSTOM FACTIONS" : "PUBLIC ShipGenerationProfile / RUNTIME CUSTOM PRESETS";
+        const char* editorSubtitle = paletteEditor ? "PUBLIC ShipPaletteConfiguration / GENERATED + FIXED" : factionEditor ? "PUBLIC ShipFactionProfile / USER PRESETS" : "PUBLIC ShipGenerationProfile / USER PRESETS";
         drawDebugText(window, editorTitle, panel.Left + 18.0f, panel.Top + 12.0f, sf::Color(240, 215, 105), TextScale);
         drawDebugText(window, editorSubtitle, panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), SmallTextScale);
         drawDebugText(window, "PgDn structural | Shift+PgDn faction | Ctrl+PgDn palette", panel.Left + panel.Width - 390.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);

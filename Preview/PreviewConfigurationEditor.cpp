@@ -28,7 +28,10 @@ namespace PixelShipGeneratorPreview
             { ConfigurationEditorAction::APPLY, "APPLY", {}, true },
             { ConfigurationEditorAction::CANCEL, "CANCEL", {}, true },
             { ConfigurationEditorAction::RESET, "RESET", {}, true },
-            { ConfigurationEditorAction::DUPLICATE, "DUPLICATE", {}, true }
+            { ConfigurationEditorAction::DUPLICATE, "DUPLICATE", {}, true },
+            { ConfigurationEditorAction::DELETE_PRESET, "DELETE", {}, false },
+            { ConfigurationEditorAction::EXPORT_PRESET, "EXPORT", {}, false },
+            { ConfigurationEditorAction::IMPORT_PRESET, "IMPORT", {}, true }
         } };
 
         collapseAllProfileSections();
@@ -37,6 +40,7 @@ namespace PixelShipGeneratorPreview
 
     void PreviewConfigurationEditor::openStructuralProfile(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
     {
+        m_ExistingCustomPreset = false;
         m_Open = true;
         m_ProfileKind = ConfigurationEditorProfileKind::STRUCTURAL;
         m_InitialName = std::move(name);
@@ -54,6 +58,7 @@ namespace PixelShipGeneratorPreview
 
     void PreviewConfigurationEditor::openFactionProfile(std::string name, const PixelShipGenerator::ShipFactionProfile& profile)
     {
+        m_ExistingCustomPreset = false;
         m_Open = true;
         m_ProfileKind = ConfigurationEditorProfileKind::FACTION;
         m_InitialName = std::move(name);
@@ -71,6 +76,7 @@ namespace PixelShipGeneratorPreview
 
     void PreviewConfigurationEditor::openPaletteConfiguration(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
     {
+        m_ExistingCustomPreset = false;
         m_Open = true;
         m_ProfileKind = ConfigurationEditorProfileKind::PALETTE;
         m_InitialName = std::move(name);
@@ -236,6 +242,7 @@ namespace PixelShipGeneratorPreview
     ConfigurationEditorEvent PreviewConfigurationEditor::createCancelEvent() const { return { ConfigurationEditorAction::CANCEL }; }
 
     void PreviewConfigurationEditor::setValidationResult(const PixelShipGenerator::ValidationResult& result) { m_ValidationResult = result; }
+    void PreviewConfigurationEditor::setExistingCustomPreset(bool existingCustomPreset) { m_ExistingCustomPreset = existingCustomPreset; rebuildLayout(); }
     const PixelShipGenerator::ValidationResult& PreviewConfigurationEditor::getValidationResult() const { return m_ValidationResult; }
     const std::string& PreviewConfigurationEditor::getName() const { return m_NameField.Value; }
     const PixelShipGenerator::ShipGenerationProfile& PreviewConfigurationEditor::getDraftProfile() const { return m_DraftProfile; }
@@ -263,7 +270,7 @@ namespace PixelShipGeneratorPreview
     const std::vector<PaletteProfileEditorSection>& PreviewConfigurationEditor::getPaletteProfileSections() const { return m_PaletteBindings.getSections(); }
     bool PreviewConfigurationEditor::isPaletteSectionVisible(const PaletteProfileEditorSection& section) const { return m_PaletteBindings.isSectionVisible(section); }
     const ConfigurationEditorSectionState& PreviewConfigurationEditor::getValidationSection() const { return m_ValidationSection; }
-    const std::array<ConfigurationEditorActionButton, 4u>& PreviewConfigurationEditor::getActionButtons() const { return m_ActionButtons; }
+    const std::array<ConfigurationEditorActionButton, 7u>& PreviewConfigurationEditor::getActionButtons() const { return m_ActionButtons; }
     std::size_t PreviewConfigurationEditor::getBoundValueCount() const
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { return m_ProfileBindings.getBoundValueCount(); }
@@ -438,17 +445,31 @@ namespace PixelShipGeneratorPreview
         }
 
         constexpr float ActionGap = 8.0f;
+        constexpr std::size_t ActionColumns = 4u;
+        constexpr float ActionRowGap = 8.0f;
         const float actionTop = m_PanelBounds.Top + m_PanelBounds.Height - ActionAreaHeight + 18.0f;
-        const float actionWidth = (m_PanelBounds.Width - PanelPadding * 2.0f - ActionGap * 3.0f) / 4.0f;
+        const float actionWidth = (m_PanelBounds.Width - PanelPadding * 2.0f - ActionGap * static_cast<float>(ActionColumns - 1u)) / static_cast<float>(ActionColumns);
         for (std::size_t index = 0u; index < m_ActionButtons.size(); ++index)
         {
-            m_ActionButtons[index].Bounds = { m_PanelBounds.Left + PanelPadding + static_cast<float>(index) * (actionWidth + ActionGap), actionTop, actionWidth, 32.0f };
+            const std::size_t column = index % ActionColumns;
+            const std::size_t row = index / ActionColumns;
+            m_ActionButtons[index].Bounds = { m_PanelBounds.Left + PanelPadding + static_cast<float>(column) * (actionWidth + ActionGap), actionTop + static_cast<float>(row) * (32.0f + ActionRowGap), actionWidth, 32.0f };
         }
         const bool validForCommit = m_ValidationResult.isValid() && !m_NameField.Value.empty();
-        m_ActionButtons[0u].Enabled = validForCommit;
-        m_ActionButtons[1u].Enabled = true;
-        m_ActionButtons[2u].Enabled = hasUnsavedChanges();
-        m_ActionButtons[3u].Enabled = validForCommit;
+        for (ConfigurationEditorActionButton& button : m_ActionButtons)
+        {
+            switch (button.Action)
+            {
+            case ConfigurationEditorAction::APPLY: button.Enabled = validForCommit; break;
+            case ConfigurationEditorAction::CANCEL: button.Enabled = true; break;
+            case ConfigurationEditorAction::RESET: button.Enabled = hasUnsavedChanges(); break;
+            case ConfigurationEditorAction::DUPLICATE: button.Enabled = validForCommit; break;
+            case ConfigurationEditorAction::DELETE_PRESET: button.Enabled = m_ExistingCustomPreset; break;
+            case ConfigurationEditorAction::EXPORT_PRESET: button.Enabled = m_ExistingCustomPreset; break;
+            case ConfigurationEditorAction::IMPORT_PRESET: button.Enabled = true; break;
+            default: button.Enabled = false; break;
+            }
+        }
     }
 
     bool PreviewConfigurationEditor::isWithinContentViewport(float x, float y) const { return m_ContentViewport.contains(x, y); }

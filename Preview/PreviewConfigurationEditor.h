@@ -33,6 +33,9 @@ namespace PixelShipGeneratorPreview
         CANCEL,
         RESET,
         DUPLICATE,
+        DELETE_PRESET,
+        EXPORT_PRESET,
+        IMPORT_PRESET,
         CONFIGURATION_EDITOR_ACTION_END
     };
 
@@ -77,6 +80,7 @@ namespace PixelShipGeneratorPreview
         ConfigurationEditorEvent createCancelEvent() const;
 
         void setValidationResult(const PixelShipGenerator::ValidationResult& result);
+        void setExistingCustomPreset(bool existingCustomPreset);
         const PixelShipGenerator::ValidationResult& getValidationResult() const;
 
         const std::string& getName() const;
@@ -98,7 +102,7 @@ namespace PixelShipGeneratorPreview
         const std::vector<PaletteProfileEditorSection>& getPaletteProfileSections() const;
         bool isPaletteSectionVisible(const PaletteProfileEditorSection& section) const;
         const ConfigurationEditorSectionState& getValidationSection() const;
-        const std::array<ConfigurationEditorActionButton, 4u>& getActionButtons() const;
+        const std::array<ConfigurationEditorActionButton, 7u>& getActionButtons() const;
         std::size_t getBoundValueCount() const;
 
         const StructuralIntegerFieldBinding* findIntegerField(std::string_view path) const;
@@ -168,6 +172,7 @@ namespace PixelShipGeneratorPreview
         ShipFactionProfileEditorBindings m_FactionProfileBindings;
         ShipPaletteConfigurationEditorBindings m_PaletteBindings;
         ConfigurationEditorSectionState m_ValidationSection = { "VALIDATION", {}, true };
-        std::array<ConfigurationEditorActionButton, 4u> m_ActionButtons = {};
+        std::array<ConfigurationEditorActionButton, 7u> m_ActionButtons = {};
+        bool m_ExistingCustomPreset = false;
     };
 }
