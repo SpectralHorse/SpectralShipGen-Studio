@@ -301,6 +301,111 @@ namespace PixelShipGeneratorPreview
         return Options.empty() || Value >= Options.size() ? std::string("-") : Options[Value];
     }
 
+    void ConfigurationColorControl::configure(std::string label, uint32_t red, uint32_t green, uint32_t blue, uint32_t alpha)
+    {
+        Label = std::move(label);
+        setValues(red, green, blue, alpha);
+    }
+
+    void ConfigurationColorControl::setRowBounds(const ConfigurationEditorRect& bounds)
+    {
+        RowBounds = bounds;
+        constexpr float LabelWidth = 198.0f;
+        constexpr float SwatchSize = 52.0f;
+        constexpr float SwatchGap = 12.0f;
+        constexpr float ValueWidth = 30.0f;
+        constexpr float ChannelHeight = 14.0f;
+        constexpr float TrackHeight = 5.0f;
+        const float right = bounds.Left + bounds.Width;
+        SwatchBounds = { right - SwatchSize, bounds.Top + (bounds.Height - SwatchSize) * 0.5f, SwatchSize, SwatchSize };
+        const float trackLeft = bounds.Left + LabelWidth;
+        const float trackRight = SwatchBounds.Left - SwatchGap - ValueWidth;
+        const float trackWidth = std::max(80.0f, trackRight - trackLeft);
+        for (std::size_t channel = 0u; channel < TrackBounds.size(); ++channel)
+        {
+            const float channelTop = bounds.Top + 6.0f + static_cast<float>(channel) * ChannelHeight;
+            TrackBounds[channel] = { trackLeft, channelTop + 4.0f, trackWidth, TrackHeight };
+        }
+    }
+
+    void ConfigurationColorControl::setValues(uint32_t red, uint32_t green, uint32_t blue, uint32_t alpha)
+    {
+        Red = std::min(255u, red);
+        Green = std::min(255u, green);
+        Blue = std::min(255u, blue);
+        Alpha = std::min(255u, alpha);
+    }
+
+    uint32_t ConfigurationColorControl::getChannel(std::size_t channel) const
+    {
+        switch (channel)
+        {
+        case 0u: return Red;
+        case 1u: return Green;
+        case 2u: return Blue;
+        case 3u: return Alpha;
+        default: return 0u;
+        }
+    }
+
+    void ConfigurationColorControl::setChannel(std::size_t channel, uint32_t value)
+    {
+        value = std::min(255u, value);
+        switch (channel)
+        {
+        case 0u: Red = value; break;
+        case 1u: Green = value; break;
+        case 2u: Blue = value; break;
+        case 3u: Alpha = value; break;
+        default: break;
+        }
+    }
+
+    uint32_t ConfigurationColorControl::valueForTrackPosition(std::size_t channel, float x) const
+    {
+        if (channel >= TrackBounds.size()) { return 0u; }
+        const ConfigurationEditorRect& track = TrackBounds[channel];
+        const float normalized = std::clamp((x - track.Left) / std::max(1.0f, track.Width), 0.0f, 1.0f);
+        return static_cast<uint32_t>(std::lround(normalized * 255.0f));
+    }
+
+    bool ConfigurationColorControl::beginPointer(float x, float y)
+    {
+        for (std::size_t channel = 0u; channel < TrackBounds.size(); ++channel)
+        {
+            ConfigurationEditorRect hit = TrackBounds[channel];
+            hit.Top -= 4.0f;
+            hit.Height += 8.0f;
+            if (!hit.contains(x, y)) { continue; }
+            DraggingChannel = static_cast<int32_t>(channel);
+            setChannel(channel, valueForTrackPosition(channel, x));
+            return true;
+        }
+        return false;
+    }
+
+    bool ConfigurationColorControl::updatePointer(float x)
+    {
+        if (DraggingChannel < 0 || static_cast<std::size_t>(DraggingChannel) >= TrackBounds.size()) { return false; }
+        const std::size_t channel = static_cast<std::size_t>(DraggingChannel);
+        setChannel(channel, valueForTrackPosition(channel, x));
+        return true;
+    }
+
+    bool ConfigurationColorControl::endPointer(float x, float)
+    {
+        if (DraggingChannel < 0 || static_cast<std::size_t>(DraggingChannel) >= TrackBounds.size()) { return false; }
+        const std::size_t channel = static_cast<std::size_t>(DraggingChannel);
+        setChannel(channel, valueForTrackPosition(channel, x));
+        DraggingChannel = -1;
+        return true;
+    }
+
+    std::string ConfigurationColorControl::getDisplayValue() const
+    {
+        return "RGBA " + std::to_string(Red) + "," + std::to_string(Green) + "," + std::to_string(Blue) + "," + std::to_string(Alpha);
+    }
+
     bool ConfigurationTextField::activate(float x, float y)
     {
         Focused = Bounds.contains(x, y);

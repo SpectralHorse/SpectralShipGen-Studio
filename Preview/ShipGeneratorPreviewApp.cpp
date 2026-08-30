@@ -11,6 +11,7 @@
 #include <utility>
 
 #include <PixelShipGenerator/SFMLImageAdapter.h>
+#include <PixelShipGenerator/BuiltInPresetCatalog.h>
 #include "GenerationCalibration.h"
 #include "GenerationCalibrationSerializer.h"
 #include "PreviewCommand.h"
@@ -406,6 +407,14 @@ namespace PixelShipGeneratorPreview
         if (entries.empty()) { return; }
         const std::size_t currentIndex = findFactionProfileSelectionIndex(entries, getCurrentRecipe(), m_SelectedFactionPresetId);
         selectFactionProfileEntry(entries[getWrappedIndex(currentIndex, delta, entries.size())]);
+    }
+
+    void ShipGeneratorPreviewApp::changePalette(int32_t delta)
+    {
+        const std::vector<PaletteProfileSelectionEntry> entries = buildPaletteProfileSelection(m_CustomPresetWorkspace);
+        if (entries.empty()) { return; }
+        const std::size_t currentIndex = findPaletteProfileSelectionIndex(entries, getCurrentRecipe(), m_SelectedBuiltInPalettePreset, m_SelectedPalettePresetId);
+        selectPaletteProfileEntry(entries[getWrappedIndex(currentIndex, delta, entries.size())]);
     }
 
     void ShipGeneratorPreviewApp::changeResolution(int32_t delta)
@@ -1083,26 +1092,88 @@ namespace PixelShipGeneratorPreview
         updateWindowTitle();
     }
 
+    void ShipGeneratorPreviewApp::enterPaletteConfigurationEditor()
+    {
+        if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
+
+        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        PixelShipGenerator::ShipPaletteConfiguration configuration = recipe.PaletteConfiguration;
+        std::string name = getCurrentPaletteDisplayName();
+        m_ConfigurationEditorTargetPalettePresetId.reset();
+
+        if (m_SelectedPalettePresetId.has_value())
+        {
+            const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(*m_SelectedPalettePresetId);
+            if (preset != nullptr)
+            {
+                configuration = preset->Configuration;
+                name = preset->Name;
+                m_ConfigurationEditorTargetPalettePresetId = preset->Id;
+            }
+        }
+        else if (m_SelectedBuiltInPalettePreset.has_value())
+        {
+            configuration.Mode = PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+            configuration.Generated = PixelShipGenerator::getBuiltInPalettePresetProfile(*m_SelectedBuiltInPalettePreset);
+            name = std::string(PixelShipGenerator::getBuiltInPalettePresetId(*m_SelectedBuiltInPalettePreset)) + " Palette Copy";
+        }
+        else if (configuration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED)
+        {
+            configuration.Mode = PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+            configuration.Generated = recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
+                ? PixelShipGenerator::getShipPaletteGenerationProfile(recipe.Faction)
+                : PixelShipGenerator::getShipPaletteGenerationProfile(recipe.FactionProfile);
+            name = "Faction Palette Copy";
+        }
+
+        if (configuration.Mode != PixelShipGenerator::ShipPaletteSourceMode::FIXED) { configuration.Fixed = m_GeneratedShip.Palette; }
+        if (configuration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FIXED)
+        {
+            configuration.Generated = recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
+                ? PixelShipGenerator::getShipPaletteGenerationProfile(recipe.Faction)
+                : PixelShipGenerator::getShipPaletteGenerationProfile(recipe.FactionProfile);
+        }
+
+        m_ConfigurationEditorReturnMode = m_PreviewMode;
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.openPaletteConfiguration(std::move(name), configuration);
+        m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
+        setDisplayedStaticFrame();
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::enterPaletteConfigurationEditorDefault()
+    {
+        if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
+        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        PixelShipGenerator::ShipPaletteConfiguration configuration;
+        configuration.Mode = PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+        configuration.Generated = recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
+            ? PixelShipGenerator::getShipPaletteGenerationProfile(recipe.Faction)
+            : PixelShipGenerator::getShipPaletteGenerationProfile(recipe.FactionProfile);
+        configuration.Fixed = m_GeneratedShip.Palette;
+        m_ConfigurationEditorReturnMode = m_PreviewMode;
+        m_ConfigurationEditorTargetPalettePresetId.reset();
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.openPaletteConfiguration("Custom Palette", configuration);
+        m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
+        setDisplayedStaticFrame();
+        updateWindowTitle();
+    }
+
     void ShipGeneratorPreviewApp::handleConfigurationEditorEvent(const ConfigurationEditorEvent& event)
     {
-        const bool factionEditor = m_ConfigurationEditor.getProfileKind() == ConfigurationEditorProfileKind::FACTION;
+        const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
         switch (event.Action)
         {
         case ConfigurationEditorAction::APPLY:
         {
             PreviewGenerationRecipe recipe = getCurrentRecipe();
-            if (factionEditor)
+            if (kind == ConfigurationEditorProfileKind::FACTION)
             {
                 RuntimeCustomPresetId id = 0u;
-                if (m_ConfigurationEditorTargetFactionPresetId.has_value() &&
-                    m_CustomPresetWorkspace.updateFaction(*m_ConfigurationEditorTargetFactionPresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile()))
-                {
-                    id = *m_ConfigurationEditorTargetFactionPresetId;
-                }
-                else
-                {
-                    id = m_CustomPresetWorkspace.addFaction(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile());
-                }
+                if (m_ConfigurationEditorTargetFactionPresetId.has_value() && m_CustomPresetWorkspace.updateFaction(*m_ConfigurationEditorTargetFactionPresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile())) { id = *m_ConfigurationEditorTargetFactionPresetId; }
+                else { id = m_CustomPresetWorkspace.addFaction(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile()); }
                 const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
                 recipe.FactionSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
                 recipe.Faction = PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END;
@@ -1114,18 +1185,26 @@ namespace PixelShipGeneratorPreview
                 appendHistoryEntry(recipe);
                 setStatusMessage("Applied runtime faction profile: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
             }
+            else if (kind == ConfigurationEditorProfileKind::PALETTE)
+            {
+                RuntimeCustomPresetId id = 0u;
+                if (m_ConfigurationEditorTargetPalettePresetId.has_value() && m_CustomPresetWorkspace.updatePalette(*m_ConfigurationEditorTargetPalettePresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftPaletteConfiguration())) { id = *m_ConfigurationEditorTargetPalettePresetId; }
+                else { id = m_CustomPresetWorkspace.addPalette(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftPaletteConfiguration()); }
+                const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(id);
+                recipe.PaletteConfiguration = m_ConfigurationEditor.getDraftPaletteConfiguration();
+                m_SelectedBuiltInPalettePreset.reset();
+                m_SelectedPalettePresetId = id;
+                m_ConfigurationEditorTargetPalettePresetId.reset();
+                m_ConfigurationEditor.close();
+                m_PreviewMode = PreviewMode::STATIC;
+                appendHistoryEntry(recipe);
+                setStatusMessage("Applied runtime palette: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
+            }
             else
             {
                 RuntimeCustomPresetId id = 0u;
-                if (m_ConfigurationEditorTargetPresetId.has_value() &&
-                    m_CustomPresetWorkspace.updateStructural(*m_ConfigurationEditorTargetPresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile()))
-                {
-                    id = *m_ConfigurationEditorTargetPresetId;
-                }
-                else
-                {
-                    id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile());
-                }
+                if (m_ConfigurationEditorTargetPresetId.has_value() && m_CustomPresetWorkspace.updateStructural(*m_ConfigurationEditorTargetPresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile())) { id = *m_ConfigurationEditorTargetPresetId; }
+                else { id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile()); }
                 const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
                 recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
                 recipe.Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
@@ -1141,33 +1220,30 @@ namespace PixelShipGeneratorPreview
         }
         case ConfigurationEditorAction::DUPLICATE:
         {
-            if (factionEditor)
+            if (kind == ConfigurationEditorProfileKind::FACTION)
             {
                 const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addFaction(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile());
                 const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
-                if (preset != nullptr)
-                {
-                    m_ConfigurationEditorTargetFactionPresetId = id;
-                    m_ConfigurationEditor.openFactionProfile(preset->Name, preset->Profile);
-                    setStatusMessage("Editing duplicated runtime faction: " + preset->Name);
-                }
+                if (preset != nullptr) { m_ConfigurationEditorTargetFactionPresetId = id; m_ConfigurationEditor.openFactionProfile(preset->Name, preset->Profile); setStatusMessage("Editing duplicated runtime faction: " + preset->Name); }
+            }
+            else if (kind == ConfigurationEditorProfileKind::PALETTE)
+            {
+                const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addPalette(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftPaletteConfiguration());
+                const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(id);
+                if (preset != nullptr) { m_ConfigurationEditorTargetPalettePresetId = id; m_ConfigurationEditor.openPaletteConfiguration(preset->Name, preset->Configuration); setStatusMessage("Editing duplicated runtime palette: " + preset->Name); }
             }
             else
             {
                 const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile());
                 const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
-                if (preset != nullptr)
-                {
-                    m_ConfigurationEditorTargetPresetId = id;
-                    m_ConfigurationEditor.openStructuralProfile(preset->Name, preset->Profile);
-                    setStatusMessage("Editing duplicated runtime profile: " + preset->Name);
-                }
+                if (preset != nullptr) { m_ConfigurationEditorTargetPresetId = id; m_ConfigurationEditor.openStructuralProfile(preset->Name, preset->Profile); setStatusMessage("Editing duplicated runtime profile: " + preset->Name); }
             }
             break;
         }
         case ConfigurationEditorAction::CANCEL:
             m_ConfigurationEditorTargetPresetId.reset();
             m_ConfigurationEditorTargetFactionPresetId.reset();
+            m_ConfigurationEditorTargetPalettePresetId.reset();
             m_ConfigurationEditor.close();
             m_PreviewMode = m_ConfigurationEditorReturnMode;
             if (m_PreviewMode == PreviewMode::ANIMATION) { m_AnimationClock.restart(); }
@@ -1333,7 +1409,7 @@ namespace PixelShipGeneratorPreview
         m_Collections.clearGallery();
         m_FavoritesState.Grid.HoveredIndex = -1;
         if (document.Recipe == getCurrentRecipe()) { regenerate(); }
-        else { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); appendHistoryEntry(document.Recipe); }
+        else { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); m_SelectedBuiltInPalettePreset.reset(); m_SelectedPalettePresetId.reset(); appendHistoryEntry(document.Recipe); }
 
         const std::string message = "Recipe loaded: " + path.string();
         setStatusMessage(message);
@@ -1395,6 +1471,7 @@ namespace PixelShipGeneratorPreview
 
         state.StyleValue = getCurrentStructuralProfileDisplayName();
         state.FactionValue = getCurrentFactionProfileDisplayName();
+        state.PaletteValue = getCurrentPaletteDisplayName();
         state.CurrentDimensions = getCurrentRecipe().Dimensions;
         state.AspectRatioLocked = m_AspectRatioLocked;
         state.ResolutionBookmarkCount = static_cast<uint32_t>(std::min<std::size_t>(m_Collections.getResolutionBookmarks().size(), state.ResolutionBookmarks.size()));
@@ -1468,6 +1545,8 @@ namespace PixelShipGeneratorPreview
             break;
         case PreviewCommandType::PREVIOUS_FACTION: changeFaction(-1); break;
         case PreviewCommandType::NEXT_FACTION: changeFaction(1); break;
+        case PreviewCommandType::PREVIOUS_PALETTE: changePalette(-1); break;
+        case PreviewCommandType::NEXT_PALETTE: changePalette(1); break;
         case PreviewCommandType::SELECT_RESOLUTION:
             if (command.Value < DirectPreviewResolutions.size()) { setResolution(DirectPreviewResolutions[command.Value]); }
             break;
@@ -1794,7 +1873,8 @@ namespace PixelShipGeneratorPreview
         }
         if (event.code == sf::Keyboard::PageDown)
         {
-            if (event.shift) { enterFactionConfigurationEditor(); }
+            if (event.control) { enterPaletteConfigurationEditor(); }
+            else if (event.shift) { enterFactionConfigurationEditor(); }
             else { enterConfigurationEditor(); }
             return;
         }
@@ -2059,6 +2139,8 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::SELECT_FACTION:
         case PreviewCommandType::PREVIOUS_FACTION:
         case PreviewCommandType::NEXT_FACTION:
+        case PreviewCommandType::PREVIOUS_PALETTE:
+        case PreviewCommandType::NEXT_PALETTE:
         case PreviewCommandType::SELECT_RESOLUTION:
         case PreviewCommandType::PREVIOUS_RESOLUTION:
         case PreviewCommandType::NEXT_RESOLUTION:
@@ -2111,6 +2193,8 @@ namespace PixelShipGeneratorPreview
 
         m_SelectedStructuralPresetId.reset();
         m_SelectedFactionPresetId.reset();
+        m_SelectedBuiltInPalettePreset.reset();
+        m_SelectedPalettePresetId.reset();
         appendHistoryEntry(recipe);
     }
 
@@ -2145,7 +2229,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::next()
     {
-        if (m_Collections.moveHistoryNext()) { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); regenerate(); }
+        if (m_Collections.moveHistoryNext()) { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); m_SelectedBuiltInPalettePreset.reset(); m_SelectedPalettePresetId.reset(); regenerate(); }
     }
 
     void ShipGeneratorPreviewApp::pinCurrentShip()
@@ -2176,7 +2260,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::previous()
     {
-        if (m_Collections.moveHistoryPrevious()) { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); regenerate(); }
+        if (m_Collections.moveHistoryPrevious()) { m_SelectedStructuralPresetId.reset(); m_SelectedFactionPresetId.reset(); m_SelectedBuiltInPalettePreset.reset(); m_SelectedPalettePresetId.reset(); regenerate(); }
     }
 
     void ShipGeneratorPreviewApp::removeCurrentFromFavorites()
@@ -2219,7 +2303,9 @@ namespace PixelShipGeneratorPreview
             std::cout << "  " << commandData.Shortcut << "    " << commandData.Description << '\n';
         }
 
-        std::cout << "  F12    Open the session-only configuration editor foundation.\n";
+        std::cout << "  PAGEDOWN          Open the structural profile editor.\n";
+        std::cout << "  SHIFT+PAGEDOWN    Open the faction profile editor.\n";
+        std::cout << "  CTRL+PAGEDOWN     Open the palette editor.\n";
         std::cout << "\n\n";
     }
 
@@ -2795,6 +2881,62 @@ namespace PixelShipGeneratorPreview
         return "CUSTOM";
     }
 
+    void ShipGeneratorPreviewApp::selectRuntimePalettePreset(RuntimeCustomPresetId id)
+    {
+        const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(id);
+        if (preset == nullptr) { return; }
+        PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        recipe.PaletteConfiguration = preset->Configuration;
+        m_SelectedBuiltInPalettePreset.reset();
+        m_SelectedPalettePresetId = id;
+        regenerate();
+        setStatusMessage("Selected runtime palette: " + preset->Name);
+    }
+
+    void ShipGeneratorPreviewApp::selectPaletteProfileEntry(const PaletteProfileSelectionEntry& entry)
+    {
+        PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        switch (entry.Kind)
+        {
+        case PaletteProfileSelectionKind::FACTION_DEFAULT:
+            recipe.PaletteConfiguration = {};
+            m_SelectedBuiltInPalettePreset.reset();
+            m_SelectedPalettePresetId.reset();
+            regenerate();
+            setStatusMessage("Selected faction-default palette language.");
+            break;
+        case PaletteProfileSelectionKind::BUILT_IN_GENERATED:
+            recipe.PaletteConfiguration.Mode = PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+            recipe.PaletteConfiguration.Generated = PixelShipGenerator::getBuiltInPalettePresetProfile(entry.PalettePreset);
+            m_SelectedBuiltInPalettePreset = entry.PalettePreset;
+            m_SelectedPalettePresetId.reset();
+            regenerate();
+            setStatusMessage("Selected built-in palette language: " + entry.Label);
+            break;
+        case PaletteProfileSelectionKind::RUNTIME_CUSTOM:
+            selectRuntimePalettePreset(entry.CustomPresetId);
+            break;
+        case PaletteProfileSelectionKind::ADD_PALETTE:
+            enterPaletteConfigurationEditorDefault();
+            break;
+        default:
+            break;
+        }
+    }
+
+    std::string ShipGeneratorPreviewApp::getCurrentPaletteDisplayName() const
+    {
+        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        if (recipe.PaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED) { return "FACTION DEFAULT"; }
+        if (m_SelectedPalettePresetId.has_value())
+        {
+            const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(*m_SelectedPalettePresetId);
+            if (preset != nullptr) { return preset->Name; }
+        }
+        if (m_SelectedBuiltInPalettePreset.has_value()) { return std::string(PixelShipGenerator::getBuiltInPalettePresetId(*m_SelectedBuiltInPalettePreset)); }
+        return recipe.PaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FIXED ? "CUSTOM FIXED" : "CUSTOM GENERATED";
+    }
+
     void ShipGeneratorPreviewApp::toggleAspectRatioLock()
     {
         if (m_AspectRatioLocked)
@@ -2980,9 +3122,10 @@ namespace PixelShipGeneratorPreview
     {
         if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
         {
-            const bool factionEditor = m_ConfigurationEditor.getProfileKind() == ConfigurationEditorProfileKind::FACTION;
-            const std::size_t runtimeCount = factionEditor ? m_CustomPresetWorkspace.getFactionPresets().size() : m_CustomPresetWorkspace.getStructuralPresets().size();
-            m_Window.setTitle("Pixel Ship Generator | " + std::string(factionEditor ? "Faction Editor" : "Structural Editor") + " | " + m_ConfigurationEditor.getName() + " | Runtime presets: " + std::to_string(runtimeCount));
+            const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
+            const std::size_t runtimeCount = kind == ConfigurationEditorProfileKind::FACTION ? m_CustomPresetWorkspace.getFactionPresets().size() : kind == ConfigurationEditorProfileKind::PALETTE ? m_CustomPresetWorkspace.getPalettePresets().size() : m_CustomPresetWorkspace.getStructuralPresets().size();
+            const char* editorName = kind == ConfigurationEditorProfileKind::FACTION ? "Faction Editor" : kind == ConfigurationEditorProfileKind::PALETTE ? "Palette Editor" : "Structural Editor";
+            m_Window.setTitle("Pixel Ship Generator | " + std::string(editorName) + " | " + m_ConfigurationEditor.getName() + " | Runtime presets: " + std::to_string(runtimeCount));
             return;
         }
 
@@ -3010,7 +3153,7 @@ namespace PixelShipGeneratorPreview
 
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         const std::string attachmentState = recipe.AttachmentsEnabled ? "ON" : "OFF";
-        std::string title = "Pixel Ship Generator | Seed: " + std::to_string(recipe.Seeds.Master) + " | " + std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height) + " | Profile: " + getCurrentStructuralProfileDisplayName() + " | Faction: " + getCurrentFactionProfileDisplayName() + " | Attachments: " + attachmentState + " | Favorite: " + (isCurrentFavorite() ? "YES" : "NO") + " | Favorites: " + std::to_string(m_Collections.getFavorites().size()) + " | S:" + getLockDisplay(m_Locks.Structure) + " P:" + getLockDisplay(m_Locks.Palette) + " D:" + getLockDisplay(m_Locks.Details) + " A:" + getLockDisplay(m_Locks.Attachments) + " | History " + std::to_string(m_Collections.getHistoryIndex() + 1u) + "/" + std::to_string(m_Collections.getHistoryCount());
+        std::string title = "Pixel Ship Generator | Seed: " + std::to_string(recipe.Seeds.Master) + " | " + std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height) + " | Profile: " + getCurrentStructuralProfileDisplayName() + " | Faction: " + getCurrentFactionProfileDisplayName() + " | Palette: " + getCurrentPaletteDisplayName() + " | Attachments: " + attachmentState + " | Favorite: " + (isCurrentFavorite() ? "YES" : "NO") + " | Favorites: " + std::to_string(m_Collections.getFavorites().size()) + " | S:" + getLockDisplay(m_Locks.Structure) + " P:" + getLockDisplay(m_Locks.Palette) + " D:" + getLockDisplay(m_Locks.Details) + " A:" + getLockDisplay(m_Locks.Attachments) + " | History " + std::to_string(m_Collections.getHistoryIndex() + 1u) + "/" + std::to_string(m_Collections.getHistoryCount());
 
         if (m_Comparison.ViewEnabled && m_Comparison.Pinned.Valid)
         {

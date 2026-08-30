@@ -5,6 +5,7 @@
 
 #include "ShipFactionProfileValidation.h"
 #include "ShipGenerationProfileValidation.h"
+#include "ShipPaletteGenerationProfileValidation.h"
 
 namespace PixelShipGeneratorPreview
 {
@@ -68,6 +69,23 @@ namespace PixelShipGeneratorPreview
         rebuildLayout();
     }
 
+    void PreviewConfigurationEditor::openPaletteConfiguration(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    {
+        m_Open = true;
+        m_ProfileKind = ConfigurationEditorProfileKind::PALETTE;
+        m_InitialName = std::move(name);
+        m_InitialPaletteConfiguration = configuration;
+        m_DraftPaletteConfiguration = configuration;
+        m_NameField.Label = "DISPLAY NAME";
+        m_NameField.Value = m_InitialName;
+        m_NameField.Focused = false;
+        m_ScrollOffset = 0.0f;
+        collapseAllProfileSections();
+        configureControlsFromDraft();
+        refreshValidation();
+        rebuildLayout();
+    }
+
     void PreviewConfigurationEditor::close()
     {
         m_Open = false;
@@ -89,16 +107,25 @@ namespace PixelShipGeneratorPreview
         if (!m_Open) { return; }
         bool changed = false;
         const auto updateSections = [&](auto& sections)
-        {
-            for (auto& section : sections)
             {
-                if (!section.Expanded) { continue; }
-                for (auto& field : section.Integers) { changed = field.Control.updatePointer(x) || changed; }
-                for (auto& field : section.WeightGroups) { changed = field.Control.updatePointer(x) || changed; }
-            }
-        };
+                for (auto& section : sections)
+                {
+                    if (!section.Expanded) { continue; }
+                    for (auto& field : section.Integers) { changed = field.Control.updatePointer(x) || changed; }
+                    for (auto& field : section.WeightGroups) { changed = field.Control.updatePointer(x) || changed; }
+                }
+            };
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { updateSections(m_ProfileBindings.getSections()); }
-        else { updateSections(m_FactionProfileBindings.getSections()); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { updateSections(m_FactionProfileBindings.getSections()); }
+        else
+        {
+            for (auto& section : m_PaletteBindings.getSections())
+            {
+                if (!section.Expanded || !m_PaletteBindings.isSectionVisible(section)) { continue; }
+                for (auto& field : section.Integers) { changed = field.Control.updatePointer(x) || changed; }
+                for (auto& field : section.Colors) { changed = field.Control.updatePointer(x) || changed; }
+            }
+        }
         if (changed)
         {
             syncDraftFromControls();
@@ -124,17 +151,27 @@ namespace PixelShipGeneratorPreview
 
         bool consumed = false;
         const auto pressSections = [&](auto& sections)
-        {
-            for (auto& section : sections)
             {
-                if (!section.Expanded || consumed) { continue; }
+                for (auto& section : sections)
+                {
+                    if (!section.Expanded || consumed) { continue; }
+                    for (auto& field : section.Integers) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
+                    if (consumed) { continue; }
+                    for (auto& field : section.WeightGroups) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
+                }
+            };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { pressSections(m_ProfileBindings.getSections()); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { pressSections(m_FactionProfileBindings.getSections()); }
+        else
+        {
+            for (auto& section : m_PaletteBindings.getSections())
+            {
+                if (!section.Expanded || !m_PaletteBindings.isSectionVisible(section) || consumed) { continue; }
                 for (auto& field : section.Integers) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
                 if (consumed) { continue; }
-                for (auto& field : section.WeightGroups) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
+                for (auto& field : section.Colors) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
             }
-        };
-        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { pressSections(m_ProfileBindings.getSections()); }
-        else { pressSections(m_FactionProfileBindings.getSections()); }
+        }
     }
 
     std::optional<ConfigurationEditorEvent> PreviewConfigurationEditor::onMouseRelease(float x, float y)
@@ -149,19 +186,30 @@ namespace PixelShipGeneratorPreview
 
         bool changed = false;
         const auto releaseSections = [&](auto& sections)
-        {
-            for (auto& section : sections)
             {
-                if (!section.Expanded) { continue; }
+                for (auto& section : sections)
+                {
+                    if (!section.Expanded) { continue; }
+                    for (auto& field : section.Integers) { changed = field.Control.endPointer(x, y) || changed; }
+                    for (auto& field : section.Ranges) { changed = field.Control.activate(x, y) || changed; }
+                    for (auto& field : section.Toggles) { changed = field.Control.activate(x, y) || changed; }
+                    for (auto& field : section.Choices) { changed = field.Control.activate(x, y) || changed; }
+                    for (auto& field : section.WeightGroups) { changed = field.Control.endPointer(x, y) || changed; }
+                }
+            };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { releaseSections(m_ProfileBindings.getSections()); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { releaseSections(m_FactionProfileBindings.getSections()); }
+        else
+        {
+            for (auto& section : m_PaletteBindings.getSections())
+            {
+                if (!section.Expanded || !m_PaletteBindings.isSectionVisible(section)) { continue; }
                 for (auto& field : section.Integers) { changed = field.Control.endPointer(x, y) || changed; }
                 for (auto& field : section.Ranges) { changed = field.Control.activate(x, y) || changed; }
-                for (auto& field : section.Toggles) { changed = field.Control.activate(x, y) || changed; }
                 for (auto& field : section.Choices) { changed = field.Control.activate(x, y) || changed; }
-                for (auto& field : section.WeightGroups) { changed = field.Control.endPointer(x, y) || changed; }
+                for (auto& field : section.Colors) { changed = field.Control.endPointer(x, y) || changed; }
             }
-        };
-        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { releaseSections(m_ProfileBindings.getSections()); }
-        else { releaseSections(m_FactionProfileBindings.getSections()); }
+        }
         if (changed)
         {
             syncDraftFromControls();
@@ -194,13 +242,15 @@ namespace PixelShipGeneratorPreview
     const PixelShipGenerator::ShipGenerationProfile& PreviewConfigurationEditor::getInitialProfile() const { return m_InitialProfile; }
     const PixelShipGenerator::ShipFactionProfile& PreviewConfigurationEditor::getDraftFactionProfile() const { return m_DraftFactionProfile; }
     const PixelShipGenerator::ShipFactionProfile& PreviewConfigurationEditor::getInitialFactionProfile() const { return m_InitialFactionProfile; }
+    const PixelShipGenerator::ShipPaletteConfiguration& PreviewConfigurationEditor::getDraftPaletteConfiguration() const { return m_DraftPaletteConfiguration; }
+    const PixelShipGenerator::ShipPaletteConfiguration& PreviewConfigurationEditor::getInitialPaletteConfiguration() const { return m_InitialPaletteConfiguration; }
 
     bool PreviewConfigurationEditor::hasUnsavedChanges() const
     {
         if (m_NameField.Value != m_InitialName) { return true; }
-        return m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL
-            ? !m_ProfileBindings.equivalent(m_DraftProfile, m_InitialProfile)
-            : !m_FactionProfileBindings.equivalent(m_DraftFactionProfile, m_InitialFactionProfile);
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { return !m_ProfileBindings.equivalent(m_DraftProfile, m_InitialProfile); }
+        if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { return !m_FactionProfileBindings.equivalent(m_DraftFactionProfile, m_InitialFactionProfile); }
+        return !m_PaletteBindings.equivalent(m_DraftPaletteConfiguration, m_InitialPaletteConfiguration);
     }
 
     float PreviewConfigurationEditor::getScrollOffset() const { return m_ScrollOffset; }
@@ -210,9 +260,16 @@ namespace PixelShipGeneratorPreview
     const ConfigurationTextField& PreviewConfigurationEditor::getNameField() const { return m_NameField; }
     const std::vector<StructuralProfileEditorSection>& PreviewConfigurationEditor::getProfileSections() const { return m_ProfileBindings.getSections(); }
     const std::vector<FactionProfileEditorSection>& PreviewConfigurationEditor::getFactionProfileSections() const { return m_FactionProfileBindings.getSections(); }
+    const std::vector<PaletteProfileEditorSection>& PreviewConfigurationEditor::getPaletteProfileSections() const { return m_PaletteBindings.getSections(); }
+    bool PreviewConfigurationEditor::isPaletteSectionVisible(const PaletteProfileEditorSection& section) const { return m_PaletteBindings.isSectionVisible(section); }
     const ConfigurationEditorSectionState& PreviewConfigurationEditor::getValidationSection() const { return m_ValidationSection; }
     const std::array<ConfigurationEditorActionButton, 4u>& PreviewConfigurationEditor::getActionButtons() const { return m_ActionButtons; }
-    std::size_t PreviewConfigurationEditor::getBoundValueCount() const { return m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL ? m_ProfileBindings.getBoundValueCount() : m_FactionProfileBindings.getBoundValueCount(); }
+    std::size_t PreviewConfigurationEditor::getBoundValueCount() const
+    {
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { return m_ProfileBindings.getBoundValueCount(); }
+        if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { return m_FactionProfileBindings.getBoundValueCount(); }
+        return m_PaletteBindings.getBoundValueCount();
+    }
 
     const StructuralIntegerFieldBinding* PreviewConfigurationEditor::findIntegerField(std::string_view path) const { return m_ProfileBindings.findInteger(path); }
     StructuralIntegerFieldBinding* PreviewConfigurationEditor::findIntegerField(std::string_view path) { return m_ProfileBindings.findInteger(path); }
@@ -236,6 +293,15 @@ namespace PixelShipGeneratorPreview
     const FactionWeightGroupBinding* PreviewConfigurationEditor::findFactionWeightGroup(std::string_view path) const { return m_FactionProfileBindings.findWeightGroup(path); }
     FactionWeightGroupBinding* PreviewConfigurationEditor::findFactionWeightGroup(std::string_view path) { return m_FactionProfileBindings.findWeightGroup(path); }
 
+    const PaletteIntegerFieldBinding* PreviewConfigurationEditor::findPaletteIntegerField(std::string_view path) const { return m_PaletteBindings.findInteger(path); }
+    PaletteIntegerFieldBinding* PreviewConfigurationEditor::findPaletteIntegerField(std::string_view path) { return m_PaletteBindings.findInteger(path); }
+    const PaletteRangeFieldBinding* PreviewConfigurationEditor::findPaletteRangeField(std::string_view path) const { return m_PaletteBindings.findRange(path); }
+    PaletteRangeFieldBinding* PreviewConfigurationEditor::findPaletteRangeField(std::string_view path) { return m_PaletteBindings.findRange(path); }
+    const PaletteChoiceFieldBinding* PreviewConfigurationEditor::findPaletteChoiceField(std::string_view path) const { return m_PaletteBindings.findChoice(path); }
+    PaletteChoiceFieldBinding* PreviewConfigurationEditor::findPaletteChoiceField(std::string_view path) { return m_PaletteBindings.findChoice(path); }
+    const PaletteColorFieldBinding* PreviewConfigurationEditor::findPaletteColorField(std::string_view path) const { return m_PaletteBindings.findColor(path); }
+    PaletteColorFieldBinding* PreviewConfigurationEditor::findPaletteColorField(std::string_view path) { return m_PaletteBindings.findColor(path); }
+
     void PreviewConfigurationEditor::setSectionExpanded(std::size_t sectionIndex, bool expanded)
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL)
@@ -244,9 +310,15 @@ namespace PixelShipGeneratorPreview
             if (sectionIndex >= sections.size()) { return; }
             sections[sectionIndex].Expanded = expanded;
         }
-        else
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION)
         {
             auto& sections = m_FactionProfileBindings.getSections();
+            if (sectionIndex >= sections.size()) { return; }
+            sections[sectionIndex].Expanded = expanded;
+        }
+        else
+        {
+            auto& sections = m_PaletteBindings.getSections();
             if (sectionIndex >= sections.size()) { return; }
             sections[sectionIndex].Expanded = expanded;
         }
@@ -256,20 +328,35 @@ namespace PixelShipGeneratorPreview
     void PreviewConfigurationEditor::configureControlsFromDraft()
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_ProfileBindings.load(m_DraftProfile); }
-        else { m_FactionProfileBindings.load(m_DraftFactionProfile); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { m_FactionProfileBindings.load(m_DraftFactionProfile); }
+        else { m_PaletteBindings.load(m_DraftPaletteConfiguration); }
     }
 
     void PreviewConfigurationEditor::syncDraftFromControls()
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_ProfileBindings.write(m_DraftProfile); }
-        else { m_FactionProfileBindings.write(m_DraftFactionProfile); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { m_FactionProfileBindings.write(m_DraftFactionProfile); }
+        else { m_PaletteBindings.write(m_DraftPaletteConfiguration); }
     }
 
     void PreviewConfigurationEditor::refreshValidation()
     {
-        setValidationResult(m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL
-            ? PixelShipGenerator::validateShipGenerationProfile(m_DraftProfile)
-            : PixelShipGenerator::validateShipFactionProfile(m_DraftFactionProfile));
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL)
+        {
+            setValidationResult(PixelShipGenerator::validateShipGenerationProfile(m_DraftProfile));
+        }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION)
+        {
+            setValidationResult(PixelShipGenerator::validateShipFactionProfile(m_DraftFactionProfile));
+        }
+        else if (m_DraftPaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED)
+        {
+            setValidationResult(PixelShipGenerator::validateShipPaletteGenerationProfile(m_DraftPaletteConfiguration.Generated));
+        }
+        else
+        {
+            setValidationResult({});
+        }
     }
 
     void PreviewConfigurationEditor::rebuildLayout()
@@ -289,29 +376,47 @@ namespace PixelShipGeneratorPreview
         y += RowHeight + SectionGap;
 
         const auto layoutSections = [&](auto& sections)
-        {
-            for (auto& section : sections)
             {
+                for (auto& section : sections)
+                {
+                    section.HeaderBounds = { contentLeft, y, contentWidth, SectionHeaderHeight };
+                    y += SectionHeaderHeight;
+                    if (section.Expanded)
+                    {
+                        for (auto& field : section.Integers) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
+                        for (auto& field : section.Ranges) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
+                        for (auto& field : section.Toggles) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
+                        for (auto& field : section.Choices) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
+                        for (auto& field : section.WeightGroups)
+                        {
+                            const float groupHeight = WeightHeaderHeight + static_cast<float>(field.Control.getRowCount()) * WeightRowHeight;
+                            field.Control.setBounds({ contentLeft, y, contentWidth, groupHeight });
+                            y += groupHeight + 4.0f;
+                        }
+                    }
+                    y += SectionGap;
+                }
+            };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { layoutSections(m_ProfileBindings.getSections()); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { layoutSections(m_FactionProfileBindings.getSections()); }
+        else
+        {
+            constexpr float ColorRowHeight = 66.0f;
+            for (auto& section : m_PaletteBindings.getSections())
+            {
+                if (!m_PaletteBindings.isSectionVisible(section)) { section.HeaderBounds = {}; continue; }
                 section.HeaderBounds = { contentLeft, y, contentWidth, SectionHeaderHeight };
                 y += SectionHeaderHeight;
                 if (section.Expanded)
                 {
                     for (auto& field : section.Integers) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
                     for (auto& field : section.Ranges) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
-                    for (auto& field : section.Toggles) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
                     for (auto& field : section.Choices) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
-                    for (auto& field : section.WeightGroups)
-                    {
-                        const float groupHeight = WeightHeaderHeight + static_cast<float>(field.Control.getRowCount()) * WeightRowHeight;
-                        field.Control.setBounds({ contentLeft, y, contentWidth, groupHeight });
-                        y += groupHeight + 4.0f;
-                    }
+                    for (auto& field : section.Colors) { field.Control.setRowBounds({ contentLeft, y, contentWidth, ColorRowHeight - 4.0f }); y += ColorRowHeight; }
                 }
                 y += SectionGap;
             }
-        };
-        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { layoutSections(m_ProfileBindings.getSections()); }
-        else { layoutSections(m_FactionProfileBindings.getSections()); }
+        }
 
         m_ValidationSection.HeaderBounds = { contentLeft, y, contentWidth, SectionHeaderHeight };
         y += SectionHeaderHeight;
@@ -352,17 +457,27 @@ namespace PixelShipGeneratorPreview
     {
         bool activated = false;
         const auto activate = [&](auto& sections)
-        {
-            for (auto& section : sections)
             {
-                if (!section.HeaderBounds.contains(x, y)) { continue; }
+                for (auto& section : sections)
+                {
+                    if (!section.HeaderBounds.contains(x, y)) { continue; }
+                    section.Expanded = !section.Expanded;
+                    activated = true;
+                    break;
+                }
+            };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { activate(m_ProfileBindings.getSections()); }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { activate(m_FactionProfileBindings.getSections()); }
+        else
+        {
+            for (auto& section : m_PaletteBindings.getSections())
+            {
+                if (!m_PaletteBindings.isSectionVisible(section) || !section.HeaderBounds.contains(x, y)) { continue; }
                 section.Expanded = !section.Expanded;
                 activated = true;
                 break;
             }
-        };
-        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { activate(m_ProfileBindings.getSections()); }
-        else { activate(m_FactionProfileBindings.getSections()); }
+        }
         if (activated)
         {
             rebuildLayout();
@@ -395,7 +510,8 @@ namespace PixelShipGeneratorPreview
     void PreviewConfigurationEditor::resetDraft()
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_DraftProfile = m_InitialProfile; }
-        else { m_DraftFactionProfile = m_InitialFactionProfile; }
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { m_DraftFactionProfile = m_InitialFactionProfile; }
+        else { m_DraftPaletteConfiguration = m_InitialPaletteConfiguration; }
         m_NameField.Value = m_InitialName;
         configureControlsFromDraft();
         refreshValidation();
@@ -405,25 +521,32 @@ namespace PixelShipGeneratorPreview
     void PreviewConfigurationEditor::cancelDragging()
     {
         const auto cancel = [](auto& sections)
-        {
-            for (auto& section : sections)
             {
-                for (auto& field : section.Integers) { field.Control.Dragging = false; }
-                for (auto& field : section.WeightGroups)
+                for (auto& section : sections)
                 {
-                    for (ConfigurationWeightRow& row : field.Control.getRows()) { row.Control.Dragging = false; }
+                    for (auto& field : section.Integers) { field.Control.Dragging = false; }
+                    for (auto& field : section.WeightGroups)
+                    {
+                        for (ConfigurationWeightRow& row : field.Control.getRows()) { row.Control.Dragging = false; }
+                    }
                 }
-            }
-        };
+            };
         cancel(m_ProfileBindings.getSections());
         cancel(m_FactionProfileBindings.getSections());
+        for (auto& section : m_PaletteBindings.getSections())
+        {
+            for (auto& field : section.Integers) { field.Control.Dragging = false; }
+            for (auto& field : section.Colors) { field.Control.DraggingChannel = -1; }
+        }
     }
 
     void PreviewConfigurationEditor::collapseAllProfileSections()
     {
         for (StructuralProfileEditorSection& section : m_ProfileBindings.getSections()) { section.Expanded = false; }
         for (FactionProfileEditorSection& section : m_FactionProfileBindings.getSections()) { section.Expanded = false; }
+        for (PaletteProfileEditorSection& section : m_PaletteBindings.getSections()) { section.Expanded = false; }
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL && !m_ProfileBindings.getSections().empty()) { m_ProfileBindings.getSections().front().Expanded = true; }
         if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION && !m_FactionProfileBindings.getSections().empty()) { m_FactionProfileBindings.getSections().front().Expanded = true; }
+        if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE && !m_PaletteBindings.getSections().empty()) { m_PaletteBindings.getSections().front().Expanded = true; }
     }
 }

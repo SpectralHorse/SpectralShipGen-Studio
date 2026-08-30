@@ -101,10 +101,11 @@ namespace PixelShipGeneratorPreview
         }
         else if (state.Mode == PreviewCommandPanelMode::NORMAL)
         {
-            if (m_Selectors.size() >= 2u)
+            if (m_Selectors.size() >= 3u)
             {
                 m_Selectors[0u].Value = state.StyleValue;
                 m_Selectors[1u].Value = state.FactionValue;
+                m_Selectors[2u].Value = state.PaletteValue;
             }
 
             m_WidthSlider.Enabled = state.Enabled[static_cast<std::size_t>(PreviewCommandType::SET_WIDTH)];
@@ -289,21 +290,23 @@ namespace PixelShipGeneratorPreview
         y += BookmarkButtonHeight + RowSpacing;
     }
 
-    void PreviewCommandPanel::addSelector(const char* label, const PreviewCommand& previousCommand, const PreviewCommand& nextCommand, float& y)
+    void PreviewCommandPanel::addSelector(const char* label, const PreviewCommand& previousCommand, const PreviewCommand& nextCommand, float& y, bool compact)
     {
         const float x = static_cast<float>(PreviewCommandPanelX) + PanelPadding;
         const float totalWidth = static_cast<float>(PreviewCommandPanelWidth) - PanelPadding * 2.0f;
         const float valueX = x + SelectorLabelWidth + SelectorButtonWidth + PairSpacing;
         const float valueWidth = totalWidth - SelectorLabelWidth - SelectorButtonWidth * 2.0f - PairSpacing * 2.0f;
+        const float selectorHeight = compact ? 18.0f : ButtonHeight;
+        const float selectorSpacing = compact ? 1.0f : RowSpacing;
         PreviewCommandPanelSelector selector;
         selector.Label = label;
-        selector.ValueBounds = sf::FloatRect(valueX, y, valueWidth, ButtonHeight);
+        selector.ValueBounds = sf::FloatRect(valueX, y, valueWidth, selectorHeight);
         selector.PreviousCommand = previousCommand;
         selector.NextCommand = nextCommand;
         m_Selectors.push_back(selector);
-        addButton(previousCommand, x + SelectorLabelWidth, y, SelectorButtonWidth, ButtonHeight);
-        addButton(nextCommand, valueX + valueWidth + PairSpacing, y, SelectorButtonWidth, ButtonHeight);
-        y += ButtonHeight + RowSpacing;
+        addButton(previousCommand, x + SelectorLabelWidth, y, SelectorButtonWidth, selectorHeight);
+        addButton(nextCommand, valueX + valueWidth + PairSpacing, y, SelectorButtonWidth, selectorHeight);
+        y += selectorHeight + selectorSpacing;
     }
 
     void PreviewCommandPanel::addDimensionSliders(float& y)
@@ -442,8 +445,9 @@ namespace PixelShipGeneratorPreview
         addFullButton({ PreviewCommandType::SELECT_GALLERY_CANDIDATE, 0u }, y);
 
         addGroupHeader("APPEARANCE", y);
-        addSelector("PROFILE", { PreviewCommandType::PREVIOUS_STYLE, 0u }, { PreviewCommandType::NEXT_STYLE, 0u }, y);
-        addSelector("FACTION", { PreviewCommandType::PREVIOUS_FACTION, 0u }, { PreviewCommandType::NEXT_FACTION, 0u }, y);
+        addSelector("PROFILE", { PreviewCommandType::PREVIOUS_STYLE, 0u }, { PreviewCommandType::NEXT_STYLE, 0u }, y, true);
+        addSelector("FACTION", { PreviewCommandType::PREVIOUS_FACTION, 0u }, { PreviewCommandType::NEXT_FACTION, 0u }, y, true);
+        addSelector("PALETTE", { PreviewCommandType::PREVIOUS_PALETTE, 0u }, { PreviewCommandType::NEXT_PALETTE, 0u }, y, true);
         addDimensionSliders(y);
         addDimensionControlButtons(y);
         addBookmarkButtons(y);

@@ -23,6 +23,7 @@
 #include "PreviewCommandPanel.h"
 #include "PreviewConfigurationEditor.h"
 #include "FactionProfileSelection.h"
+#include "PaletteProfileSelection.h"
 #include "RuntimeCustomPresetWorkspace.h"
 #include "StructuralProfileSelection.h"
 #include "PreviewAnimationSession.h"
@@ -44,6 +45,7 @@ namespace PixelShipGeneratorPreview
         void addResolutionBookmark();
         void appendHistoryEntry(const PreviewGenerationRecipe& recipe);
         void changeFaction(int32_t delta);
+        void changePalette(int32_t delta);
         void changeResolution(int32_t delta);
         void changeStyle(int32_t delta);
         void clearPinnedShip();
@@ -80,6 +82,8 @@ namespace PixelShipGeneratorPreview
         void enterConfigurationEditorDefault();
         void enterFactionConfigurationEditor();
         void enterFactionConfigurationEditorDefault();
+        void enterPaletteConfigurationEditor();
+        void enterPaletteConfigurationEditorDefault();
         void handleConfigurationEditorEvent(const ConfigurationEditorEvent& event);
         void enterGalleryMode();
         void enterGalleryModeFromKnownSeed();
@@ -142,6 +146,9 @@ namespace PixelShipGeneratorPreview
         void selectRuntimeFactionPreset(RuntimeCustomPresetId id);
         void selectFactionProfileEntry(const FactionProfileSelectionEntry& entry);
         std::string getCurrentFactionProfileDisplayName() const;
+        void selectRuntimePalettePreset(RuntimeCustomPresetId id);
+        void selectPaletteProfileEntry(const PaletteProfileSelectionEntry& entry);
+        std::string getCurrentPaletteDisplayName() const;
         void setDimensions(const PixelShipGenerator::ShipDimensions& dimensions);
         void setHeight(uint32_t height);
         void setResolution(uint32_t resolution);
@@ -180,8 +187,11 @@ namespace PixelShipGeneratorPreview
         PreviewMode m_ConfigurationEditorReturnMode = PreviewMode::STATIC;
         std::optional<RuntimeCustomPresetId> m_SelectedStructuralPresetId;
         std::optional<RuntimeCustomPresetId> m_SelectedFactionPresetId;
+        std::optional<PixelShipGenerator::ShipFactionType> m_SelectedBuiltInPalettePreset;
+        std::optional<RuntimeCustomPresetId> m_SelectedPalettePresetId;
         std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetPresetId;
         std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetFactionPresetId;
+        std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetPalettePresetId;
         PreviewDiagnosticState m_Diagnostics;
         GalleryState m_GalleryState;
         FavoritesState m_FavoritesState;

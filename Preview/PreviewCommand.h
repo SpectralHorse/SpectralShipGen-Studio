@@ -50,6 +50,8 @@ namespace PixelShipGeneratorPreview
         SELECT_FACTION,
         PREVIOUS_FACTION,
         NEXT_FACTION,
+        PREVIOUS_PALETTE,
+        NEXT_PALETTE,
         SELECT_RESOLUTION,
         PREVIOUS_RESOLUTION,
         NEXT_RESOLUTION,

@@ -85,6 +85,7 @@ namespace PixelShipGeneratorPreview
         bool AspectRatioLocked = true;
         std::string StyleValue;
         std::string FactionValue;
+        std::string PaletteValue;
         PreviewCommandPanelMode Mode = PreviewCommandPanelMode::NORMAL;
         std::array<bool, PixelShipGenerator::GenerationDomainCount> RerollStudioSelectedDomains = {};
         std::string CalibrationGroupValue;
@@ -122,7 +123,7 @@ namespace PixelShipGeneratorPreview
         void addPairButtons(const PreviewCommand& leftCommand, const PreviewCommand& rightCommand, float& y);
         void addQuadButtons(const PreviewCommand& first, const PreviewCommand& second, const PreviewCommand& third, const PreviewCommand& fourth, float& y);
         void addBookmarkButtons(float& y);
-        void addSelector(const char* label, const PreviewCommand& previousCommand, const PreviewCommand& nextCommand, float& y);
+        void addSelector(const char* label, const PreviewCommand& previousCommand, const PreviewCommand& nextCommand, float& y, bool compact = false);
         void addDimensionSliders(float& y);
         void addDimensionControlButtons(float& y);
         void addCalibrationWeightSliders(float& y);

@@ -35,9 +35,9 @@ namespace PixelShipGeneratorPreview
         {
             const std::string root = base.empty() ? "Custom Preset" : base;
             const auto exists = [&](const std::string& name)
-            {
-                return std::any_of(presets.begin(), presets.end(), [&](const Preset& preset) { return preset.Name == name; });
-            };
+                {
+                    return std::any_of(presets.begin(), presets.end(), [&](const Preset& preset) { return preset.Name == name; });
+                };
             if (!exists(root)) { return root; }
             const std::string firstCopy = root + " Copy";
             if (!exists(firstCopy)) { return firstCopy; }
@@ -103,6 +103,24 @@ namespace PixelShipGeneratorPreview
         }
         preset->Name = std::move(unique);
         preset->Profile = profile;
+        return true;
+    }
+
+    bool RuntimeCustomPresetWorkspace::updatePalette(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    {
+        RuntimePalettePreset* preset = findPalette(id);
+        if (preset == nullptr) { return false; }
+        const std::string requested = name.empty() ? preset->Name : std::move(name);
+        std::string unique = requested;
+        if (unique != preset->Name)
+        {
+            const std::string original = preset->Name;
+            preset->Name.clear();
+            unique = makeUniquePaletteName(requested);
+            preset->Name = original;
+        }
+        preset->Name = std::move(unique);
+        preset->Configuration = configuration;
         return true;
     }
 

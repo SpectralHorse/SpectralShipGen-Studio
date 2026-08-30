@@ -138,6 +138,30 @@ namespace PixelShipGeneratorPreview
         std::string getDisplayValue() const;
     };
 
+    struct ConfigurationColorControl
+    {
+        std::string Label;
+        uint32_t Red = 0u;
+        uint32_t Green = 0u;
+        uint32_t Blue = 0u;
+        uint32_t Alpha = 255u;
+        ConfigurationEditorRect RowBounds;
+        std::array<ConfigurationEditorRect, 4u> TrackBounds = {};
+        ConfigurationEditorRect SwatchBounds;
+        int32_t DraggingChannel = -1;
+
+        void configure(std::string label, uint32_t red, uint32_t green, uint32_t blue, uint32_t alpha = 255u);
+        void setRowBounds(const ConfigurationEditorRect& bounds);
+        void setValues(uint32_t red, uint32_t green, uint32_t blue, uint32_t alpha);
+        uint32_t getChannel(std::size_t channel) const;
+        void setChannel(std::size_t channel, uint32_t value);
+        uint32_t valueForTrackPosition(std::size_t channel, float x) const;
+        bool beginPointer(float x, float y);
+        bool updatePointer(float x);
+        bool endPointer(float x, float y);
+        std::string getDisplayValue() const;
+    };
+
     struct ConfigurationTextField
     {
         std::string Label;

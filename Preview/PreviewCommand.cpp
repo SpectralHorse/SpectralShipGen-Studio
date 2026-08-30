@@ -32,6 +32,8 @@ namespace PixelShipGeneratorPreview
             { PreviewCommandType::SELECT_FACTION, "Faction", "Z / X / C / V", "Direct faction selection: Z FRONTIER, X MILITARY, C ASCENDANT, V XENO.", PreviewCommandGroup::APPEARANCE },
             { PreviewCommandType::PREVIOUS_FACTION, "Previous Faction", "", "Select the previous faction.", PreviewCommandGroup::APPEARANCE },
             { PreviewCommandType::NEXT_FACTION, "Next Faction", "", "Select the next faction.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::PREVIOUS_PALETTE, "Previous Palette", "", "Select the previous faction-default, built-in, or runtime custom palette source.", PreviewCommandGroup::APPEARANCE },
+            { PreviewCommandType::NEXT_PALETTE, "Next Palette", "", "Select the next palette source or + ADD PALETTE.", PreviewCommandGroup::APPEARANCE },
             { PreviewCommandType::SELECT_RESOLUTION, "Resolution", "1-7", "Direct resolution selection: 1 24, 2 32, 3 44, 4 64, 5 96, 6 128, 7 160.", PreviewCommandGroup::APPEARANCE },
             { PreviewCommandType::PREVIOUS_RESOLUTION, "Previous Preset", "", "Select the previous established resolution preset.", PreviewCommandGroup::APPEARANCE },
             { PreviewCommandType::NEXT_RESOLUTION, "Next Preset", "", "Select the next established resolution preset.", PreviewCommandGroup::APPEARANCE },

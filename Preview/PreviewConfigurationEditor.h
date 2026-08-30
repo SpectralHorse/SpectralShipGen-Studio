@@ -9,11 +9,13 @@
 
 #include "ShipFactionProfile.h"
 #include "ShipGenerationProfile.h"
+#include "ShipPaletteConfiguration.h"
 #include "Validation.h"
 
 #include "ConfigurationEditorControls.h"
 #include "ShipFactionProfileEditorBindings.h"
 #include "ShipGenerationProfileEditorBindings.h"
+#include "ShipPaletteConfigurationEditorBindings.h"
 
 namespace PixelShipGeneratorPreview
 {
@@ -21,6 +23,7 @@ namespace PixelShipGeneratorPreview
     {
         STRUCTURAL = 0u,
         FACTION,
+        PALETTE,
         CONFIGURATION_EDITOR_PROFILE_KIND_END
     };
 
@@ -60,6 +63,7 @@ namespace PixelShipGeneratorPreview
 
         void openStructuralProfile(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
         void openFactionProfile(std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
+        void openPaletteConfiguration(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
         void close();
         bool isOpen() const;
         ConfigurationEditorProfileKind getProfileKind() const;
@@ -80,6 +84,8 @@ namespace PixelShipGeneratorPreview
         const PixelShipGenerator::ShipGenerationProfile& getInitialProfile() const;
         const PixelShipGenerator::ShipFactionProfile& getDraftFactionProfile() const;
         const PixelShipGenerator::ShipFactionProfile& getInitialFactionProfile() const;
+        const PixelShipGenerator::ShipPaletteConfiguration& getDraftPaletteConfiguration() const;
+        const PixelShipGenerator::ShipPaletteConfiguration& getInitialPaletteConfiguration() const;
         bool hasUnsavedChanges() const;
 
         float getScrollOffset() const;
@@ -89,6 +95,8 @@ namespace PixelShipGeneratorPreview
         const ConfigurationTextField& getNameField() const;
         const std::vector<StructuralProfileEditorSection>& getProfileSections() const;
         const std::vector<FactionProfileEditorSection>& getFactionProfileSections() const;
+        const std::vector<PaletteProfileEditorSection>& getPaletteProfileSections() const;
+        bool isPaletteSectionVisible(const PaletteProfileEditorSection& section) const;
         const ConfigurationEditorSectionState& getValidationSection() const;
         const std::array<ConfigurationEditorActionButton, 4u>& getActionButtons() const;
         std::size_t getBoundValueCount() const;
@@ -115,6 +123,15 @@ namespace PixelShipGeneratorPreview
         const FactionWeightGroupBinding* findFactionWeightGroup(std::string_view path) const;
         FactionWeightGroupBinding* findFactionWeightGroup(std::string_view path);
 
+        const PaletteIntegerFieldBinding* findPaletteIntegerField(std::string_view path) const;
+        PaletteIntegerFieldBinding* findPaletteIntegerField(std::string_view path);
+        const PaletteRangeFieldBinding* findPaletteRangeField(std::string_view path) const;
+        PaletteRangeFieldBinding* findPaletteRangeField(std::string_view path);
+        const PaletteChoiceFieldBinding* findPaletteChoiceField(std::string_view path) const;
+        PaletteChoiceFieldBinding* findPaletteChoiceField(std::string_view path);
+        const PaletteColorFieldBinding* findPaletteColorField(std::string_view path) const;
+        PaletteColorFieldBinding* findPaletteColorField(std::string_view path);
+
         void setSectionExpanded(std::size_t sectionIndex, bool expanded);
 
     private:
@@ -137,6 +154,8 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::ShipGenerationProfile m_DraftProfile;
         PixelShipGenerator::ShipFactionProfile m_InitialFactionProfile;
         PixelShipGenerator::ShipFactionProfile m_DraftFactionProfile;
+        PixelShipGenerator::ShipPaletteConfiguration m_InitialPaletteConfiguration;
+        PixelShipGenerator::ShipPaletteConfiguration m_DraftPaletteConfiguration;
         PixelShipGenerator::ValidationResult m_ValidationResult;
         ConfigurationEditorRect m_PanelBounds = { 880.0f, 0.0f, 760.0f, 1000.0f };
         ConfigurationEditorRect m_ContentViewport;
@@ -147,6 +166,7 @@ namespace PixelShipGeneratorPreview
         ConfigurationTextField m_NameField;
         ShipGenerationProfileEditorBindings m_ProfileBindings;
         ShipFactionProfileEditorBindings m_FactionProfileBindings;
+        ShipPaletteConfigurationEditorBindings m_PaletteBindings;
         ConfigurationEditorSectionState m_ValidationSection = { "VALIDATION", {}, true };
         std::array<ConfigurationEditorActionButton, 4u> m_ActionButtons = {};
     };

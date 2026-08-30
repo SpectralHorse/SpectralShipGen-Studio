@@ -708,84 +708,110 @@ namespace PixelShipGeneratorPreview
         const ConfigurationEditorRect viewport = editor.getContentViewport();
         drawPanel(window, panel.Left, panel.Top, panel.Width, panel.Height, sf::Color(18, 19, 24, 252), sf::Color(82, 88, 104));
         const bool factionEditor = editor.getProfileKind() == ConfigurationEditorProfileKind::FACTION;
-        drawDebugText(window, factionEditor ? "FACTION PROFILE EDITOR" : "STRUCTURAL PROFILE EDITOR", panel.Left + 18.0f, panel.Top + 12.0f, sf::Color(240, 215, 105), TextScale);
-        drawDebugText(window, factionEditor ? "PUBLIC ShipFactionProfile / RUNTIME CUSTOM FACTIONS" : "PUBLIC ShipGenerationProfile / RUNTIME CUSTOM PRESETS", panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), SmallTextScale);
-        drawDebugText(window, "PgDn structural  |  Shift+PgDn faction  |  ESC cancels", panel.Left + panel.Width - 390.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);
+        const bool paletteEditor = editor.getProfileKind() == ConfigurationEditorProfileKind::PALETTE;
+        const char* editorTitle = paletteEditor ? "PALETTE CONFIGURATION EDITOR" : factionEditor ? "FACTION PROFILE EDITOR" : "STRUCTURAL PROFILE EDITOR";
+        const char* editorSubtitle = paletteEditor ? "PUBLIC ShipPaletteConfiguration / GENERATED + FIXED" : factionEditor ? "PUBLIC ShipFactionProfile / RUNTIME CUSTOM FACTIONS" : "PUBLIC ShipGenerationProfile / RUNTIME CUSTOM PRESETS";
+        drawDebugText(window, editorTitle, panel.Left + 18.0f, panel.Top + 12.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, editorSubtitle, panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), SmallTextScale);
+        drawDebugText(window, "PgDn structural | Shift+PgDn faction | Ctrl+PgDn palette", panel.Left + panel.Width - 390.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);
 
         drawPanel(window, viewport.Left - 6.0f, viewport.Top - 4.0f, viewport.Width + 12.0f, viewport.Height + 8.0f, sf::Color(13, 14, 18, 248), sf::Color(48, 52, 62));
 
         const auto visible = [&](const ConfigurationEditorRect& bounds)
-        {
-            return bounds.Top + bounds.Height >= viewport.Top && bounds.Top <= viewport.Top + viewport.Height;
-        };
-        const auto drawSmallButton = [&](const ConfigurationEditorRect& bounds, const char* label, bool enabled = true)
-        {
-            if (!visible(bounds)) { return; }
-            drawPanel(window, bounds.Left, bounds.Top, bounds.Width, bounds.Height, enabled ? sf::Color(38, 42, 51) : sf::Color(24, 25, 29), enabled ? sf::Color(82, 92, 110) : sf::Color(46, 48, 55));
-            const float textWidth = getDebugTextWidth(label, SmallTextScale);
-            drawDebugText(window, label, bounds.Left + std::max(2.0f, (bounds.Width - textWidth) * 0.5f), bounds.Top + 6.0f, enabled ? sf::Color(220, 224, 232) : sf::Color(90, 94, 105), SmallTextScale);
-        };
-        const auto drawInteger = [&](const ConfigurationIntegerControl& control, bool showProbability = false, uint32_t probability = 0u)
-        {
-            if (!visible(control.RowBounds)) { return; }
-            drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
-            sf::RectangleShape track(sf::Vector2f(control.TrackBounds.Width, control.TrackBounds.Height));
-            track.setPosition(control.TrackBounds.Left, control.TrackBounds.Top);
-            track.setFillColor(sf::Color(58, 64, 76));
-            window.draw(track);
-            const float span = static_cast<float>(std::max(1, control.Maximum - control.Minimum));
-            const float normalized = static_cast<float>(control.Value - control.Minimum) / span;
-            sf::RectangleShape knob(sf::Vector2f(4.0f, 14.0f));
-            knob.setPosition(control.TrackBounds.Left + normalized * control.TrackBounds.Width - 2.0f, control.TrackBounds.Top - 4.0f);
-            knob.setFillColor(control.Dragging ? sf::Color(240, 215, 105) : sf::Color(120, 190, 230));
-            window.draw(knob);
-            const std::string value = control.getDisplayValue();
-            drawDebugText(window, value, control.TrackBounds.Left + control.TrackBounds.Width + 8.0f, control.RowBounds.Top + 8.0f, sf::Color(232, 234, 240), SmallTextScale);
-            if (showProbability)
             {
-                const std::string probabilityText = std::to_string(probability) + "% share";
-                drawDebugText(window, probabilityText, control.TrackBounds.Left - 74.0f, control.RowBounds.Top + 8.0f, sf::Color(125, 175, 205), SmallTextScale);
-            }
-            drawSmallButton(control.DecrementBounds, "-");
-            drawSmallButton(control.IncrementBounds, "+");
-        };
+                return bounds.Top + bounds.Height >= viewport.Top && bounds.Top <= viewport.Top + viewport.Height;
+            };
+        const auto drawSmallButton = [&](const ConfigurationEditorRect& bounds, const char* label, bool enabled = true)
+            {
+                if (!visible(bounds)) { return; }
+                drawPanel(window, bounds.Left, bounds.Top, bounds.Width, bounds.Height, enabled ? sf::Color(38, 42, 51) : sf::Color(24, 25, 29), enabled ? sf::Color(82, 92, 110) : sf::Color(46, 48, 55));
+                const float textWidth = getDebugTextWidth(label, SmallTextScale);
+                drawDebugText(window, label, bounds.Left + std::max(2.0f, (bounds.Width - textWidth) * 0.5f), bounds.Top + 6.0f, enabled ? sf::Color(220, 224, 232) : sf::Color(90, 94, 105), SmallTextScale);
+            };
+        const auto drawInteger = [&](const ConfigurationIntegerControl& control, bool showProbability = false, uint32_t probability = 0u)
+            {
+                if (!visible(control.RowBounds)) { return; }
+                drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                sf::RectangleShape track(sf::Vector2f(control.TrackBounds.Width, control.TrackBounds.Height));
+                track.setPosition(control.TrackBounds.Left, control.TrackBounds.Top);
+                track.setFillColor(sf::Color(58, 64, 76));
+                window.draw(track);
+                const float span = static_cast<float>(std::max(1, control.Maximum - control.Minimum));
+                const float normalized = static_cast<float>(control.Value - control.Minimum) / span;
+                sf::RectangleShape knob(sf::Vector2f(4.0f, 14.0f));
+                knob.setPosition(control.TrackBounds.Left + normalized * control.TrackBounds.Width - 2.0f, control.TrackBounds.Top - 4.0f);
+                knob.setFillColor(control.Dragging ? sf::Color(240, 215, 105) : sf::Color(120, 190, 230));
+                window.draw(knob);
+                const std::string value = control.getDisplayValue();
+                drawDebugText(window, value, control.TrackBounds.Left + control.TrackBounds.Width + 8.0f, control.RowBounds.Top + 8.0f, sf::Color(232, 234, 240), SmallTextScale);
+                if (showProbability)
+                {
+                    const std::string probabilityText = std::to_string(probability) + "% share";
+                    drawDebugText(window, probabilityText, control.TrackBounds.Left - 74.0f, control.RowBounds.Top + 8.0f, sf::Color(125, 175, 205), SmallTextScale);
+                }
+                drawSmallButton(control.DecrementBounds, "-");
+                drawSmallButton(control.IncrementBounds, "+");
+            };
         const auto drawRange = [&](const ConfigurationRangeControl& range)
-        {
-            if (!visible(range.RowBounds)) { return; }
-            drawDebugText(window, range.Label, range.RowBounds.Left + 6.0f, range.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
-            drawDebugText(window, "MIN " + std::to_string(range.MinimumValue), range.MinimumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), SmallTextScale);
-            drawSmallButton(range.MinimumDecrementBounds, "-");
-            drawSmallButton(range.MinimumIncrementBounds, "+");
-            drawDebugText(window, "MAX " + std::to_string(range.MaximumValue), range.MaximumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), SmallTextScale);
-            drawSmallButton(range.MaximumDecrementBounds, "-");
-            drawSmallButton(range.MaximumIncrementBounds, "+");
-        };
+            {
+                if (!visible(range.RowBounds)) { return; }
+                drawDebugText(window, range.Label, range.RowBounds.Left + 6.0f, range.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                drawDebugText(window, "MIN " + std::to_string(range.MinimumValue), range.MinimumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), SmallTextScale);
+                drawSmallButton(range.MinimumDecrementBounds, "-");
+                drawSmallButton(range.MinimumIncrementBounds, "+");
+                drawDebugText(window, "MAX " + std::to_string(range.MaximumValue), range.MaximumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), SmallTextScale);
+                drawSmallButton(range.MaximumDecrementBounds, "-");
+                drawSmallButton(range.MaximumIncrementBounds, "+");
+            };
         const auto drawToggle = [&](const ConfigurationToggleControl& control)
-        {
-            if (!visible(control.RowBounds)) { return; }
-            drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
-            drawPanel(window, control.ToggleBounds.Left, control.ToggleBounds.Top, control.ToggleBounds.Width, control.ToggleBounds.Height,
-                control.Value ? sf::Color(45, 78, 62) : sf::Color(38, 42, 51), control.Value ? sf::Color(100, 190, 130) : sf::Color(82, 92, 110));
-            const std::string text = control.getDisplayValue();
-            const float textWidth = getDebugTextWidth(text, SmallTextScale);
-            drawDebugText(window, text, control.ToggleBounds.Left + std::max(3.0f, (control.ToggleBounds.Width - textWidth) * 0.5f), control.ToggleBounds.Top + 8.0f,
-                control.Value ? sf::Color(180, 235, 195) : sf::Color(210, 214, 224), SmallTextScale);
-        };
+            {
+                if (!visible(control.RowBounds)) { return; }
+                drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                drawPanel(window, control.ToggleBounds.Left, control.ToggleBounds.Top, control.ToggleBounds.Width, control.ToggleBounds.Height,
+                    control.Value ? sf::Color(45, 78, 62) : sf::Color(38, 42, 51), control.Value ? sf::Color(100, 190, 130) : sf::Color(82, 92, 110));
+                const std::string text = control.getDisplayValue();
+                const float textWidth = getDebugTextWidth(text, SmallTextScale);
+                drawDebugText(window, text, control.ToggleBounds.Left + std::max(3.0f, (control.ToggleBounds.Width - textWidth) * 0.5f), control.ToggleBounds.Top + 8.0f,
+                    control.Value ? sf::Color(180, 235, 195) : sf::Color(210, 214, 224), SmallTextScale);
+            };
         const auto drawChoice = [&](const ConfigurationChoiceControl& control)
-        {
-            if (!visible(control.RowBounds)) { return; }
-            drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
-            drawDebugText(window, control.getDisplayValue(), control.PreviousBounds.Left - 150.0f, control.RowBounds.Top + 9.0f, sf::Color(232, 234, 240), SmallTextScale);
-            drawSmallButton(control.PreviousBounds, "<");
-            drawSmallButton(control.NextBounds, ">");
-        };
+            {
+                if (!visible(control.RowBounds)) { return; }
+                drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                drawDebugText(window, control.getDisplayValue(), control.PreviousBounds.Left - 150.0f, control.RowBounds.Top + 9.0f, sf::Color(232, 234, 240), SmallTextScale);
+                drawSmallButton(control.PreviousBounds, "<");
+                drawSmallButton(control.NextBounds, ">");
+            };
+        const auto drawColor = [&](const ConfigurationColorControl& control)
+            {
+                if (!visible(control.RowBounds)) { return; }
+                drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 8.0f, sf::Color(185, 190, 204), SmallTextScale);
+                static constexpr std::array<const char*, 4u> channelLabels = { "R", "G", "B", "A" };
+                for (std::size_t channel = 0u; channel < control.TrackBounds.size(); ++channel)
+                {
+                    const ConfigurationEditorRect& trackBounds = control.TrackBounds[channel];
+                    drawDebugText(window, channelLabels[channel], trackBounds.Left - 14.0f, trackBounds.Top - 3.0f, sf::Color(150, 160, 176), SmallTextScale);
+                    sf::RectangleShape track(sf::Vector2f(trackBounds.Width, trackBounds.Height));
+                    track.setPosition(trackBounds.Left, trackBounds.Top);
+                    track.setFillColor(sf::Color(58, 64, 76));
+                    window.draw(track);
+                    const float normalized = static_cast<float>(control.getChannel(channel)) / 255.0f;
+                    sf::RectangleShape knob(sf::Vector2f(4.0f, 11.0f));
+                    knob.setPosition(trackBounds.Left + normalized * trackBounds.Width - 2.0f, trackBounds.Top - 3.0f);
+                    knob.setFillColor(control.DraggingChannel == static_cast<int32_t>(channel) ? sf::Color(240, 215, 105) : sf::Color(120, 190, 230));
+                    window.draw(knob);
+                    drawDebugText(window, std::to_string(control.getChannel(channel)), trackBounds.Left + trackBounds.Width + 7.0f, trackBounds.Top - 3.0f, sf::Color(232, 234, 240), SmallTextScale);
+                }
+                drawPanel(window, control.SwatchBounds.Left, control.SwatchBounds.Top, control.SwatchBounds.Width, control.SwatchBounds.Height,
+                    sf::Color(static_cast<sf::Uint8>(control.Red), static_cast<sf::Uint8>(control.Green), static_cast<sf::Uint8>(control.Blue), static_cast<sf::Uint8>(control.Alpha)), sf::Color(130, 135, 150));
+            };
         const auto drawSectionHeader = [&](const std::string& label, const ConfigurationEditorRect& bounds, bool expanded)
-        {
-            if (!visible(bounds)) { return; }
-            drawPanel(window, bounds.Left, bounds.Top, bounds.Width, bounds.Height, sf::Color(29, 32, 40), sf::Color(55, 64, 78));
-            drawDebugText(window, expanded ? "[-]" : "[+]", bounds.Left + 6.0f, bounds.Top + 7.0f, sf::Color(125, 190, 230), SmallTextScale);
-            drawDebugText(window, label, bounds.Left + 34.0f, bounds.Top + 7.0f, sf::Color(205, 212, 225), SmallTextScale);
-        };
+            {
+                if (!visible(bounds)) { return; }
+                drawPanel(window, bounds.Left, bounds.Top, bounds.Width, bounds.Height, sf::Color(29, 32, 40), sf::Color(55, 64, 78));
+                drawDebugText(window, expanded ? "[-]" : "[+]", bounds.Left + 6.0f, bounds.Top + 7.0f, sf::Color(125, 190, 230), SmallTextScale);
+                drawDebugText(window, label, bounds.Left + 34.0f, bounds.Top + 7.0f, sf::Color(205, 212, 225), SmallTextScale);
+            };
 
         const ConfigurationTextField& nameField = editor.getNameField();
         if (visible(nameField.Bounds))
@@ -798,23 +824,36 @@ namespace PixelShipGeneratorPreview
         }
 
         const auto drawProfileSections = [&](const auto& sections)
-        {
-            for (const auto& section : sections)
             {
+                for (const auto& section : sections)
+                {
+                    drawSectionHeader(section.Label, section.HeaderBounds, section.Expanded);
+                    if (!section.Expanded) { continue; }
+                    for (const auto& field : section.Integers) { drawInteger(field.Control); }
+                    for (const auto& field : section.Ranges) { drawRange(field.Control); }
+                    for (const auto& field : section.Toggles) { drawToggle(field.Control); }
+                    for (const auto& field : section.Choices) { drawChoice(field.Control); }
+                    for (const auto& field : section.WeightGroups)
+                    {
+                        const auto& rows = field.Control.getRows();
+                        for (std::size_t index = 0u; index < field.Control.getRowCount(); ++index) { drawInteger(rows[index].Control, true, rows[index].ProbabilityPercent); }
+                    }
+                }
+            };
+        if (paletteEditor)
+        {
+            for (const auto& section : editor.getPaletteProfileSections())
+            {
+                if (!editor.isPaletteSectionVisible(section)) { continue; }
                 drawSectionHeader(section.Label, section.HeaderBounds, section.Expanded);
                 if (!section.Expanded) { continue; }
                 for (const auto& field : section.Integers) { drawInteger(field.Control); }
                 for (const auto& field : section.Ranges) { drawRange(field.Control); }
-                for (const auto& field : section.Toggles) { drawToggle(field.Control); }
                 for (const auto& field : section.Choices) { drawChoice(field.Control); }
-                for (const auto& field : section.WeightGroups)
-                {
-                    const auto& rows = field.Control.getRows();
-                    for (std::size_t index = 0u; index < field.Control.getRowCount(); ++index) { drawInteger(rows[index].Control, true, rows[index].ProbabilityPercent); }
-                }
+                for (const auto& field : section.Colors) { drawColor(field.Control); }
             }
-        };
-        if (factionEditor) { drawProfileSections(editor.getFactionProfileSections()); }
+        }
+        else if (factionEditor) { drawProfileSections(editor.getFactionProfileSections()); }
         else { drawProfileSections(editor.getProfileSections()); }
 
         const ConfigurationEditorSectionState& validationSection = editor.getValidationSection();
@@ -823,15 +862,15 @@ namespace PixelShipGeneratorPreview
         {
             float y = validationSection.HeaderBounds.Top + validationSection.HeaderBounds.Height + 6.0f;
             const auto drawIssue = [&](const PixelShipGenerator::ValidationIssue& issue, const sf::Color& color)
-            {
-                if (y > viewport.Top + viewport.Height) { return; }
-                if (y + 24.0f >= viewport.Top)
                 {
-                    drawDebugText(window, issue.Field.empty() ? "CONFIG" : issue.Field, viewport.Left + 8.0f, y, color, SmallTextScale);
-                    drawDebugText(window, wrapDebugText(issue.Message, 76u), viewport.Left + 170.0f, y, sf::Color(190, 194, 204), SmallTextScale);
-                }
-                y += 28.0f;
-            };
+                    if (y > viewport.Top + viewport.Height) { return; }
+                    if (y + 24.0f >= viewport.Top)
+                    {
+                        drawDebugText(window, issue.Field.empty() ? "CONFIG" : issue.Field, viewport.Left + 8.0f, y, color, SmallTextScale);
+                        drawDebugText(window, wrapDebugText(issue.Message, 76u), viewport.Left + 170.0f, y, sf::Color(190, 194, 204), SmallTextScale);
+                    }
+                    y += 28.0f;
+                };
             const auto& validation = editor.getValidationResult();
             if (validation.Errors.empty() && validation.Warnings.empty())
             {
