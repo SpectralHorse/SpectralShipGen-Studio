@@ -36,6 +36,7 @@ namespace PixelShipGeneratorPreview
         std::optional<std::size_t> findFavoriteIndex(const PreviewGenerationRecipe& recipe) const;
         const PreviewGenerationRecipe* getFavorite(std::size_t index) const;
         const std::vector<PreviewGenerationRecipe>& getFavorites() const;
+        void setFavorites(std::vector<PreviewGenerationRecipe> favorites);
 
         void beginGallery(uint64_t batchSeed, const PreviewGenerationRecipe& templateRecipe);
         void clearGallery();

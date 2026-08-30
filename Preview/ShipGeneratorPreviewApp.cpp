@@ -14,6 +14,7 @@
 #include "GenerationCalibration.h"
 #include "GenerationCalibrationSerializer.h"
 #include "PreviewCommand.h"
+#include "PreviewFavoritesPersistence.h"
 #include "PreviewPreferences.h"
 #include "ShipGenerationRecipeSerializer.h"
 #include "PreviewThumbnailGrid.h"
@@ -25,6 +26,7 @@ namespace
 {
     constexpr uint32_t GalleryCandidateMaximumAttempts = 16u;
     const std::filesystem::path PreviewPreferencesPath = "pixel_ship_generator_preview_preferences.json";
+    const std::filesystem::path PreviewFavoritesPath = "pixel_ship_generator_preview_favorites.json";
     const std::filesystem::path CalibrationSessionPath = "generation_calibration_session.json";
     const std::filesystem::path CalibrationReportPath = "generation_calibration_report.csv";
     const std::filesystem::path CalibrationTuningProfilePath = "generation_tuning_profile.json";
@@ -336,12 +338,14 @@ namespace PixelShipGeneratorPreview
         m_Collections = PreviewCollectionSession(initialRecipe);
         m_CalibrationSession = createGenerationCalibrationSession(m_SeedGenerator());
         loadPreviewAppPreferences();
+        loadFavoriteCollection();
     }
 
     int ShipGeneratorPreviewApp::run()
     {
         printControls();
         regenerate();
+        rebuildFavoriteThumbnails();
         if (!m_StartupRecipePath.empty()) { importRecipeFromPath(m_StartupRecipePath); }
         updateCommandPanelState();
 
@@ -374,6 +378,7 @@ namespace PixelShipGeneratorPreview
         m_FavoritesState.Grid.Items.push_back(std::move(favorite));
         m_FavoritesState.Grid.SelectedIndex = static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u);
         m_FavoritesState.Grid.HoveredIndex = -1;
+        saveFavoriteCollection();
         updateWindowTitle();
         std::cout << "Added Favorite: seed " << getCurrentRecipe().Seeds.Master << '\n';
     }
@@ -1876,6 +1881,23 @@ namespace PixelShipGeneratorPreview
         appendHistoryEntry(recipe);
     }
 
+    void ShipGeneratorPreviewApp::loadFavoriteCollection()
+    {
+        const PreviewFavoritesLoadResult result = loadPreviewFavorites(PreviewFavoritesPath);
+        if (!result.Success)
+        {
+            std::cerr << result.Error << '\n';
+            setStatusMessage(result.Error);
+            return;
+        }
+
+        m_Collections.setFavorites(result.Favorites);
+        if (result.SkippedEntryCount > 0u || result.DuplicateEntryCount > 0u)
+        {
+            std::cerr << "Favorites loaded with " << result.SkippedEntryCount << " invalid entries skipped and " << result.DuplicateEntryCount << " duplicates ignored.\n";
+        }
+    }
+
     void ShipGeneratorPreviewApp::loadPreviewAppPreferences()
     {
         const PreviewPreferencesLoadResult result = loadPreviewPreferences(PreviewPreferencesPath);
@@ -1941,6 +1963,7 @@ namespace PixelShipGeneratorPreview
             if (m_FavoritesState.Grid.HoveredIndex >= static_cast<int32_t>(m_FavoritesState.Grid.Items.size())) { m_FavoritesState.Grid.HoveredIndex = -1; }
         }
 
+        saveFavoriteCollection();
         updateWindowTitle();
         std::cout << "Removed Favorite. Remaining: " << m_Collections.getFavorites().size() << '\n';
     }
@@ -2009,6 +2032,38 @@ namespace PixelShipGeneratorPreview
                 handleKeyPressed(event.key);
             }
         }
+    }
+
+    void ShipGeneratorPreviewApp::rebuildFavoriteThumbnails()
+    {
+        m_FavoritesState.Grid.Items.clear();
+        m_FavoritesState.Grid.Items.reserve(m_Collections.getFavorites().size());
+
+        for (const PreviewGenerationRecipe& recipe : m_Collections.getFavorites())
+        {
+            PreviewThumbnailItem favorite;
+            favorite.Recipe = recipe;
+
+            PixelShipGenerator::GeneratedShip favoriteShip;
+            if (generateShipFromRecipe(recipe, favoriteShip))
+            {
+                const sf::Image favoriteImage = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(favoriteShip.FinalImage);
+                if (favorite.Texture.loadFromImage(favoriteImage))
+                {
+                    favorite.Texture.setSmooth(false);
+                    favorite.Valid = true;
+                }
+                else
+                {
+                    std::cerr << "Failed to rebuild Favorite thumbnail texture for seed " << recipe.Seeds.Master << ".\n";
+                }
+            }
+
+            m_FavoritesState.Grid.Items.push_back(std::move(favorite));
+        }
+
+        m_FavoritesState.Grid.SelectedIndex = 0u;
+        m_FavoritesState.Grid.HoveredIndex = -1;
     }
 
     bool ShipGeneratorPreviewApp::regenerate()
@@ -2204,6 +2259,16 @@ namespace PixelShipGeneratorPreview
         }
 
         appendHistoryEntry(recipe);
+    }
+
+    void ShipGeneratorPreviewApp::saveFavoriteCollection()
+    {
+        std::string error;
+        if (!savePreviewFavorites(m_Collections.getFavorites(), PreviewFavoritesPath, error))
+        {
+            setStatusMessage(error);
+            std::cerr << error << '\n';
+        }
     }
 
     void ShipGeneratorPreviewApp::saveCurrent()

@@ -88,6 +88,17 @@ namespace PixelShipGeneratorPreview
 
     const std::vector<PreviewGenerationRecipe>& PreviewCollectionSession::getFavorites() const { return m_Favorites; }
 
+    void PreviewCollectionSession::setFavorites(std::vector<PreviewGenerationRecipe> favorites)
+    {
+        std::vector<PreviewGenerationRecipe> unique;
+        unique.reserve(favorites.size());
+        for (PreviewGenerationRecipe& recipe : favorites)
+        {
+            if (std::find(unique.begin(), unique.end(), recipe) == unique.end()) { unique.push_back(std::move(recipe)); }
+        }
+        m_Favorites = std::move(unique);
+    }
+
     void PreviewCollectionSession::beginGallery(uint64_t batchSeed, const PreviewGenerationRecipe& templateRecipe)
     {
         m_GalleryBatchSeed = batchSeed;

@@ -101,6 +101,7 @@ namespace PixelShipGeneratorPreview
         void moveGallerySelection(int32_t deltaX, int32_t deltaY);
         void moveGenerationStage(int32_t delta);
         void loadFavorite(uint32_t index);
+        void loadFavoriteCollection();
         void loadPreviewAppPreferences();
         void next();
         void pinCurrentShip();
@@ -112,12 +113,14 @@ namespace PixelShipGeneratorPreview
         void processEvents();
         bool refreshDiagnosticTexture();
         void refreshDisplayedTexture();
+        void rebuildFavoriteThumbnails();
         bool regenerate();
         bool regenerateAnimation();
         bool refreshAnimationTextures();
         void render();
         void reroll();
         void saveCurrent();
+        void saveFavoriteCollection();
         void savePreviewAppPreferences();
         void saveSpritesheet();
         void selectGalleryCandidate(uint32_t index);
