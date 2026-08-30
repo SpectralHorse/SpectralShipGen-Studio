@@ -603,6 +603,10 @@ namespace PixelShipGeneratorDiagnosticsApp
         drawLabelValue("NEG SPACE ATTEMPT", formatDouble(summary.StructuralNegativeSpaceAttemptRatePercent) + "%", RightX + 14.0f, y); y += RowHeight;
         drawLabelValue("NEG SPACE SUCCESS", formatDouble(summary.StructuralNegativeSpaceSuccessRatePercent) + "%", RightX + 14.0f, y); y += 38.0f;
         drawLabelValue("MATERIAL ZONES AVG", formatDouble(summary.MaterialZoneCount.Mean), RightX + 14.0f, y); y += RowHeight;
+        drawLabelValue("LIVERY COVERAGE AVG", formatDouble(summary.LiveryCoveragePercent.Mean) + "%", RightX + 14.0f, y); y += RowHeight;
+        drawLabelValue("LIVERY COVERAGE MED", formatDouble(summary.LiveryCoveragePercent.Median) + "%", RightX + 14.0f, y); y += RowHeight;
+        drawLabelValue("LIVERY COVERAGE P95", formatDouble(summary.LiveryCoveragePercent.P95) + "%", RightX + 14.0f, y); y += RowHeight;
+        drawLabelValue("LIVERY CONNECTED P95", formatDouble(summary.LiveryLargestConnectedCoveragePercent.P95) + "%", RightX + 14.0f, y); y += RowHeight;
         drawLabelValue("MAJOR FEATURES AVG", formatDouble(summary.MajorFeatureCount.Mean), RightX + 14.0f, y); y += RowHeight;
         drawLabelValue("WEAPONS AVG", formatDouble(summary.WeaponCount.Mean), RightX + 14.0f, y); y += RowHeight;
         drawLabelValue("ENGINES AVG", formatDouble(summary.EngineCount.Mean), RightX + 14.0f, y); y += RowHeight;
