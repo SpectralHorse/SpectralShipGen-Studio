@@ -9,6 +9,7 @@ namespace PixelShipGeneratorTests
             { "preview-favorites", "Preview Favorites Persistence", RegressionCategory::PERSISTENCE, runPreviewFavoritesPersistenceRegression, false },
             { "preview-session", "Preview Session Controllers", RegressionCategory::TOOLING, runPreviewSessionRegression, false },
             { "diagnostics-app", "Diagnostics Application Controller", RegressionCategory::TOOLING, runDiagnosticsAppRegression, false },
+            { "configuration-editor", "Preview Configuration Editor", RegressionCategory::TOOLING, runPreviewConfigurationEditorRegression, false },
             { "calibration", "Calibration Lab", RegressionCategory::TOOLING, runGenerationCalibrationRegression, true }
         };
 #if PIXEL_SHIP_GENERATOR_PREVIEW_HAS_SFML

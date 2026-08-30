@@ -975,6 +975,72 @@ namespace PixelShipGeneratorPreview
         updateWindowTitle();
     }
 
+    void ShipGeneratorPreviewApp::enterConfigurationEditor()
+    {
+        if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
+
+        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        PixelShipGenerator::ShipGenerationProfile profile;
+        std::string name;
+        if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
+        {
+            profile = recipe.StructuralProfile;
+            name = "Current Custom";
+        }
+        else
+        {
+            profile = PixelShipGenerator::getShipGenerationProfile(recipe.Style);
+            name = getStyleName(recipe.Style) + " Copy";
+        }
+
+        m_ConfigurationEditorReturnMode = m_PreviewMode;
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.openStructuralProfile(std::move(name), profile);
+        m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
+        setDisplayedStaticFrame();
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::handleConfigurationEditorEvent(const ConfigurationEditorEvent& event)
+    {
+        switch (event.Action)
+        {
+        case ConfigurationEditorAction::APPLY:
+        {
+            const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile());
+            const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
+            PreviewGenerationRecipe recipe = getCurrentRecipe();
+            recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+            recipe.Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
+            recipe.StructuralProfile = m_ConfigurationEditor.getDraftProfile();
+            m_ConfigurationEditor.close();
+            m_PreviewMode = PreviewMode::STATIC;
+            appendHistoryEntry(recipe);
+            setStatusMessage("Applied runtime structural preset: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
+            break;
+        }
+        case ConfigurationEditorAction::DUPLICATE:
+        {
+            const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile());
+            const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
+            setStatusMessage("Runtime preset copy created: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
+            break;
+        }
+        case ConfigurationEditorAction::CANCEL:
+            m_ConfigurationEditor.close();
+            m_PreviewMode = m_ConfigurationEditorReturnMode;
+            if (m_PreviewMode == PreviewMode::ANIMATION) { m_AnimationClock.restart(); }
+            if (m_PreviewMode == PreviewMode::STATIC) { setDisplayedStaticFrame(); }
+            setStatusMessage("Configuration editor changes discarded.");
+            updateWindowTitle();
+            break;
+        case ConfigurationEditorAction::RESET:
+        case ConfigurationEditorAction::CONFIGURATION_EDITOR_ACTION_END:
+        default:
+            break;
+        }
+    }
+
     void ShipGeneratorPreviewApp::enterGalleryMode()
     {
         buildGallery(m_SeedGenerator());
@@ -1580,6 +1646,16 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::handleKeyPressed(const sf::Event::KeyEvent& event)
     {
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
+        {
+            if (event.code == sf::Keyboard::Escape) { handleConfigurationEditorEvent(m_ConfigurationEditor.createCancelEvent()); }
+            return;
+        }
+        if (event.code == sf::Keyboard::PageDown)
+        {
+            enterConfigurationEditor();
+            return;
+        }
         const std::optional<PreviewCommand> command = getKeyboardCommand(event.code, event.shift);
         if (command.has_value()) { executeCommand(*command); }
     }
@@ -1587,6 +1663,11 @@ namespace PixelShipGeneratorPreview
     void ShipGeneratorPreviewApp::handleMouseMoved(const sf::Event::MouseMoveEvent& event)
     {
         const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
+        {
+            m_ConfigurationEditor.onMouseMove(position.x, position.y);
+            return;
+        }
         m_CommandPanel.onMouseMove(position);
 
         if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible) { return; }
@@ -1602,6 +1683,11 @@ namespace PixelShipGeneratorPreview
         }
 
         const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
+        {
+            m_ConfigurationEditor.onMousePress(position.x, position.y);
+            return;
+        }
         m_CommandPanel.onMousePress(position);
 
         if (m_CommandPanel.getPressedButtonIndex() >= 0 || m_CommandPanel.isDimensionSliderDragging())
@@ -1640,8 +1726,24 @@ namespace PixelShipGeneratorPreview
         }
 
         const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
+        {
+            const std::optional<ConfigurationEditorEvent> editorEvent = m_ConfigurationEditor.onMouseRelease(position.x, position.y);
+            if (editorEvent.has_value()) { handleConfigurationEditorEvent(*editorEvent); }
+            return;
+        }
         const std::optional<PreviewCommand> command = m_CommandPanel.onMouseRelease(position);
         if (command.has_value()) { executeCommand(*command); }
+    }
+
+    void ShipGeneratorPreviewApp::handleMouseWheelScrolled(const sf::Event::MouseWheelScrollEvent& event)
+    {
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { m_ConfigurationEditor.onMouseWheelScrolled(event.delta); }
+    }
+
+    void ShipGeneratorPreviewApp::handleTextEntered(const sf::Event::TextEvent& event)
+    {
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { m_ConfigurationEditor.onTextEntered(event.unicode); }
     }
 
     bool ShipGeneratorPreviewApp::isCommandActive(PreviewCommandType type) const
@@ -1973,6 +2075,7 @@ namespace PixelShipGeneratorPreview
             std::cout << "  " << commandData.Shortcut << "    " << commandData.Description << '\n';
         }
 
+        std::cout << "  F12    Open the session-only configuration editor foundation.\n";
         std::cout << "\n\n";
     }
 
@@ -2012,6 +2115,16 @@ namespace PixelShipGeneratorPreview
             if (event.type == sf::Event::MouseButtonReleased)
             {
                 handleMouseReleased(event.mouseButton);
+            }
+
+            if (event.type == sf::Event::MouseWheelScrolled)
+            {
+                handleMouseWheelScrolled(event.mouseWheelScroll);
+            }
+
+            if (event.type == sf::Event::TextEntered)
+            {
+                handleTextEntered(event.text);
             }
 
             if (event.type == sf::Event::KeyPressed)
@@ -2195,7 +2308,8 @@ namespace PixelShipGeneratorPreview
         data.HistoryIndex = m_Collections.getHistoryIndex();
         data.HistoryCount = m_Collections.getHistoryCount();
         data.AnimationFrameIndex = m_AnimationSession.getFrameIndex();
-        data.CommandPanel = &m_CommandPanel;
+        data.CommandPanel = m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR ? nullptr : &m_CommandPanel;
+        data.ConfigurationEditor = m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR ? &m_ConfigurationEditor : nullptr;
         data.CurrentIsFavorite = isCurrentFavorite();
         data.StatusMessage = &m_StatusMessage;
         data.CalibrationPair = m_PreviewMode == PreviewMode::CALIBRATION ? &m_CalibrationPair : nullptr;
@@ -2646,6 +2760,12 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::updateWindowTitle()
     {
+        if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
+        {
+            m_Window.setTitle("Pixel Ship Generator | Configuration Editor | " + m_ConfigurationEditor.getName() + " | Runtime structural presets: " + std::to_string(m_CustomPresetWorkspace.getStructuralPresets().size()));
+            return;
+        }
+
         if (m_PreviewMode == PreviewMode::GALLERY)
         {
             const std::string title = "Pixel Ship Generator | Gallery | BatchSeed: " + std::to_string(m_GalleryState.BatchSeed) + " | " + std::to_string(m_GalleryState.CandidateCount) + " candidates | Style: " + getStyleName(m_GalleryState.TemplateRecipe.Style) + " | Faction: " + getFactionName(m_GalleryState.TemplateRecipe.Faction) + " | " + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Width) + "x" + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Height) + " | Selected " + std::to_string(m_GalleryState.Grid.SelectedIndex + 1u) + "/" + std::to_string(m_GalleryState.Grid.Items.size());

@@ -15,6 +15,7 @@
 #include "ShipMovementAnimation.h"
 
 #include "PreviewCommandPanel.h"
+#include "PreviewConfigurationEditor.h"
 #include "PreviewState.h"
 
 namespace PixelShipGeneratorPreview
@@ -47,6 +48,7 @@ namespace PixelShipGeneratorPreview
         const PixelShipGenerator::ShipFiringAnimation* FiringAnimation = nullptr;
         const PixelShipGenerator::ShipFiringAnimationSettings* FiringAnimationSettings = nullptr;
         const PreviewCommandPanel* CommandPanel = nullptr;
+        const PreviewConfigurationEditor* ConfigurationEditor = nullptr;
         std::size_t HistoryIndex = 0u;
         std::size_t HistoryCount = 0u;
         uint32_t AnimationFrameIndex = 0u;
@@ -71,6 +73,7 @@ namespace PixelShipGeneratorPreview
 
     private:
         void renderCommandPanel(sf::RenderWindow& window, const PreviewCommandPanel& commandPanel) const;
+        void renderConfigurationEditor(sf::RenderWindow& window, const PreviewConfigurationEditor& editor) const;
         void renderCalibration(sf::RenderWindow& window, const PreviewRenderData& data) const;
         void renderComparison(sf::RenderWindow& window, const PreviewRenderData& data) const;
         void renderRerollStudio(sf::RenderWindow& window, const PreviewRenderData& data) const;

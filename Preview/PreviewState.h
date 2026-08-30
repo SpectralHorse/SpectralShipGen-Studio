@@ -86,7 +86,8 @@ namespace PixelShipGeneratorPreview
         GALLERY,
         FAVORITES,
         REROLL_STUDIO,
-        CALIBRATION
+        CALIBRATION,
+        CONFIGURATION_EDITOR
     };
 
     enum class DiagnosticViewMode : uint32_t

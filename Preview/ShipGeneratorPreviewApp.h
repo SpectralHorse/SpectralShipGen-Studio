@@ -21,6 +21,8 @@
 #include "GenerationCalibrationSerializer.h"
 #include "PreviewCommand.h"
 #include "PreviewCommandPanel.h"
+#include "PreviewConfigurationEditor.h"
+#include "RuntimeCustomPresetWorkspace.h"
 #include "PreviewAnimationSession.h"
 #include "PreviewCollectionSession.h"
 #include "PreviewRenderer.h"
@@ -72,6 +74,8 @@ namespace PixelShipGeneratorPreview
         void runCalibrationObjectiveBatch();
         CalibrationContextFilter getCalibrationContextFilter() const;
         void enterFrameInspection();
+        void enterConfigurationEditor();
+        void handleConfigurationEditorEvent(const ConfigurationEditorEvent& event);
         void enterGalleryMode();
         void enterGalleryModeFromKnownSeed();
         void enterFavoritesMode();
@@ -90,6 +94,8 @@ namespace PixelShipGeneratorPreview
         void handleMouseMoved(const sf::Event::MouseMoveEvent& event);
         void handleMousePressed(const sf::Event::MouseButtonEvent& event);
         void handleMouseReleased(const sf::Event::MouseButtonEvent& event);
+        void handleMouseWheelScrolled(const sf::Event::MouseWheelScrollEvent& event);
+        void handleTextEntered(const sf::Event::TextEvent& event);
         bool isCommandActive(PreviewCommandType type) const;
         bool isCommandEnabled(const PreviewCommand& command) const;
         bool importRecipeFromPath(const std::filesystem::path& path);
@@ -154,10 +160,13 @@ namespace PixelShipGeneratorPreview
         std::mt19937_64 m_SeedGenerator;
         PreviewRenderer m_Renderer;
         PreviewCommandPanel m_CommandPanel;
+        PreviewConfigurationEditor m_ConfigurationEditor;
+        RuntimeCustomPresetWorkspace m_CustomPresetWorkspace;
         PreviewAnimationSession m_AnimationSession;
         PreviewCollectionSession m_Collections{ PreviewGenerationRecipe{} };
 
         PreviewMode m_PreviewMode = PreviewMode::STATIC;
+        PreviewMode m_ConfigurationEditorReturnMode = PreviewMode::STATIC;
         PreviewDiagnosticState m_Diagnostics;
         GalleryState m_GalleryState;
         FavoritesState m_FavoritesState;

@@ -150,6 +150,7 @@ namespace
         case PixelShipGeneratorPreview::PreviewMode::FAVORITES: return "FAVORITES";
         case PixelShipGeneratorPreview::PreviewMode::REROLL_STUDIO: return "REROLL STUDIO";
         case PixelShipGeneratorPreview::PreviewMode::CALIBRATION: return "CALIBRATION";
+        case PixelShipGeneratorPreview::PreviewMode::CONFIGURATION_EDITOR: return "CONFIGURATION EDITOR";
         default: return "UNKNOWN";
         }
     }
@@ -548,15 +549,22 @@ namespace PixelShipGeneratorPreview
             renderSingle(window, *data.PreviewSprite);
         }
 
-        const bool singlePreviewMode = data.Mode == PreviewMode::STATIC || data.Mode == PreviewMode::ANIMATION || data.Mode == PreviewMode::FRAME_INSPECTION;
+        const bool singlePreviewMode = data.Mode == PreviewMode::STATIC || data.Mode == PreviewMode::ANIMATION || data.Mode == PreviewMode::FRAME_INSPECTION || data.Mode == PreviewMode::CONFIGURATION_EDITOR;
         const bool comparisonVisible = data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid;
         if (singlePreviewMode && !comparisonVisible && data.NativePreviewTexture != nullptr && data.Recipe != nullptr)
         {
             renderNativePreview(window, data);
         }
 
-        renderPersistentStatePanel(window, data);
-        if (data.CommandPanel != nullptr) { renderCommandPanel(window, *data.CommandPanel); }
+        if (data.Mode == PreviewMode::CONFIGURATION_EDITOR && data.ConfigurationEditor != nullptr)
+        {
+            renderConfigurationEditor(window, *data.ConfigurationEditor);
+        }
+        else
+        {
+            renderPersistentStatePanel(window, data);
+            if (data.CommandPanel != nullptr) { renderCommandPanel(window, *data.CommandPanel); }
+        }
 
         if (data.Diagnostics != nullptr)
         {
@@ -692,6 +700,152 @@ namespace PixelShipGeneratorPreview
         {
             drawDebugText(window, wrapDebugText(hoveredCommandData->Description, 84u), CommandPanelX + 18.0f, descriptionY + 26.0f, sf::Color(185, 190, 202), SmallTextScale);
         }
+    }
+
+    void PreviewRenderer::renderConfigurationEditor(sf::RenderWindow& window, const PreviewConfigurationEditor& editor) const
+    {
+        const ConfigurationEditorRect panel = editor.getPanelBounds();
+        const ConfigurationEditorRect viewport = editor.getContentViewport();
+        drawPanel(window, panel.Left, panel.Top, panel.Width, panel.Height, sf::Color(18, 19, 24, 252), sf::Color(82, 88, 104));
+        drawDebugText(window, "CONFIGURATION EDITOR", panel.Left + 18.0f, panel.Top + 12.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, "TASK 89 FOUNDATION / REPRESENTATIVE STRUCTURAL FIELDS", panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), SmallTextScale);
+        drawDebugText(window, "F12 opens  |  wheel scrolls  |  ESC cancels", panel.Left + panel.Width - 300.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);
+
+        drawPanel(window, viewport.Left - 6.0f, viewport.Top - 4.0f, viewport.Width + 12.0f, viewport.Height + 8.0f, sf::Color(13, 14, 18, 248), sf::Color(48, 52, 62));
+
+        const auto visible = [&](const ConfigurationEditorRect& bounds)
+        {
+            return bounds.Top + bounds.Height >= viewport.Top && bounds.Top <= viewport.Top + viewport.Height;
+        };
+        const auto drawSmallButton = [&](const ConfigurationEditorRect& bounds, const char* label, bool enabled = true)
+        {
+            if (!visible(bounds)) { return; }
+            drawPanel(window, bounds.Left, bounds.Top, bounds.Width, bounds.Height, enabled ? sf::Color(38, 42, 51) : sf::Color(24, 25, 29), enabled ? sf::Color(82, 92, 110) : sf::Color(46, 48, 55));
+            const float textWidth = getDebugTextWidth(label, SmallTextScale);
+            drawDebugText(window, label, bounds.Left + std::max(2.0f, (bounds.Width - textWidth) * 0.5f), bounds.Top + 6.0f, enabled ? sf::Color(220, 224, 232) : sf::Color(90, 94, 105), SmallTextScale);
+        };
+        const auto drawInteger = [&](const ConfigurationIntegerControl& control, bool showProbability = false, uint32_t probability = 0u)
+        {
+            if (!visible(control.RowBounds)) { return; }
+            drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+            sf::RectangleShape track(sf::Vector2f(control.TrackBounds.Width, control.TrackBounds.Height));
+            track.setPosition(control.TrackBounds.Left, control.TrackBounds.Top);
+            track.setFillColor(sf::Color(58, 64, 76));
+            window.draw(track);
+            const float span = static_cast<float>(std::max(1, control.Maximum - control.Minimum));
+            const float normalized = static_cast<float>(control.Value - control.Minimum) / span;
+            sf::RectangleShape knob(sf::Vector2f(4.0f, 14.0f));
+            knob.setPosition(control.TrackBounds.Left + normalized * control.TrackBounds.Width - 2.0f, control.TrackBounds.Top - 4.0f);
+            knob.setFillColor(control.Dragging ? sf::Color(240, 215, 105) : sf::Color(120, 190, 230));
+            window.draw(knob);
+            const std::string value = control.getDisplayValue();
+            drawDebugText(window, value, control.TrackBounds.Left + control.TrackBounds.Width + 8.0f, control.RowBounds.Top + 8.0f, sf::Color(232, 234, 240), SmallTextScale);
+            if (showProbability)
+            {
+                const std::string probabilityText = std::to_string(probability) + "% share";
+                drawDebugText(window, probabilityText, control.TrackBounds.Left - 74.0f, control.RowBounds.Top + 8.0f, sf::Color(125, 175, 205), SmallTextScale);
+            }
+            drawSmallButton(control.DecrementBounds, "-");
+            drawSmallButton(control.IncrementBounds, "+");
+        };
+
+        for (const ConfigurationEditorSectionState& section : editor.getSections())
+        {
+            if (!visible(section.HeaderBounds)) { continue; }
+            drawPanel(window, section.HeaderBounds.Left, section.HeaderBounds.Top, section.HeaderBounds.Width, section.HeaderBounds.Height, sf::Color(29, 32, 40), sf::Color(55, 64, 78));
+            drawDebugText(window, section.Expanded ? "[-]" : "[+]", section.HeaderBounds.Left + 6.0f, section.HeaderBounds.Top + 7.0f, sf::Color(125, 190, 230), SmallTextScale);
+            drawDebugText(window, section.Label, section.HeaderBounds.Left + 34.0f, section.HeaderBounds.Top + 7.0f, sf::Color(205, 212, 225), SmallTextScale);
+        }
+
+        if (editor.getSections()[0u].Expanded)
+        {
+            const ConfigurationTextField& field = editor.getNameField();
+            if (visible(field.Bounds))
+            {
+                drawDebugText(window, field.Label, field.Bounds.Left + 6.0f, field.Bounds.Top + 7.0f, sf::Color(170, 175, 190), SmallTextScale);
+                const float boxLeft = field.Bounds.Left + 150.0f;
+                const float boxWidth = field.Bounds.Width - 156.0f;
+                drawPanel(window, boxLeft, field.Bounds.Top + 2.0f, boxWidth, field.Bounds.Height - 4.0f, sf::Color(23, 25, 31), field.Focused ? sf::Color(135, 185, 225) : sf::Color(61, 66, 78));
+                drawDebugText(window, field.Value + (field.Focused ? "_" : ""), boxLeft + 7.0f, field.Bounds.Top + 8.0f, sf::Color(232, 234, 240), SmallTextScale);
+            }
+        }
+        if (editor.getSections()[1u].Expanded)
+        {
+            drawInteger(editor.getWeaponChanceControl());
+            drawInteger(editor.getWeaponScaleControl());
+            drawInteger(editor.getWeaponGroupCountControl());
+        }
+        if (editor.getSections()[2u].Expanded)
+        {
+            const ConfigurationRangeControl& range = editor.getNoseWidthRangeControl();
+            if (visible(range.RowBounds))
+            {
+                drawDebugText(window, range.Label, range.RowBounds.Left + 6.0f, range.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                drawDebugText(window, "MIN " + std::to_string(range.MinimumValue), range.MinimumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), SmallTextScale);
+                drawSmallButton(range.MinimumDecrementBounds, "-");
+                drawSmallButton(range.MinimumIncrementBounds, "+");
+                drawDebugText(window, "MAX " + std::to_string(range.MaximumValue), range.MaximumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), SmallTextScale);
+                drawSmallButton(range.MaximumDecrementBounds, "-");
+                drawSmallButton(range.MaximumIncrementBounds, "+");
+            }
+        }
+        if (editor.getSections()[3u].Expanded) { drawInteger(editor.getPaletteValueOffsetControl()); }
+        if (editor.getSections()[4u].Expanded)
+        {
+            const auto& group = editor.getVisualAnchorWeightsControl();
+            const auto& rows = group.getRows();
+            for (std::size_t index = 0u; index < group.getRowCount(); ++index) { drawInteger(rows[index].Control, true, rows[index].ProbabilityPercent); }
+        }
+        if (editor.getSections()[5u].Expanded)
+        {
+            float y = editor.getSections()[5u].HeaderBounds.Top + editor.getSections()[5u].HeaderBounds.Height + 6.0f;
+            const auto drawIssue = [&](const PixelShipGenerator::ValidationIssue& issue, const sf::Color& color)
+            {
+                if (y > viewport.Top + viewport.Height) { return; }
+                if (y + 24.0f >= viewport.Top)
+                {
+                    drawDebugText(window, issue.Field.empty() ? "CONFIG" : issue.Field, viewport.Left + 8.0f, y, color, SmallTextScale);
+                    drawDebugText(window, wrapDebugText(issue.Message, 76u), viewport.Left + 170.0f, y, sf::Color(190, 194, 204), SmallTextScale);
+                }
+                y += 28.0f;
+            };
+            const auto& validation = editor.getValidationResult();
+            if (validation.Errors.empty() && validation.Warnings.empty())
+            {
+                if (y >= viewport.Top && y <= viewport.Top + viewport.Height) { drawDebugText(window, "VALID / NO CORE VALIDATION ISSUES", viewport.Left + 8.0f, y, sf::Color(125, 215, 150), SmallTextScale); }
+            }
+            else
+            {
+                for (const auto& issue : validation.Errors) { drawIssue(issue, sf::Color(235, 105, 105)); }
+                for (const auto& issue : validation.Warnings) { drawIssue(issue, sf::Color(235, 195, 100)); }
+            }
+        }
+
+        if (editor.getMaximumScrollOffset() > 0.0f)
+        {
+            const float trackX = viewport.Left + viewport.Width - 4.0f;
+            sf::RectangleShape scrollTrack(sf::Vector2f(3.0f, viewport.Height));
+            scrollTrack.setPosition(trackX, viewport.Top);
+            scrollTrack.setFillColor(sf::Color(42, 45, 54));
+            window.draw(scrollTrack);
+            const float thumbHeight = std::max(30.0f, viewport.Height * viewport.Height / (viewport.Height + editor.getMaximumScrollOffset()));
+            const float available = viewport.Height - thumbHeight;
+            const float normalized = editor.getScrollOffset() / editor.getMaximumScrollOffset();
+            sf::RectangleShape thumb(sf::Vector2f(3.0f, thumbHeight));
+            thumb.setPosition(trackX, viewport.Top + normalized * available);
+            thumb.setFillColor(sf::Color(120, 185, 225));
+            window.draw(thumb);
+        }
+
+        for (const ConfigurationEditorActionButton& button : editor.getActionButtons())
+        {
+            drawPanel(window, button.Bounds.Left, button.Bounds.Top, button.Bounds.Width, button.Bounds.Height, button.Enabled ? sf::Color(39, 46, 57) : sf::Color(24, 25, 30), button.Enabled ? sf::Color(88, 104, 124) : sf::Color(45, 48, 56));
+            const float textWidth = getDebugTextWidth(button.Label, SmallTextScale);
+            drawDebugText(window, button.Label, button.Bounds.Left + std::max(4.0f, (button.Bounds.Width - textWidth) * 0.5f), button.Bounds.Top + 10.0f, button.Enabled ? sf::Color(225, 229, 237) : sf::Color(90, 94, 105), SmallTextScale);
+        }
+
+        const std::string dirty = editor.hasUnsavedChanges() ? "UNAPPLIED CHANGES" : "NO CHANGES";
+        drawDebugText(window, dirty, panel.Left + 18.0f, panel.Top + panel.Height - 22.0f, editor.hasUnsavedChanges() ? sf::Color(235, 195, 100) : sf::Color(120, 175, 140), SmallTextScale);
     }
 
     void PreviewRenderer::renderCalibration(sf::RenderWindow& window, const PreviewRenderData& data) const
