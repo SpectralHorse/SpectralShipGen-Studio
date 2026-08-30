@@ -47,7 +47,9 @@ namespace PixelShipGeneratorPreview
 
     void ConfigurationIntegerControl::setValue(int32_t value)
     {
-        Value = clampSteppedValue(value, Minimum, Maximum, Step);
+        // Loading an existing Core configuration must preserve any valid value exactly.
+        // Step controls interaction increments and track snapping; it is not a storage grid.
+        Value = std::clamp(value, Minimum, Maximum);
     }
 
     void ConfigurationIntegerControl::decrement() { setValue(Value - Step); }

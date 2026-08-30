@@ -22,6 +22,7 @@
 #include "PreviewCommand.h"
 #include "PreviewCommandPanel.h"
 #include "PreviewConfigurationEditor.h"
+#include "FactionProfileSelection.h"
 #include "RuntimeCustomPresetWorkspace.h"
 #include "StructuralProfileSelection.h"
 #include "PreviewAnimationSession.h"
@@ -77,6 +78,8 @@ namespace PixelShipGeneratorPreview
         void enterFrameInspection();
         void enterConfigurationEditor();
         void enterConfigurationEditorDefault();
+        void enterFactionConfigurationEditor();
+        void enterFactionConfigurationEditorDefault();
         void handleConfigurationEditorEvent(const ConfigurationEditorEvent& event);
         void enterGalleryMode();
         void enterGalleryModeFromKnownSeed();
@@ -136,6 +139,9 @@ namespace PixelShipGeneratorPreview
         void setDisplayedAnimationFrame(uint32_t frameIndex);
         void setDisplayedStaticFrame();
         void setFaction(PixelShipGenerator::ShipFactionType faction);
+        void selectRuntimeFactionPreset(RuntimeCustomPresetId id);
+        void selectFactionProfileEntry(const FactionProfileSelectionEntry& entry);
+        std::string getCurrentFactionProfileDisplayName() const;
         void setDimensions(const PixelShipGenerator::ShipDimensions& dimensions);
         void setHeight(uint32_t height);
         void setResolution(uint32_t resolution);
@@ -173,7 +179,9 @@ namespace PixelShipGeneratorPreview
         PreviewMode m_PreviewMode = PreviewMode::STATIC;
         PreviewMode m_ConfigurationEditorReturnMode = PreviewMode::STATIC;
         std::optional<RuntimeCustomPresetId> m_SelectedStructuralPresetId;
+        std::optional<RuntimeCustomPresetId> m_SelectedFactionPresetId;
         std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetPresetId;
+        std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetFactionPresetId;
         PreviewDiagnosticState m_Diagnostics;
         GalleryState m_GalleryState;
         FavoritesState m_FavoritesState;

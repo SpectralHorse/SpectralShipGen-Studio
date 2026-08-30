@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "ShipFactionProfileValidation.h"
 #include "ShipGenerationProfileValidation.h"
 
 namespace PixelShipGeneratorPreview
@@ -29,15 +30,14 @@ namespace PixelShipGeneratorPreview
             { ConfigurationEditorAction::DUPLICATE, "DUPLICATE", {}, true }
         } };
 
-        auto& sections = m_ProfileBindings.getSections();
-        for (StructuralProfileEditorSection& section : sections) { section.Expanded = false; }
-        if (!sections.empty()) { sections.front().Expanded = true; }
+        collapseAllProfileSections();
         rebuildLayout();
     }
 
     void PreviewConfigurationEditor::openStructuralProfile(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
     {
         m_Open = true;
+        m_ProfileKind = ConfigurationEditorProfileKind::STRUCTURAL;
         m_InitialName = std::move(name);
         m_InitialProfile = profile;
         m_DraftProfile = profile;
@@ -45,6 +45,24 @@ namespace PixelShipGeneratorPreview
         m_NameField.Value = m_InitialName;
         m_NameField.Focused = false;
         m_ScrollOffset = 0.0f;
+        collapseAllProfileSections();
+        configureControlsFromDraft();
+        refreshValidation();
+        rebuildLayout();
+    }
+
+    void PreviewConfigurationEditor::openFactionProfile(std::string name, const PixelShipGenerator::ShipFactionProfile& profile)
+    {
+        m_Open = true;
+        m_ProfileKind = ConfigurationEditorProfileKind::FACTION;
+        m_InitialName = std::move(name);
+        m_InitialFactionProfile = profile;
+        m_DraftFactionProfile = profile;
+        m_NameField.Label = "DISPLAY NAME";
+        m_NameField.Value = m_InitialName;
+        m_NameField.Focused = false;
+        m_ScrollOffset = 0.0f;
+        collapseAllProfileSections();
         configureControlsFromDraft();
         refreshValidation();
         rebuildLayout();
@@ -58,6 +76,7 @@ namespace PixelShipGeneratorPreview
     }
 
     bool PreviewConfigurationEditor::isOpen() const { return m_Open; }
+    ConfigurationEditorProfileKind PreviewConfigurationEditor::getProfileKind() const { return m_ProfileKind; }
 
     void PreviewConfigurationEditor::setPanelBounds(const ConfigurationEditorRect& bounds)
     {
@@ -69,12 +88,17 @@ namespace PixelShipGeneratorPreview
     {
         if (!m_Open) { return; }
         bool changed = false;
-        for (StructuralProfileEditorSection& section : m_ProfileBindings.getSections())
+        const auto updateSections = [&](auto& sections)
         {
-            if (!section.Expanded) { continue; }
-            for (StructuralIntegerFieldBinding& field : section.Integers) { changed = field.Control.updatePointer(x) || changed; }
-            for (StructuralWeightGroupBinding& field : section.WeightGroups) { changed = field.Control.updatePointer(x) || changed; }
-        }
+            for (auto& section : sections)
+            {
+                if (!section.Expanded) { continue; }
+                for (auto& field : section.Integers) { changed = field.Control.updatePointer(x) || changed; }
+                for (auto& field : section.WeightGroups) { changed = field.Control.updatePointer(x) || changed; }
+            }
+        };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { updateSections(m_ProfileBindings.getSections()); }
+        else { updateSections(m_FactionProfileBindings.getSections()); }
         if (changed)
         {
             syncDraftFromControls();
@@ -98,18 +122,19 @@ namespace PixelShipGeneratorPreview
         if (m_NameField.activate(x, y)) { return; }
         m_NameField.Focused = false;
 
-        for (StructuralProfileEditorSection& section : m_ProfileBindings.getSections())
+        bool consumed = false;
+        const auto pressSections = [&](auto& sections)
         {
-            if (!section.Expanded) { continue; }
-            for (StructuralIntegerFieldBinding& field : section.Integers)
+            for (auto& section : sections)
             {
-                if (field.Control.beginPointer(x, y)) { return; }
+                if (!section.Expanded || consumed) { continue; }
+                for (auto& field : section.Integers) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
+                if (consumed) { continue; }
+                for (auto& field : section.WeightGroups) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
             }
-            for (StructuralWeightGroupBinding& field : section.WeightGroups)
-            {
-                if (field.Control.beginPointer(x, y)) { return; }
-            }
-        }
+        };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { pressSections(m_ProfileBindings.getSections()); }
+        else { pressSections(m_FactionProfileBindings.getSections()); }
     }
 
     std::optional<ConfigurationEditorEvent> PreviewConfigurationEditor::onMouseRelease(float x, float y)
@@ -123,15 +148,20 @@ namespace PixelShipGeneratorPreview
         }
 
         bool changed = false;
-        for (StructuralProfileEditorSection& section : m_ProfileBindings.getSections())
+        const auto releaseSections = [&](auto& sections)
         {
-            if (!section.Expanded) { continue; }
-            for (StructuralIntegerFieldBinding& field : section.Integers) { changed = field.Control.endPointer(x, y) || changed; }
-            for (StructuralRangeFieldBinding& field : section.Ranges) { changed = field.Control.activate(x, y) || changed; }
-            for (StructuralToggleFieldBinding& field : section.Toggles) { changed = field.Control.activate(x, y) || changed; }
-            for (StructuralChoiceFieldBinding& field : section.Choices) { changed = field.Control.activate(x, y) || changed; }
-            for (StructuralWeightGroupBinding& field : section.WeightGroups) { changed = field.Control.endPointer(x, y) || changed; }
-        }
+            for (auto& section : sections)
+            {
+                if (!section.Expanded) { continue; }
+                for (auto& field : section.Integers) { changed = field.Control.endPointer(x, y) || changed; }
+                for (auto& field : section.Ranges) { changed = field.Control.activate(x, y) || changed; }
+                for (auto& field : section.Toggles) { changed = field.Control.activate(x, y) || changed; }
+                for (auto& field : section.Choices) { changed = field.Control.activate(x, y) || changed; }
+                for (auto& field : section.WeightGroups) { changed = field.Control.endPointer(x, y) || changed; }
+            }
+        };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { releaseSections(m_ProfileBindings.getSections()); }
+        else { releaseSections(m_FactionProfileBindings.getSections()); }
         if (changed)
         {
             syncDraftFromControls();
@@ -157,19 +187,20 @@ namespace PixelShipGeneratorPreview
 
     ConfigurationEditorEvent PreviewConfigurationEditor::createCancelEvent() const { return { ConfigurationEditorAction::CANCEL }; }
 
-    void PreviewConfigurationEditor::setValidationResult(const PixelShipGenerator::ValidationResult& result)
-    {
-        m_ValidationResult = result;
-    }
-
+    void PreviewConfigurationEditor::setValidationResult(const PixelShipGenerator::ValidationResult& result) { m_ValidationResult = result; }
     const PixelShipGenerator::ValidationResult& PreviewConfigurationEditor::getValidationResult() const { return m_ValidationResult; }
     const std::string& PreviewConfigurationEditor::getName() const { return m_NameField.Value; }
     const PixelShipGenerator::ShipGenerationProfile& PreviewConfigurationEditor::getDraftProfile() const { return m_DraftProfile; }
     const PixelShipGenerator::ShipGenerationProfile& PreviewConfigurationEditor::getInitialProfile() const { return m_InitialProfile; }
+    const PixelShipGenerator::ShipFactionProfile& PreviewConfigurationEditor::getDraftFactionProfile() const { return m_DraftFactionProfile; }
+    const PixelShipGenerator::ShipFactionProfile& PreviewConfigurationEditor::getInitialFactionProfile() const { return m_InitialFactionProfile; }
 
     bool PreviewConfigurationEditor::hasUnsavedChanges() const
     {
-        return m_NameField.Value != m_InitialName || !m_ProfileBindings.equivalent(m_DraftProfile, m_InitialProfile);
+        if (m_NameField.Value != m_InitialName) { return true; }
+        return m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL
+            ? !m_ProfileBindings.equivalent(m_DraftProfile, m_InitialProfile)
+            : !m_FactionProfileBindings.equivalent(m_DraftFactionProfile, m_InitialFactionProfile);
     }
 
     float PreviewConfigurationEditor::getScrollOffset() const { return m_ScrollOffset; }
@@ -178,9 +209,10 @@ namespace PixelShipGeneratorPreview
     ConfigurationEditorRect PreviewConfigurationEditor::getContentViewport() const { return m_ContentViewport; }
     const ConfigurationTextField& PreviewConfigurationEditor::getNameField() const { return m_NameField; }
     const std::vector<StructuralProfileEditorSection>& PreviewConfigurationEditor::getProfileSections() const { return m_ProfileBindings.getSections(); }
+    const std::vector<FactionProfileEditorSection>& PreviewConfigurationEditor::getFactionProfileSections() const { return m_FactionProfileBindings.getSections(); }
     const ConfigurationEditorSectionState& PreviewConfigurationEditor::getValidationSection() const { return m_ValidationSection; }
     const std::array<ConfigurationEditorActionButton, 4u>& PreviewConfigurationEditor::getActionButtons() const { return m_ActionButtons; }
-    std::size_t PreviewConfigurationEditor::getBoundValueCount() const { return m_ProfileBindings.getBoundValueCount(); }
+    std::size_t PreviewConfigurationEditor::getBoundValueCount() const { return m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL ? m_ProfileBindings.getBoundValueCount() : m_FactionProfileBindings.getBoundValueCount(); }
 
     const StructuralIntegerFieldBinding* PreviewConfigurationEditor::findIntegerField(std::string_view path) const { return m_ProfileBindings.findInteger(path); }
     StructuralIntegerFieldBinding* PreviewConfigurationEditor::findIntegerField(std::string_view path) { return m_ProfileBindings.findInteger(path); }
@@ -193,27 +225,51 @@ namespace PixelShipGeneratorPreview
     const StructuralWeightGroupBinding* PreviewConfigurationEditor::findWeightGroup(std::string_view path) const { return m_ProfileBindings.findWeightGroup(path); }
     StructuralWeightGroupBinding* PreviewConfigurationEditor::findWeightGroup(std::string_view path) { return m_ProfileBindings.findWeightGroup(path); }
 
+    const FactionIntegerFieldBinding* PreviewConfigurationEditor::findFactionIntegerField(std::string_view path) const { return m_FactionProfileBindings.findInteger(path); }
+    FactionIntegerFieldBinding* PreviewConfigurationEditor::findFactionIntegerField(std::string_view path) { return m_FactionProfileBindings.findInteger(path); }
+    const FactionRangeFieldBinding* PreviewConfigurationEditor::findFactionRangeField(std::string_view path) const { return m_FactionProfileBindings.findRange(path); }
+    FactionRangeFieldBinding* PreviewConfigurationEditor::findFactionRangeField(std::string_view path) { return m_FactionProfileBindings.findRange(path); }
+    const FactionToggleFieldBinding* PreviewConfigurationEditor::findFactionToggleField(std::string_view path) const { return m_FactionProfileBindings.findToggle(path); }
+    FactionToggleFieldBinding* PreviewConfigurationEditor::findFactionToggleField(std::string_view path) { return m_FactionProfileBindings.findToggle(path); }
+    const FactionChoiceFieldBinding* PreviewConfigurationEditor::findFactionChoiceField(std::string_view path) const { return m_FactionProfileBindings.findChoice(path); }
+    FactionChoiceFieldBinding* PreviewConfigurationEditor::findFactionChoiceField(std::string_view path) { return m_FactionProfileBindings.findChoice(path); }
+    const FactionWeightGroupBinding* PreviewConfigurationEditor::findFactionWeightGroup(std::string_view path) const { return m_FactionProfileBindings.findWeightGroup(path); }
+    FactionWeightGroupBinding* PreviewConfigurationEditor::findFactionWeightGroup(std::string_view path) { return m_FactionProfileBindings.findWeightGroup(path); }
+
     void PreviewConfigurationEditor::setSectionExpanded(std::size_t sectionIndex, bool expanded)
     {
-        auto& sections = m_ProfileBindings.getSections();
-        if (sectionIndex >= sections.size()) { return; }
-        sections[sectionIndex].Expanded = expanded;
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL)
+        {
+            auto& sections = m_ProfileBindings.getSections();
+            if (sectionIndex >= sections.size()) { return; }
+            sections[sectionIndex].Expanded = expanded;
+        }
+        else
+        {
+            auto& sections = m_FactionProfileBindings.getSections();
+            if (sectionIndex >= sections.size()) { return; }
+            sections[sectionIndex].Expanded = expanded;
+        }
         rebuildLayout();
     }
 
     void PreviewConfigurationEditor::configureControlsFromDraft()
     {
-        m_ProfileBindings.load(m_DraftProfile);
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_ProfileBindings.load(m_DraftProfile); }
+        else { m_FactionProfileBindings.load(m_DraftFactionProfile); }
     }
 
     void PreviewConfigurationEditor::syncDraftFromControls()
     {
-        m_ProfileBindings.write(m_DraftProfile);
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_ProfileBindings.write(m_DraftProfile); }
+        else { m_FactionProfileBindings.write(m_DraftFactionProfile); }
     }
 
     void PreviewConfigurationEditor::refreshValidation()
     {
-        setValidationResult(PixelShipGenerator::validateShipGenerationProfile(m_DraftProfile));
+        setValidationResult(m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL
+            ? PixelShipGenerator::validateShipGenerationProfile(m_DraftProfile)
+            : PixelShipGenerator::validateShipFactionProfile(m_DraftFactionProfile));
     }
 
     void PreviewConfigurationEditor::rebuildLayout()
@@ -232,25 +288,30 @@ namespace PixelShipGeneratorPreview
         m_NameField.Bounds = { contentLeft, y + 2.0f, contentWidth, RowHeight - 4.0f };
         y += RowHeight + SectionGap;
 
-        for (StructuralProfileEditorSection& section : m_ProfileBindings.getSections())
+        const auto layoutSections = [&](auto& sections)
         {
-            section.HeaderBounds = { contentLeft, y, contentWidth, SectionHeaderHeight };
-            y += SectionHeaderHeight;
-            if (section.Expanded)
+            for (auto& section : sections)
             {
-                for (StructuralIntegerFieldBinding& field : section.Integers) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
-                for (StructuralRangeFieldBinding& field : section.Ranges) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
-                for (StructuralToggleFieldBinding& field : section.Toggles) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
-                for (StructuralChoiceFieldBinding& field : section.Choices) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
-                for (StructuralWeightGroupBinding& field : section.WeightGroups)
+                section.HeaderBounds = { contentLeft, y, contentWidth, SectionHeaderHeight };
+                y += SectionHeaderHeight;
+                if (section.Expanded)
                 {
-                    const float groupHeight = WeightHeaderHeight + static_cast<float>(field.Control.getRowCount()) * WeightRowHeight;
-                    field.Control.setBounds({ contentLeft, y, contentWidth, groupHeight });
-                    y += groupHeight + 4.0f;
+                    for (auto& field : section.Integers) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
+                    for (auto& field : section.Ranges) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
+                    for (auto& field : section.Toggles) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
+                    for (auto& field : section.Choices) { field.Control.setRowBounds({ contentLeft, y, contentWidth, RowHeight - 4.0f }); y += RowHeight; }
+                    for (auto& field : section.WeightGroups)
+                    {
+                        const float groupHeight = WeightHeaderHeight + static_cast<float>(field.Control.getRowCount()) * WeightRowHeight;
+                        field.Control.setBounds({ contentLeft, y, contentWidth, groupHeight });
+                        y += groupHeight + 4.0f;
+                    }
                 }
+                y += SectionGap;
             }
-            y += SectionGap;
-        }
+        };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { layoutSections(m_ProfileBindings.getSections()); }
+        else { layoutSections(m_FactionProfileBindings.getSections()); }
 
         m_ValidationSection.HeaderBounds = { contentLeft, y, contentWidth, SectionHeaderHeight };
         y += SectionHeaderHeight;
@@ -285,17 +346,25 @@ namespace PixelShipGeneratorPreview
         m_ActionButtons[3u].Enabled = validForCommit;
     }
 
-    bool PreviewConfigurationEditor::isWithinContentViewport(float x, float y) const
-    {
-        return m_ContentViewport.contains(x, y);
-    }
+    bool PreviewConfigurationEditor::isWithinContentViewport(float x, float y) const { return m_ContentViewport.contains(x, y); }
 
     bool PreviewConfigurationEditor::activateSectionHeader(float x, float y)
     {
-        for (StructuralProfileEditorSection& section : m_ProfileBindings.getSections())
+        bool activated = false;
+        const auto activate = [&](auto& sections)
         {
-            if (!section.HeaderBounds.contains(x, y)) { continue; }
-            section.Expanded = !section.Expanded;
+            for (auto& section : sections)
+            {
+                if (!section.HeaderBounds.contains(x, y)) { continue; }
+                section.Expanded = !section.Expanded;
+                activated = true;
+                break;
+            }
+        };
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { activate(m_ProfileBindings.getSections()); }
+        else { activate(m_FactionProfileBindings.getSections()); }
+        if (activated)
+        {
             rebuildLayout();
             return true;
         }
@@ -325,7 +394,8 @@ namespace PixelShipGeneratorPreview
 
     void PreviewConfigurationEditor::resetDraft()
     {
-        m_DraftProfile = m_InitialProfile;
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL) { m_DraftProfile = m_InitialProfile; }
+        else { m_DraftFactionProfile = m_InitialFactionProfile; }
         m_NameField.Value = m_InitialName;
         configureControlsFromDraft();
         refreshValidation();
@@ -334,13 +404,26 @@ namespace PixelShipGeneratorPreview
 
     void PreviewConfigurationEditor::cancelDragging()
     {
-        for (StructuralProfileEditorSection& section : m_ProfileBindings.getSections())
+        const auto cancel = [](auto& sections)
         {
-            for (StructuralIntegerFieldBinding& field : section.Integers) { field.Control.Dragging = false; }
-            for (StructuralWeightGroupBinding& field : section.WeightGroups)
+            for (auto& section : sections)
             {
-                for (ConfigurationWeightRow& row : field.Control.getRows()) { row.Control.Dragging = false; }
+                for (auto& field : section.Integers) { field.Control.Dragging = false; }
+                for (auto& field : section.WeightGroups)
+                {
+                    for (ConfigurationWeightRow& row : field.Control.getRows()) { row.Control.Dragging = false; }
+                }
             }
-        }
+        };
+        cancel(m_ProfileBindings.getSections());
+        cancel(m_FactionProfileBindings.getSections());
+    }
+
+    void PreviewConfigurationEditor::collapseAllProfileSections()
+    {
+        for (StructuralProfileEditorSection& section : m_ProfileBindings.getSections()) { section.Expanded = false; }
+        for (FactionProfileEditorSection& section : m_FactionProfileBindings.getSections()) { section.Expanded = false; }
+        if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL && !m_ProfileBindings.getSections().empty()) { m_ProfileBindings.getSections().front().Expanded = true; }
+        if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION && !m_FactionProfileBindings.getSections().empty()) { m_FactionProfileBindings.getSections().front().Expanded = true; }
     }
 }

@@ -88,6 +88,24 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
+    bool RuntimeCustomPresetWorkspace::updateFaction(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipFactionProfile& profile)
+    {
+        RuntimeFactionPreset* preset = findFaction(id);
+        if (preset == nullptr) { return false; }
+        const std::string requested = name.empty() ? preset->Name : std::move(name);
+        std::string unique = requested;
+        if (unique != preset->Name)
+        {
+            const std::string original = preset->Name;
+            preset->Name.clear();
+            unique = makeUniqueFactionName(requested);
+            preset->Name = original;
+        }
+        preset->Name = std::move(unique);
+        preset->Profile = profile;
+        return true;
+    }
+
     bool RuntimeCustomPresetWorkspace::removeStructural(RuntimeCustomPresetId id) { return removePreset(m_StructuralPresets, id); }
     bool RuntimeCustomPresetWorkspace::removeFaction(RuntimeCustomPresetId id) { return removePreset(m_FactionPresets, id); }
     bool RuntimeCustomPresetWorkspace::removePalette(RuntimeCustomPresetId id) { return removePreset(m_PalettePresets, id); }

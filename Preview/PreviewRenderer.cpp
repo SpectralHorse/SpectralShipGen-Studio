@@ -707,9 +707,10 @@ namespace PixelShipGeneratorPreview
         const ConfigurationEditorRect panel = editor.getPanelBounds();
         const ConfigurationEditorRect viewport = editor.getContentViewport();
         drawPanel(window, panel.Left, panel.Top, panel.Width, panel.Height, sf::Color(18, 19, 24, 252), sf::Color(82, 88, 104));
-        drawDebugText(window, "STRUCTURAL PROFILE EDITOR", panel.Left + 18.0f, panel.Top + 12.0f, sf::Color(240, 215, 105), TextScale);
-        drawDebugText(window, "PUBLIC ShipGenerationProfile / RUNTIME CUSTOM PRESETS", panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), SmallTextScale);
-        drawDebugText(window, "PageDown opens  |  wheel scrolls  |  ESC cancels", panel.Left + panel.Width - 300.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);
+        const bool factionEditor = editor.getProfileKind() == ConfigurationEditorProfileKind::FACTION;
+        drawDebugText(window, factionEditor ? "FACTION PROFILE EDITOR" : "STRUCTURAL PROFILE EDITOR", panel.Left + 18.0f, panel.Top + 12.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, factionEditor ? "PUBLIC ShipFactionProfile / RUNTIME CUSTOM FACTIONS" : "PUBLIC ShipGenerationProfile / RUNTIME CUSTOM PRESETS", panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), SmallTextScale);
+        drawDebugText(window, "PgDn structural  |  Shift+PgDn faction  |  ESC cancels", panel.Left + panel.Width - 390.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);
 
         drawPanel(window, viewport.Left - 6.0f, viewport.Top - 4.0f, viewport.Width + 12.0f, viewport.Height + 8.0f, sf::Color(13, 14, 18, 248), sf::Color(48, 52, 62));
 
@@ -796,20 +797,25 @@ namespace PixelShipGeneratorPreview
             drawDebugText(window, nameField.Value + (nameField.Focused ? "_" : ""), boxLeft + 7.0f, nameField.Bounds.Top + 8.0f, sf::Color(232, 234, 240), SmallTextScale);
         }
 
-        for (const StructuralProfileEditorSection& section : editor.getProfileSections())
+        const auto drawProfileSections = [&](const auto& sections)
         {
-            drawSectionHeader(section.Label, section.HeaderBounds, section.Expanded);
-            if (!section.Expanded) { continue; }
-            for (const StructuralIntegerFieldBinding& field : section.Integers) { drawInteger(field.Control); }
-            for (const StructuralRangeFieldBinding& field : section.Ranges) { drawRange(field.Control); }
-            for (const StructuralToggleFieldBinding& field : section.Toggles) { drawToggle(field.Control); }
-            for (const StructuralChoiceFieldBinding& field : section.Choices) { drawChoice(field.Control); }
-            for (const StructuralWeightGroupBinding& field : section.WeightGroups)
+            for (const auto& section : sections)
             {
-                const auto& rows = field.Control.getRows();
-                for (std::size_t index = 0u; index < field.Control.getRowCount(); ++index) { drawInteger(rows[index].Control, true, rows[index].ProbabilityPercent); }
+                drawSectionHeader(section.Label, section.HeaderBounds, section.Expanded);
+                if (!section.Expanded) { continue; }
+                for (const auto& field : section.Integers) { drawInteger(field.Control); }
+                for (const auto& field : section.Ranges) { drawRange(field.Control); }
+                for (const auto& field : section.Toggles) { drawToggle(field.Control); }
+                for (const auto& field : section.Choices) { drawChoice(field.Control); }
+                for (const auto& field : section.WeightGroups)
+                {
+                    const auto& rows = field.Control.getRows();
+                    for (std::size_t index = 0u; index < field.Control.getRowCount(); ++index) { drawInteger(rows[index].Control, true, rows[index].ProbabilityPercent); }
+                }
             }
-        }
+        };
+        if (factionEditor) { drawProfileSections(editor.getFactionProfileSections()); }
+        else { drawProfileSections(editor.getProfileSections()); }
 
         const ConfigurationEditorSectionState& validationSection = editor.getValidationSection();
         drawSectionHeader(validationSection.Label, validationSection.HeaderBounds, validationSection.Expanded);

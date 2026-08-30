@@ -7,14 +7,23 @@
 #include <string>
 #include <string_view>
 
+#include "ShipFactionProfile.h"
 #include "ShipGenerationProfile.h"
 #include "Validation.h"
 
 #include "ConfigurationEditorControls.h"
+#include "ShipFactionProfileEditorBindings.h"
 #include "ShipGenerationProfileEditorBindings.h"
 
 namespace PixelShipGeneratorPreview
 {
+    enum class ConfigurationEditorProfileKind : uint32_t
+    {
+        STRUCTURAL = 0u,
+        FACTION,
+        CONFIGURATION_EDITOR_PROFILE_KIND_END
+    };
+
     enum class ConfigurationEditorAction : uint32_t
     {
         APPLY = 0u,
@@ -50,8 +59,10 @@ namespace PixelShipGeneratorPreview
         PreviewConfigurationEditor();
 
         void openStructuralProfile(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
+        void openFactionProfile(std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
         void close();
         bool isOpen() const;
+        ConfigurationEditorProfileKind getProfileKind() const;
 
         void setPanelBounds(const ConfigurationEditorRect& bounds);
         void onMouseMove(float x, float y);
@@ -67,6 +78,8 @@ namespace PixelShipGeneratorPreview
         const std::string& getName() const;
         const PixelShipGenerator::ShipGenerationProfile& getDraftProfile() const;
         const PixelShipGenerator::ShipGenerationProfile& getInitialProfile() const;
+        const PixelShipGenerator::ShipFactionProfile& getDraftFactionProfile() const;
+        const PixelShipGenerator::ShipFactionProfile& getInitialFactionProfile() const;
         bool hasUnsavedChanges() const;
 
         float getScrollOffset() const;
@@ -75,6 +88,7 @@ namespace PixelShipGeneratorPreview
         ConfigurationEditorRect getContentViewport() const;
         const ConfigurationTextField& getNameField() const;
         const std::vector<StructuralProfileEditorSection>& getProfileSections() const;
+        const std::vector<FactionProfileEditorSection>& getFactionProfileSections() const;
         const ConfigurationEditorSectionState& getValidationSection() const;
         const std::array<ConfigurationEditorActionButton, 4u>& getActionButtons() const;
         std::size_t getBoundValueCount() const;
@@ -90,6 +104,17 @@ namespace PixelShipGeneratorPreview
         const StructuralWeightGroupBinding* findWeightGroup(std::string_view path) const;
         StructuralWeightGroupBinding* findWeightGroup(std::string_view path);
 
+        const FactionIntegerFieldBinding* findFactionIntegerField(std::string_view path) const;
+        FactionIntegerFieldBinding* findFactionIntegerField(std::string_view path);
+        const FactionRangeFieldBinding* findFactionRangeField(std::string_view path) const;
+        FactionRangeFieldBinding* findFactionRangeField(std::string_view path);
+        const FactionToggleFieldBinding* findFactionToggleField(std::string_view path) const;
+        FactionToggleFieldBinding* findFactionToggleField(std::string_view path);
+        const FactionChoiceFieldBinding* findFactionChoiceField(std::string_view path) const;
+        FactionChoiceFieldBinding* findFactionChoiceField(std::string_view path);
+        const FactionWeightGroupBinding* findFactionWeightGroup(std::string_view path) const;
+        FactionWeightGroupBinding* findFactionWeightGroup(std::string_view path);
+
         void setSectionExpanded(std::size_t sectionIndex, bool expanded);
 
     private:
@@ -102,12 +127,16 @@ namespace PixelShipGeneratorPreview
         std::optional<ConfigurationEditorEvent> activateAction(float x, float y);
         void resetDraft();
         void cancelDragging();
+        void collapseAllProfileSections();
 
     private:
         bool m_Open = false;
+        ConfigurationEditorProfileKind m_ProfileKind = ConfigurationEditorProfileKind::STRUCTURAL;
         std::string m_InitialName;
         PixelShipGenerator::ShipGenerationProfile m_InitialProfile;
         PixelShipGenerator::ShipGenerationProfile m_DraftProfile;
+        PixelShipGenerator::ShipFactionProfile m_InitialFactionProfile;
+        PixelShipGenerator::ShipFactionProfile m_DraftFactionProfile;
         PixelShipGenerator::ValidationResult m_ValidationResult;
         ConfigurationEditorRect m_PanelBounds = { 880.0f, 0.0f, 760.0f, 1000.0f };
         ConfigurationEditorRect m_ContentViewport;
@@ -117,6 +146,7 @@ namespace PixelShipGeneratorPreview
 
         ConfigurationTextField m_NameField;
         ShipGenerationProfileEditorBindings m_ProfileBindings;
+        ShipFactionProfileEditorBindings m_FactionProfileBindings;
         ConfigurationEditorSectionState m_ValidationSection = { "VALIDATION", {}, true };
         std::array<ConfigurationEditorActionButton, 4u> m_ActionButtons = {};
     };
