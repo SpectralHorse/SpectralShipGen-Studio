@@ -33,6 +33,10 @@ namespace PixelShipGeneratorPreview
         const GalleryState* Gallery = nullptr;
         const FavoritesState* Favorites = nullptr;
         const PreviewGenerationRecipe* Recipe = nullptr;
+        std::string StructuralDisplayName;
+        std::string FactionDisplayName;
+        std::string PaletteDisplayName;
+        std::string ConfigurationBundleDisplayName;
         const GenerationLocks* Locks = nullptr;
         const PreviewDiagnosticState* Diagnostics = nullptr;
         const PreviewComparisonState* Comparison = nullptr;
@@ -87,6 +91,8 @@ namespace PixelShipGeneratorPreview
         void renderSingle(sf::RenderWindow& window, const sf::Sprite& previewSprite) const;
         void renderNativePreview(sf::RenderWindow& window, const PreviewRenderData& data) const;
         void renderPersistentStatePanel(sf::RenderWindow& window, const PreviewRenderData& data) const;
+        void renderInspectionStatePanel(sf::RenderWindow& window, const PreviewRenderData& data, float x, float& y) const;
+        void renderInspectionEmptyState(sf::RenderWindow& window) const;
         void renderWorkspaceNavigation(sf::RenderWindow& window, const PreviewWorkspaceNavigation& navigation) const;
         void renderHelpOverlay(sf::RenderWindow& window, PreviewWorkspace workspace) const;
         void renderGenerationInspector(sf::RenderWindow& window, const PreviewRenderData& data) const;

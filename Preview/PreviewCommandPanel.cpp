@@ -67,6 +67,11 @@ namespace PixelShipGeneratorPreview
                 button.Label = std::string(selected ? "[X] " : "[ ] ") + getRerollStudioDomainLabel(domain);
             }
 
+            if (button.Command.Type == PreviewCommandType::TOGGLE_INSPECTION_PRESENTATION)
+            {
+                button.Label = state.InspectionPresentationValue.empty() ? "Overlay / Isolate" : state.InspectionPresentationValue;
+            }
+
             if (button.Command.Type == PreviewCommandType::SELECT_RESOLUTION_BOOKMARK)
             {
                 const uint32_t slot = button.Command.Value;
@@ -100,7 +105,7 @@ namespace PixelShipGeneratorPreview
                 slider.DetailText = row.Valid ? ("D " + std::to_string(row.DefaultWeight) + "  S " + std::to_string(row.SuggestedWeight) + "  " + std::to_string(row.ProbabilityPercent) + "%") : std::string();
             }
         }
-        else if (state.Mode == PreviewCommandPanelMode::GENERATE || state.Mode == PreviewCommandPanelMode::PROFILES)
+        else if (state.Mode == PreviewCommandPanelMode::GENERATE || state.Mode == PreviewCommandPanelMode::PROFILES || state.Mode == PreviewCommandPanelMode::INSPECT)
         {
             if (state.Mode == PreviewCommandPanelMode::GENERATE && m_Selectors.size() >= 4u)
             {
@@ -113,6 +118,11 @@ namespace PixelShipGeneratorPreview
             {
                 m_Selectors[0u].Value = state.ProfilesSectionValue;
                 m_Selectors[1u].Value = state.ProfilesItemValue;
+            }
+            else if (state.Mode == PreviewCommandPanelMode::INSPECT && m_Selectors.size() >= 2u)
+            {
+                m_Selectors[0u].Value = state.InspectionGroupValue;
+                m_Selectors[1u].Value = state.InspectionViewValue;
             }
 
             if (state.Mode == PreviewCommandPanelMode::GENERATE)
@@ -462,14 +472,24 @@ namespace PixelShipGeneratorPreview
 
         if (mode == PreviewCommandPanelMode::INSPECT)
         {
-            addGroupHeader("SEMANTIC / DEBUG", y);
-            addPairButtons({ PreviewCommandType::TOGGLE_GENERATION_INSPECTOR, 0u }, { PreviewCommandType::TOGGLE_PALETTE_INSPECTOR, 0u }, y);
-            addFullButton({ PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW, 0u }, y);
+            addGroupHeader("SEMANTIC VIEW", y);
+            addSelector("GROUP", { PreviewCommandType::INSPECTION_PREVIOUS_GROUP, 0u }, { PreviewCommandType::INSPECTION_NEXT_GROUP, 0u }, y);
+            addSelector("VIEW", { PreviewCommandType::INSPECTION_PREVIOUS_VIEW, 0u }, { PreviewCommandType::INSPECTION_NEXT_VIEW, 0u }, y);
+            addFullButton({ PreviewCommandType::TOGGLE_INSPECTION_PRESENTATION, 0u }, y);
+
+            addGroupHeader("GENERATION", y);
             addFullButton({ PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW, 0u }, y);
             addPairButtons({ PreviewCommandType::PREVIOUS_GENERATION_STAGE, 0u }, { PreviewCommandType::NEXT_GENERATION_STAGE, 0u }, y);
-            addGroupHeader("COMPARISON", y);
+            addPairButtons({ PreviewCommandType::TOGGLE_GENERATION_INSPECTOR, 0u }, { PreviewCommandType::TOGGLE_PALETTE_INSPECTOR, 0u }, y);
+
+            addGroupHeader("REFERENCE", y);
             addPairButtons({ PreviewCommandType::PIN_CURRENT, 0u }, { PreviewCommandType::CLEAR_PIN, 0u }, y);
             addFullButton({ PreviewCommandType::TOGGLE_COMPARISON, 0u }, y);
+
+            addGroupHeader("WORKFLOW", y);
+            addPairButtons({ PreviewCommandType::OPEN_GENERATE_WORKSPACE, 0u }, { PreviewCommandType::OPEN_REROLL_STUDIO, 0u }, y);
+            addPairButtons({ PreviewCommandType::OPEN_ANIMATION_WORKSPACE, 0u }, { PreviewCommandType::ADD_CURRENT_TO_FAVORITES, 0u }, y);
+
             addGroupHeader("FILES", y);
             addFullButton({ PreviewCommandType::SAVE_CURRENT, 0u }, y);
             return;

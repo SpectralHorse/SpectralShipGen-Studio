@@ -49,6 +49,8 @@ namespace PixelShipGeneratorPreview
         void appendHistoryEntry(const PreviewGenerationRecipe& recipe);
         void changeConfigurationBundle(int32_t delta);
         void changeFaction(int32_t delta);
+        void changeInspectionGroup(int32_t delta);
+        void changeInspectionView(int32_t delta);
         void changePalette(int32_t delta);
         void changeProfilesItem(int32_t delta);
         void changeProfilesSection(int32_t delta);
@@ -118,6 +120,7 @@ namespace PixelShipGeneratorPreview
         const std::vector<PixelShipGenerator::Image>& getActiveAnimationFrames() const;
         uint64_t getActiveAnimationSeed() const;
         std::optional<PreviewCommand> getKeyboardCommand(sf::Keyboard::Key key, bool shift, bool control) const;
+        bool hasCurrentShip() const;
         bool hasKeyboardInputFocus() const;
         void handleBackOrCancel();
         void handleKeyPressed(const sf::Event::KeyEvent& event);
@@ -191,6 +194,7 @@ namespace PixelShipGeneratorPreview
         void toggleGenerationStageView();
         void toggleGenerationInspector();
         void toggleHelpOverlay();
+        void toggleInspectionPresentation();
         void togglePaletteInspector();
         void toggleGalleryCandidateFavorite(uint32_t index);
         void update();

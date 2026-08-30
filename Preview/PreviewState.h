@@ -14,6 +14,7 @@
 #include "ShipGenerationSeeds.h"
 
 #include "PreviewGenerationRecipe.h"
+#include "PreviewInspection.h"
 #include "PreviewWorkspace.h"
 #include "PreviewResolution.h"
 
@@ -52,48 +53,6 @@ namespace PixelShipGeneratorPreview
         PixelShipGenerator::ShipFactionType::XENO,
         PixelShipGenerator::ShipFactionType::CORPORATE,
         PixelShipGenerator::ShipFactionType::RELIC
-    };
-
-    namespace PreviewDiagnosticColors
-    {
-        inline constexpr PixelShipGenerator::Color Hull(80u, 140u, 230u, 255u);
-        inline constexpr PixelShipGenerator::Color Cockpit(80u, 230u, 235u, 255u);
-        inline constexpr PixelShipGenerator::Color Engine(245u, 160u, 70u, 255u);
-        inline constexpr PixelShipGenerator::Color Exhaust(245u, 80u, 65u, 255u);
-        inline constexpr PixelShipGenerator::Color Accent(220u, 90u, 225u, 255u);
-        inline constexpr PixelShipGenerator::Color Mechanical(100u, 220u, 120u, 255u);
-        inline constexpr PixelShipGenerator::Color Light(250u, 235u, 90u, 255u);
-        inline constexpr PixelShipGenerator::Color Attachment(165u, 105u, 245u, 255u);
-        inline constexpr PixelShipGenerator::Color HullLayerLower(95u, 170u, 225u, 255u);
-        inline constexpr PixelShipGenerator::Color HullLayerUpper(235u, 205u, 95u, 255u);
-        inline constexpr PixelShipGenerator::Color CoreRegion(55u, 65u, 85u, 255u);
-        inline constexpr PixelShipGenerator::Color CoreSecondary(95u, 145u, 195u, 255u);
-        inline constexpr PixelShipGenerator::Color CoreRaised(235u, 205u, 95u, 255u);
-        inline constexpr PixelShipGenerator::Color CoreRecessed(75u, 85u, 105u, 255u);
-        inline constexpr PixelShipGenerator::Color CoreLuminous(95u, 235u, 205u, 255u);
-        inline constexpr PixelShipGenerator::Color Overlap(255u, 70u, 120u, 255u);
-        inline constexpr PixelShipGenerator::Color SpatialLow(75u, 130u, 215u, 255u);
-        inline constexpr PixelShipGenerator::Color SpatialModerate(95u, 190u, 125u, 255u);
-        inline constexpr PixelShipGenerator::Color SpatialHigh(235u, 185u, 70u, 255u);
-        inline constexpr PixelShipGenerator::Color SpatialOverloaded(240u, 80u, 85u, 255u);
-        inline constexpr PixelShipGenerator::Color MacroAsymmetryBase(45u, 50u, 65u, 255u);
-        inline constexpr PixelShipGenerator::Color MacroAsymmetryFeature(245u, 105u, 210u, 255u);
-    }
-
-    enum class DiagnosticViewMode : uint32_t
-    {
-        FINAL = 0u,
-        HULL,
-        COCKPIT,
-        ENGINES,
-        DETAILS,
-        ATTACHMENTS,
-        HULL_LAYERS,
-        CORE_TREATMENT,
-        SEMANTIC_LOAD,
-        MACRO_ASYMMETRY,
-        COMBINED,
-        DIAGNOSTIC_VIEW_MODE_END
     };
 
     struct PreviewThumbnailItem
@@ -149,7 +108,9 @@ namespace PixelShipGeneratorPreview
 
     struct PreviewDiagnosticState
     {
-        DiagnosticViewMode ViewMode = DiagnosticViewMode::FINAL;
+        PreviewInspectionGroup InspectionGroup = PreviewInspectionGroup::STRUCTURE;
+        DiagnosticViewMode ViewMode = DiagnosticViewMode::HULL;
+        PreviewInspectionPresentation InspectionPresentation = PreviewInspectionPresentation::OVERLAY;
         bool HelpVisible = false;
         bool GenerationInspectorVisible = false;
         bool PaletteInspectorVisible = false;

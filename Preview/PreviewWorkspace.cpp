@@ -63,10 +63,9 @@ namespace PixelShipGeneratorPreview
                 PreviewHelpEntry{ "ENTER", "Accept current reroll candidate" }
             }, 2u },
             PreviewHelpSection{ {
-                PreviewHelpEntry{ "M", "Cycle diagnostic mask view" },
-                PreviewHelpEntry{ "F8", "Toggle generation-stage view" },
-                PreviewHelpEntry{ "[ / ]", "Previous / next generation stage" }
-            }, 3u },
+                PreviewHelpEntry{ "MOUSE", "Select semantic group/view and Overlay/Isolate" },
+                PreviewHelpEntry{ "PANEL", "Open one-ship decision/palette details" }
+            }, 2u },
             PreviewHelpSection{ {
                 PreviewHelpEntry{ "ARROWS", "Move Favorite selection" },
                 PreviewHelpEntry{ "ENTER", "Load selected Favorite" },

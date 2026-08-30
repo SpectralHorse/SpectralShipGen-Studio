@@ -610,185 +610,13 @@ namespace PixelShipGeneratorPreview
 
     PixelShipGenerator::Image ShipGeneratorPreviewApp::createDiagnosticImage() const
     {
-        const uint32_t width = m_GeneratedShip.HullMask.getWidth();
-        const uint32_t height = m_GeneratedShip.HullMask.getHeight();
-        PixelShipGenerator::Image image;
-        image.reset(width, height);
-        image.clear(PixelShipGenerator::Color(0u, 0u, 0u, 0u));
-
-        const PixelShipGenerator::Color& hullColor = PreviewDiagnosticColors::Hull;
-        const PixelShipGenerator::Color& cockpitColor = PreviewDiagnosticColors::Cockpit;
-        const PixelShipGenerator::Color& engineColor = PreviewDiagnosticColors::Engine;
-        const PixelShipGenerator::Color& exhaustColor = PreviewDiagnosticColors::Exhaust;
-        const PixelShipGenerator::Color& accentColor = PreviewDiagnosticColors::Accent;
-        const PixelShipGenerator::Color& mechanicalColor = PreviewDiagnosticColors::Mechanical;
-        const PixelShipGenerator::Color& lightColor = PreviewDiagnosticColors::Light;
-        const PixelShipGenerator::Color& attachmentColor = PreviewDiagnosticColors::Attachment;
-        const PixelShipGenerator::Color& overlapColor = PreviewDiagnosticColors::Overlap;
-
-        if (m_Diagnostics.GenerationStageView && !m_GenerationDebugInfo.HullStages.empty())
-        {
-            const uint32_t stageIndex = std::min(m_Diagnostics.GenerationStageIndex, static_cast<uint32_t>(m_GenerationDebugInfo.HullStages.size() - 1u));
-            const PixelShipGenerator::PixelMask& stageMask = m_GenerationDebugInfo.HullStages[stageIndex].HullMask;
-
-            for (uint32_t y = 0u; y < height; ++y)
-            {
-                for (uint32_t x = 0u; x < width; ++x)
-                {
-                    if (stageMask.get(x, y)) { image.setPixel(x, y, hullColor); }
-                }
-            }
-
-            return image;
-        }
-
-        if (m_Diagnostics.ViewMode == DiagnosticViewMode::FINAL)
-        {
-            return m_GeneratedShip.FinalImage;
-        }
-
-        if (m_Diagnostics.ViewMode == DiagnosticViewMode::HULL_LAYERS)
-        {
-            if (m_GenerationDebugInfo.HullLayerMask.getWidth() != width || m_GenerationDebugInfo.HullLayerMask.getHeight() != height)
-            {
-                return image;
-            }
-
-            for (uint32_t y = 0u; y < height; ++y)
-            {
-                for (uint32_t x = 0u; x < width; ++x)
-                {
-                    if (!m_GenerationDebugInfo.HullLayerMask.get(x, y)) { continue; }
-                    image.setPixel(x, y, m_GenerationDebugInfo.HullLayerUpperMask.get(x, y) ? PreviewDiagnosticColors::HullLayerUpper : PreviewDiagnosticColors::HullLayerLower);
-                }
-            }
-            return image;
-        }
-
-        if (m_Diagnostics.ViewMode == DiagnosticViewMode::CORE_TREATMENT)
-        {
-            if (m_GenerationDebugInfo.CoreRegionMask.getWidth() != width || m_GenerationDebugInfo.CoreRegionMask.getHeight() != height)
-            {
-                return image;
-            }
-
-            for (uint32_t y = 0u; y < height; ++y)
-            {
-                for (uint32_t x = 0u; x < width; ++x)
-                {
-                    if (m_GenerationDebugInfo.CoreRegionMask.get(x, y)) { image.setPixel(x, y, PreviewDiagnosticColors::CoreRegion); }
-                    if (m_GenerationDebugInfo.CoreSecondaryMaterialMask.get(x, y)) { image.setPixel(x, y, PreviewDiagnosticColors::CoreSecondary); }
-                    if (m_GenerationDebugInfo.CoreRecessedMask.get(x, y)) { image.setPixel(x, y, PreviewDiagnosticColors::CoreRecessed); }
-                    if (m_GenerationDebugInfo.CoreRaisedMask.get(x, y)) { image.setPixel(x, y, PreviewDiagnosticColors::CoreRaised); }
-                    if (m_GenerationDebugInfo.CoreLuminousMask.get(x, y)) { image.setPixel(x, y, PreviewDiagnosticColors::CoreLuminous); }
-                }
-            }
-            return image;
-        }
-
-        if (m_Diagnostics.ViewMode == DiagnosticViewMode::SEMANTIC_LOAD)
-        {
-            if (m_GenerationDebugInfo.SpatialRegionMapWidth != width || m_GenerationDebugInfo.SpatialRegionMapHeight != height || m_GenerationDebugInfo.SpatialRegionMap.size() != static_cast<std::size_t>(width) * height)
-            {
-                return image;
-            }
-
-            for (uint32_t y = 0u; y < height; ++y)
-            {
-                for (uint32_t x = 0u; x < width; ++x)
-                {
-                    const uint8_t regionValue = m_GenerationDebugInfo.SpatialRegionMap[static_cast<std::size_t>(y) * width + x];
-                    if (regionValue >= static_cast<uint8_t>(PixelShipGenerator::GenerationSpatialRegion::GENERATION_SPATIAL_REGION_END)) { continue; }
-                    const std::size_t regionIndex = static_cast<std::size_t>(regionValue);
-                    const uint32_t capacity = m_GenerationDebugInfo.SpatialRegionCapacities[regionIndex];
-                    const uint32_t utilization = capacity == 0u ? 0u : (m_GenerationDebugInfo.SpatialRegionLoads[regionIndex] * 100u) / capacity;
-                    if (utilization < 40u) { image.setPixel(x, y, PreviewDiagnosticColors::SpatialLow); }
-                    else if (utilization < 75u) { image.setPixel(x, y, PreviewDiagnosticColors::SpatialModerate); }
-                    else if (utilization < 100u) { image.setPixel(x, y, PreviewDiagnosticColors::SpatialHigh); }
-                    else { image.setPixel(x, y, PreviewDiagnosticColors::SpatialOverloaded); }
-                }
-            }
-            return image;
-        }
-
-        if (m_Diagnostics.ViewMode == DiagnosticViewMode::MACRO_ASYMMETRY)
-        {
-            for (uint32_t y = 0u; y < height; ++y)
-            {
-                for (uint32_t x = 0u; x < width; ++x)
-                {
-                    if (m_GeneratedShip.HullMask.get(x, y)) { image.setPixel(x, y, PreviewDiagnosticColors::MacroAsymmetryBase); }
-                    if (m_GenerationDebugInfo.MacroAsymmetryMask.getWidth() == width && m_GenerationDebugInfo.MacroAsymmetryMask.getHeight() == height && m_GenerationDebugInfo.MacroAsymmetryMask.get(x, y))
-                    {
-                        image.setPixel(x, y, PreviewDiagnosticColors::MacroAsymmetryFeature);
-                    }
-                }
-            }
-            return image;
-        }
-
-        for (uint32_t y = 0u; y < height; ++y)
-        {
-            for (uint32_t x = 0u; x < width; ++x)
-            {
-                const bool hull = m_GeneratedShip.HullMask.get(x, y);
-                const bool cockpit = m_GeneratedShip.CockpitMask.get(x, y);
-                const bool engine = m_GeneratedShip.EngineMask.get(x, y);
-                const bool exhaust = m_GeneratedShip.EngineExhaustMask.get(x, y);
-                const bool accent = m_GeneratedShip.AccentMask.get(x, y);
-                const bool mechanical = m_GeneratedShip.MechanicalDetailMask.get(x, y);
-                const bool light = m_GeneratedShip.LightMask.get(x, y);
-                const bool attachment = m_GeneratedShip.AttachmentMask.get(x, y);
-                const bool details = accent || mechanical || light;
-
-                switch (m_Diagnostics.ViewMode)
-                {
-                case DiagnosticViewMode::HULL:
-                    if (hull) { image.setPixel(x, y, hullColor); }
-                    break;
-                case DiagnosticViewMode::COCKPIT:
-                    if (cockpit) { image.setPixel(x, y, cockpitColor); }
-                    break;
-                case DiagnosticViewMode::ENGINES:
-                    if (exhaust) { image.setPixel(x, y, exhaustColor); }
-                    else if (engine) { image.setPixel(x, y, engineColor); }
-                    break;
-                case DiagnosticViewMode::DETAILS:
-                    if (light) { image.setPixel(x, y, lightColor); }
-                    else if (mechanical) { image.setPixel(x, y, mechanicalColor); }
-                    else if (accent) { image.setPixel(x, y, accentColor); }
-                    break;
-                case DiagnosticViewMode::ATTACHMENTS:
-                    if (attachment) { image.setPixel(x, y, attachmentColor); }
-                    break;
-                case DiagnosticViewMode::HULL_LAYERS:
-                    break;
-                case DiagnosticViewMode::CORE_TREATMENT:
-                    break;
-                case DiagnosticViewMode::SEMANTIC_LOAD:
-                    break;
-                case DiagnosticViewMode::MACRO_ASYMMETRY:
-                    break;
-                case DiagnosticViewMode::COMBINED:
-                {
-                    const uint32_t nonHullCategoryCount = static_cast<uint32_t>(cockpit) + static_cast<uint32_t>(engine || exhaust) + static_cast<uint32_t>(details) + static_cast<uint32_t>(attachment);
-                    if (nonHullCategoryCount > 1u) { image.setPixel(x, y, overlapColor); }
-                    else if (light) { image.setPixel(x, y, lightColor); }
-                    else if (mechanical) { image.setPixel(x, y, mechanicalColor); }
-                    else if (accent) { image.setPixel(x, y, accentColor); }
-                    else if (cockpit) { image.setPixel(x, y, cockpitColor); }
-                    else if (exhaust) { image.setPixel(x, y, exhaustColor); }
-                    else if (engine) { image.setPixel(x, y, engineColor); }
-                    else if (attachment) { image.setPixel(x, y, attachmentColor); }
-                    else if (hull) { image.setPixel(x, y, hullColor); }
-                    break;
-                }
-                default: break;
-                }
-            }
-        }
-
-        return image;
+        return createPreviewInspectionImage(
+            m_GeneratedShip,
+            m_GenerationDebugInfo,
+            m_Diagnostics.ViewMode,
+            m_Diagnostics.InspectionPresentation,
+            m_Diagnostics.GenerationStageView,
+            m_Diagnostics.GenerationStageIndex);
     }
 
     void ShipGeneratorPreviewApp::cycleAnimationType()
@@ -871,14 +699,28 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    void ShipGeneratorPreviewApp::cycleDiagnosticView()
+    void ShipGeneratorPreviewApp::changeInspectionGroup(int32_t delta)
     {
         m_Diagnostics.GenerationStageView = false;
-        const uint32_t nextView = (static_cast<uint32_t>(m_Diagnostics.ViewMode) + 1u) % static_cast<uint32_t>(DiagnosticViewMode::DIAGNOSTIC_VIEW_MODE_END);
-        m_Diagnostics.ViewMode = static_cast<DiagnosticViewMode>(nextView);
+        m_Diagnostics.InspectionGroup = getWrappedPreviewInspectionGroup(m_Diagnostics.InspectionGroup, delta);
+        m_Diagnostics.ViewMode = getDefaultDiagnosticViewForGroup(m_Diagnostics.InspectionGroup);
         refreshDiagnosticTexture();
         refreshDisplayedTexture();
         updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::changeInspectionView(int32_t delta)
+    {
+        m_Diagnostics.GenerationStageView = false;
+        m_Diagnostics.ViewMode = getWrappedDiagnosticView(m_Diagnostics.InspectionGroup, m_Diagnostics.ViewMode, delta);
+        refreshDiagnosticTexture();
+        refreshDisplayedTexture();
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::cycleDiagnosticView()
+    {
+        changeInspectionView(1);
     }
 
     void ShipGeneratorPreviewApp::enterAnimationPlayback()
@@ -1891,6 +1733,9 @@ namespace PixelShipGeneratorPreview
         state.ConfigurationBundleValue = getCurrentConfigurationBundleDisplayName();
         state.ProfilesSectionValue = getProfilesSectionName(m_ProfilesSection);
         state.ProfilesItemValue = getProfilesItemDisplayName();
+        state.InspectionGroupValue = getPreviewInspectionGroupName(m_Diagnostics.InspectionGroup);
+        state.InspectionViewValue = getDiagnosticViewModeName(m_Diagnostics.ViewMode);
+        state.InspectionPresentationValue = getPreviewInspectionPresentationName(m_Diagnostics.InspectionPresentation);
         state.CurrentDimensions = getCurrentRecipe().Dimensions;
         state.AspectRatioLocked = m_AspectRatioLocked;
         state.ResolutionBookmarkCount = static_cast<uint32_t>(std::min<std::size_t>(m_Collections.getResolutionBookmarks().size(), state.ResolutionBookmarks.size()));
@@ -2005,6 +1850,13 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::TOGGLE_DETAILS_LOCK: m_Locks.Details = !m_Locks.Details; updateWindowTitle(); break;
         case PreviewCommandType::TOGGLE_ATTACHMENTS_LOCK: m_Locks.Attachments = !m_Locks.Attachments; updateWindowTitle(); break;
         case PreviewCommandType::TOGGLE_HELP: toggleHelpOverlay(); break;
+        case PreviewCommandType::INSPECTION_PREVIOUS_GROUP: changeInspectionGroup(-1); break;
+        case PreviewCommandType::INSPECTION_NEXT_GROUP: changeInspectionGroup(1); break;
+        case PreviewCommandType::INSPECTION_PREVIOUS_VIEW: changeInspectionView(-1); break;
+        case PreviewCommandType::INSPECTION_NEXT_VIEW: changeInspectionView(1); break;
+        case PreviewCommandType::TOGGLE_INSPECTION_PRESENTATION: toggleInspectionPresentation(); break;
+        case PreviewCommandType::OPEN_GENERATE_WORKSPACE: switchWorkspace(PreviewWorkspace::GENERATE); break;
+        case PreviewCommandType::OPEN_ANIMATION_WORKSPACE: switchWorkspace(PreviewWorkspace::ANIMATION); break;
         case PreviewCommandType::TOGGLE_GENERATION_INSPECTOR: toggleGenerationInspector(); break;
         case PreviewCommandType::TOGGLE_PALETTE_INSPECTOR: togglePaletteInspector(); break;
         case PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW: cycleDiagnosticView(); break;
@@ -2171,10 +2023,6 @@ namespace PixelShipGeneratorPreview
 
         if (workspace == PreviewWorkspace::INSPECT)
         {
-            if (key == sf::Keyboard::M) { return PreviewCommand{ PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW, 0u }; }
-            if (key == sf::Keyboard::F8) { return PreviewCommand{ PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW, 0u }; }
-            if (key == sf::Keyboard::LBracket) { return PreviewCommand{ PreviewCommandType::PREVIOUS_GENERATION_STAGE, 0u }; }
-            if (key == sf::Keyboard::RBracket) { return PreviewCommand{ PreviewCommandType::NEXT_GENERATION_STAGE, 0u }; }
             return std::nullopt;
         }
 
@@ -2203,6 +2051,11 @@ namespace PixelShipGeneratorPreview
         }
 
         return std::nullopt;
+    }
+
+    bool ShipGeneratorPreviewApp::hasCurrentShip() const
+    {
+        return hasPreviewInspectionShip(m_GeneratedShip);
     }
 
     bool ShipGeneratorPreviewApp::hasKeyboardInputFocus() const
@@ -2425,6 +2278,7 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::TOGGLE_DETAILS_LOCK: return m_Locks.Details;
         case PreviewCommandType::TOGGLE_ATTACHMENTS_LOCK: return m_Locks.Attachments;
         case PreviewCommandType::TOGGLE_HELP: return m_Diagnostics.HelpVisible;
+        case PreviewCommandType::TOGGLE_INSPECTION_PRESENTATION: return m_Diagnostics.InspectionPresentation == PreviewInspectionPresentation::OVERLAY;
         case PreviewCommandType::TOGGLE_GENERATION_INSPECTOR: return m_Diagnostics.GenerationInspectorVisible;
         case PreviewCommandType::TOGGLE_PALETTE_INSPECTOR: return m_Diagnostics.PaletteInspectorVisible;
         case PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW: return m_Diagnostics.GenerationStageView;
@@ -2446,7 +2300,14 @@ namespace PixelShipGeneratorPreview
         const bool browserMode = m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES;
 
         if (type == PreviewCommandType::TOGGLE_HELP) { return true; }
-        if (type == PreviewCommandType::TOGGLE_GENERATION_INSPECTOR || type == PreviewCommandType::TOGGLE_PALETTE_INSPECTOR) { return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT && !browserMode; }
+        const bool inspectWorkspace = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT;
+        if (inspectWorkspace && type == PreviewCommandType::OPEN_GENERATE_WORKSPACE) { return true; }
+        if (inspectWorkspace && type == PreviewCommandType::OPEN_REROLL_STUDIO) { return hasCurrentShip(); }
+        if (inspectWorkspace && type == PreviewCommandType::ADD_CURRENT_TO_FAVORITES) { return hasCurrentShip() && !isCurrentFavorite(); }
+        if (inspectWorkspace && type == PreviewCommandType::PIN_CURRENT) { return hasCurrentShip(); }
+        if (type == PreviewCommandType::INSPECTION_PREVIOUS_GROUP || type == PreviewCommandType::INSPECTION_NEXT_GROUP || type == PreviewCommandType::INSPECTION_PREVIOUS_VIEW || type == PreviewCommandType::INSPECTION_NEXT_VIEW || type == PreviewCommandType::TOGGLE_INSPECTION_PRESENTATION) { return inspectWorkspace && hasCurrentShip() && !browserMode; }
+        if (type == PreviewCommandType::OPEN_ANIMATION_WORKSPACE) { return inspectWorkspace && hasCurrentShip(); }
+        if (type == PreviewCommandType::TOGGLE_GENERATION_INSPECTOR || type == PreviewCommandType::TOGGLE_PALETTE_INSPECTOR) { return inspectWorkspace && hasCurrentShip() && !browserMode; }
         if (type == PreviewCommandType::BACK_OR_EXIT) { return true; }
         if (overlayVisible) { return false; }
 
@@ -2597,10 +2458,10 @@ namespace PixelShipGeneratorPreview
         if (type == PreviewCommandType::PIN_CURRENT) { return true; }
         if (type == PreviewCommandType::CLEAR_PIN) { return m_Comparison.Pinned.Valid; }
         if (type == PreviewCommandType::TOGGLE_COMPARISON) { return m_Comparison.Pinned.Valid; }
-        if (type == PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW) { return true; }
-        if (type == PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW) { return !m_GenerationDebugInfo.HullStages.empty(); }
+        if (type == PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW) { return inspectWorkspace && hasCurrentShip(); }
+        if (type == PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW) { return inspectWorkspace && hasCurrentShip() && !m_GenerationDebugInfo.HullStages.empty(); }
         if (type == PreviewCommandType::PREVIOUS_GENERATION_STAGE || type == PreviewCommandType::NEXT_GENERATION_STAGE) { return m_Diagnostics.GenerationStageView && !m_GenerationDebugInfo.HullStages.empty(); }
-        if (type == PreviewCommandType::SAVE_CURRENT) { return true; }
+        if (type == PreviewCommandType::SAVE_CURRENT) { return hasCurrentShip(); }
         if (type == PreviewCommandType::EXPORT_RECIPE || type == PreviewCommandType::IMPORT_RECIPE) { return true; }
         if (type == PreviewCommandType::SAVE_SPRITESHEET)
         {
@@ -3076,11 +2937,15 @@ namespace PixelShipGeneratorPreview
         data.Gallery = &m_GalleryState;
         data.Favorites = &m_FavoritesState;
         data.Recipe = &getCurrentRecipe();
+        data.StructuralDisplayName = getCurrentStructuralProfileDisplayName();
+        data.FactionDisplayName = getCurrentFactionProfileDisplayName();
+        data.PaletteDisplayName = getCurrentPaletteDisplayName();
+        data.ConfigurationBundleDisplayName = getCurrentConfigurationBundleDisplayName();
         data.Locks = &m_Locks;
         data.Diagnostics = &m_Diagnostics;
         data.Comparison = &m_Comparison;
-        data.Ship = &m_GeneratedShip;
-        data.GenerationDebugInfo = &m_GenerationDebugInfo;
+        data.Ship = hasCurrentShip() ? &m_GeneratedShip : nullptr;
+        data.GenerationDebugInfo = hasCurrentShip() ? &m_GenerationDebugInfo : nullptr;
         data.SelectedAnimationType = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? PixelShipGenerator::ShipAnimationType::IDLE : m_AnimationSession.getSelectedAnimationType();
         data.IdleAnimation = &m_AnimationSession.getIdleAnimation();
         data.IdleAnimationSettings = &m_AnimationSession.getIdleSettings();
@@ -3631,7 +3496,7 @@ namespace PixelShipGeneratorPreview
 
     bool ShipGeneratorPreviewApp::isDiagnosticImageViewActive() const
     {
-        return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT && (m_Diagnostics.GenerationStageView || m_Diagnostics.ViewMode != DiagnosticViewMode::FINAL);
+        return hasCurrentShip() && m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT && (m_Diagnostics.GenerationStageView || m_Diagnostics.ViewMode != DiagnosticViewMode::FINAL);
     }
 
     void ShipGeneratorPreviewApp::moveGenerationStage(int32_t delta)
@@ -3712,6 +3577,15 @@ namespace PixelShipGeneratorPreview
             setDisplayedStaticFrame();
         }
 
+        updateWindowTitle();
+    }
+
+    void ShipGeneratorPreviewApp::toggleInspectionPresentation()
+    {
+        if (m_WorkspaceSession.getActiveWorkspace() != PreviewWorkspace::INSPECT || !hasCurrentShip()) { return; }
+        m_Diagnostics.InspectionPresentation = m_Diagnostics.InspectionPresentation == PreviewInspectionPresentation::OVERLAY ? PreviewInspectionPresentation::ISOLATE : PreviewInspectionPresentation::OVERLAY;
+        refreshDiagnosticTexture();
+        refreshDisplayedTexture();
         updateWindowTitle();
     }
 
@@ -3844,6 +3718,7 @@ namespace PixelShipGeneratorPreview
 
         m_PreviewMode = targetMode;
         if (m_PreviewMode == PreviewMode::ANIMATION) { m_AnimationClock.restart(); }
+        if (workspace == PreviewWorkspace::INSPECT) { refreshDiagnosticTexture(); }
         refreshDisplayedTexture();
         updateCommandPanelState();
         updateWindowTitle();

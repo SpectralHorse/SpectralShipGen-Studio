@@ -5,7 +5,6 @@
 #include <cctype>
 #include <cstdint>
 #include <iomanip>
-#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -176,40 +175,6 @@ namespace
         }
     }
 
-    std::string getDiagnosticViewName(PixelShipGeneratorPreview::DiagnosticViewMode mode)
-    {
-        switch (mode)
-        {
-        case PixelShipGeneratorPreview::DiagnosticViewMode::FINAL: return "FINAL";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::HULL: return "HULL";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::COCKPIT: return "COCKPIT";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::ENGINES: return "ENGINES";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::DETAILS: return "DETAILS";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::ATTACHMENTS: return "ATTACHMENTS";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::HULL_LAYERS: return "HULL LAYERS";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::CORE_TREATMENT: return "CORE TREATMENT";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::SEMANTIC_LOAD: return "SEMANTIC LOAD";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::MACRO_ASYMMETRY: return "MACRO ASYMMETRY";
-        case PixelShipGeneratorPreview::DiagnosticViewMode::COMBINED: return "COMBINED";
-        default: return "UNKNOWN";
-        }
-    }
-
-    std::string getHullModifierName(PixelShipGenerator::HullModifierType type)
-    {
-        switch (type)
-        {
-        case PixelShipGenerator::HullModifierType::BROADER_SHOULDERS: return "BROADER SHOULDERS";
-        case PixelShipGenerator::HullModifierType::SIDE_LOBES: return "SIDE LOBES";
-        case PixelShipGenerator::HullModifierType::STEPPED_WING_EXTENSION: return "STEPPED WING";
-        case PixelShipGenerator::HullModifierType::NARROW_WAIST: return "NARROW WAIST";
-        case PixelShipGenerator::HullModifierType::WING_CUTOUT: return "WING CUTOUT";
-        case PixelShipGenerator::HullModifierType::SPLIT_NOSE: return "SPLIT NOSE";
-        default: return "UNKNOWN";
-        }
-    }
-
-
     std::string getWingShapeName(PixelShipGenerator::WingShapeType type)
     {
         switch (type)
@@ -218,20 +183,6 @@ namespace
         case PixelShipGenerator::WingShapeType::SMALL: return "SMALL";
         case PixelShipGenerator::WingShapeType::SWEPT: return "SWEPT";
         case PixelShipGenerator::WingShapeType::BROAD: return "BROAD";
-        default: return "UNKNOWN";
-        }
-    }
-
-    std::string getMajorFeatureName(PixelShipGenerator::ShipMajorFeatureType type)
-    {
-        switch (type)
-        {
-        case PixelShipGenerator::ShipMajorFeatureType::CENTRAL_SPINE: return "CENTRAL SPINE";
-        case PixelShipGenerator::ShipMajorFeatureType::ARMOR_PLATE: return "ARMOR PLATE";
-        case PixelShipGenerator::ShipMajorFeatureType::RECESSED_BAY: return "RECESSED BAY";
-        case PixelShipGenerator::ShipMajorFeatureType::VENT_BANK: return "VENT BANK";
-        case PixelShipGenerator::ShipMajorFeatureType::WING_PLATE: return "WING PLATE";
-        case PixelShipGenerator::ShipMajorFeatureType::TECH_CORE: return "TECH CORE";
         default: return "UNKNOWN";
         }
     }
@@ -277,17 +228,6 @@ namespace
         }
     }
 
-    std::string getEngineSizeName(PixelShipGenerator::EngineSizeClass type)
-    {
-        switch (type)
-        {
-        case PixelShipGenerator::EngineSizeClass::SMALL: return "SMALL";
-        case PixelShipGenerator::EngineSizeClass::MEDIUM: return "MEDIUM";
-        case PixelShipGenerator::EngineSizeClass::LARGE: return "LARGE";
-        default: return "UNKNOWN";
-        }
-    }
-
     std::string getDebugStageName(PixelShipGenerator::ShipGenerationDebugStageType type)
     {
         switch (type)
@@ -297,20 +237,6 @@ namespace
         case PixelShipGenerator::ShipGenerationDebugStageType::AFTER_ADDITIVE_MODIFIERS: return "AFTER ADDITIVE";
         case PixelShipGenerator::ShipGenerationDebugStageType::AFTER_SUBTRACTIVE_MODIFIERS: return "AFTER SUBTRACTIVE";
         case PixelShipGenerator::ShipGenerationDebugStageType::FINAL_HULL: return "FINAL HULL";
-        default: return "UNKNOWN";
-        }
-    }
-
-    std::string getAttachmentTypeName(PixelShipGenerator::ShipAttachmentType type)
-    {
-        switch (type)
-        {
-        case PixelShipGenerator::ShipAttachmentType::WEAPON_MOUNT: return "WEAPON";
-        case PixelShipGenerator::ShipAttachmentType::SENSOR_ARRAY: return "SENSOR";
-        case PixelShipGenerator::ShipAttachmentType::AUXILIARY_POD: return "AUX POD";
-        case PixelShipGenerator::ShipAttachmentType::RADIATOR: return "RADIATOR";
-        case PixelShipGenerator::ShipAttachmentType::ARMOR_FIN: return "ARMOR FIN";
-        case PixelShipGenerator::ShipAttachmentType::TECHNOLOGY_NODE: return "TECH NODE";
         default: return "UNKNOWN";
         }
     }
@@ -365,24 +291,6 @@ namespace
         }
 
         return bounds;
-    }
-
-    uint32_t countMaskPixels(const PixelShipGenerator::PixelMask& mask)
-    {
-        uint32_t count = 0u;
-
-        for (uint32_t y = 0u; y < mask.getHeight(); ++y)
-        {
-            for (uint32_t x = 0u; x < mask.getWidth(); ++x)
-            {
-                if (mask.get(x, y))
-                {
-                    ++count;
-                }
-            }
-        }
-
-        return count;
     }
 
     std::string getBoundsString(const Bounds& bounds)
@@ -492,13 +400,6 @@ namespace
         return result;
     }
 
-    std::string getAspectRatioString(uint32_t width, uint32_t height)
-    {
-        std::ostringstream stream;
-        stream << std::fixed << std::setprecision(3) << (height == 0u ? 0.0 : static_cast<double>(width) / height);
-        return stream.str();
-    }
-
     std::string getMillisecondsString(double milliseconds)
     {
         std::ostringstream stream;
@@ -561,6 +462,10 @@ namespace PixelShipGeneratorPreview
         {
             renderFavorites(window, *data.Favorites);
         }
+        else if (data.Workspace == PreviewWorkspace::INSPECT && data.Ship == nullptr)
+        {
+            renderInspectionEmptyState(window);
+        }
         else if (data.Workspace == PreviewWorkspace::INSPECT && data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid && data.CurrentStaticTexture != nullptr && data.PinnedTexture != nullptr && data.Recipe != nullptr)
         {
             renderComparison(window, data);
@@ -572,7 +477,7 @@ namespace PixelShipGeneratorPreview
 
         const bool singlePreviewMode = data.Mode == PreviewMode::STATIC || data.Mode == PreviewMode::ANIMATION || data.Mode == PreviewMode::FRAME_INSPECTION || data.Mode == PreviewMode::CONFIGURATION_EDITOR;
         const bool comparisonVisible = data.Workspace == PreviewWorkspace::INSPECT && data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid;
-        if (singlePreviewMode && !comparisonVisible && data.NativePreviewTexture != nullptr && data.Recipe != nullptr)
+        if (singlePreviewMode && !comparisonVisible && data.NativePreviewTexture != nullptr && data.Recipe != nullptr && (data.Workspace != PreviewWorkspace::INSPECT || data.Ship != nullptr))
         {
             renderNativePreview(window, data);
         }
@@ -1281,6 +1186,12 @@ namespace PixelShipGeneratorPreview
         float y = static_cast<float>(PreviewWorkspaceNavigationHeight) + 14.0f;
         drawSectionHeader(window, "CURRENT STATE", x, y);
 
+        if (data.Workspace == PreviewWorkspace::INSPECT)
+        {
+            renderInspectionStatePanel(window, data, x, y);
+            return;
+        }
+
         drawLabelValue(window, "MODE", getPreviewModeName(data.Mode), x, y);
 
         if (data.Mode == PreviewMode::CALIBRATION && data.CalibrationSession != nullptr)
@@ -1353,74 +1264,6 @@ namespace PixelShipGeneratorPreview
         drawLabelValue(window, "FAVORITE", data.CurrentIsFavorite ? "YES" : "NO", x, y);
         if (data.Favorites != nullptr) { drawLabelValue(window, "FAVORITES", std::to_string(data.Favorites->Grid.Items.size()), x, y); }
 
-        if (data.Diagnostics != nullptr)
-        {
-            drawLabelValue(window, "VIEW", data.Diagnostics->GenerationStageView ? "GEN STAGE" : getDiagnosticViewName(data.Diagnostics->ViewMode), x, y);
-
-            if (!data.Diagnostics->GenerationStageView && data.Diagnostics->ViewMode != DiagnosticViewMode::FINAL)
-            {
-                y += 2.0f;
-                drawSectionHeader(window, "DEBUG COLORS", x, y);
-
-                switch (data.Diagnostics->ViewMode)
-                {
-                case DiagnosticViewMode::HULL:
-                    drawDiagnosticLegendEntry(window, "HULL", PreviewDiagnosticColors::Hull, x, y);
-                    break;
-                case DiagnosticViewMode::COCKPIT:
-                    drawDiagnosticLegendEntry(window, "COCKPIT", PreviewDiagnosticColors::Cockpit, x, y);
-                    break;
-                case DiagnosticViewMode::ENGINES:
-                    drawDiagnosticLegendEntry(window, "ENGINE", PreviewDiagnosticColors::Engine, x, y);
-                    drawDiagnosticLegendEntry(window, "EXHAUST", PreviewDiagnosticColors::Exhaust, x, y);
-                    break;
-                case DiagnosticViewMode::DETAILS:
-                    drawDiagnosticLegendEntry(window, "ACCENT", PreviewDiagnosticColors::Accent, x, y);
-                    drawDiagnosticLegendEntry(window, "MECHANICAL", PreviewDiagnosticColors::Mechanical, x, y);
-                    drawDiagnosticLegendEntry(window, "LIGHT", PreviewDiagnosticColors::Light, x, y);
-                    break;
-                case DiagnosticViewMode::ATTACHMENTS:
-                    drawDiagnosticLegendEntry(window, "ATTACHMENT", PreviewDiagnosticColors::Attachment, x, y);
-                    break;
-                case DiagnosticViewMode::HULL_LAYERS:
-                    drawDiagnosticLegendEntry(window, "LOWER LAYER", PreviewDiagnosticColors::HullLayerLower, x, y);
-                    drawDiagnosticLegendEntry(window, "UPPER LAYER", PreviewDiagnosticColors::HullLayerUpper, x, y);
-                    break;
-                case DiagnosticViewMode::CORE_TREATMENT:
-                    drawDiagnosticLegendEntry(window, "CORE REGION", PreviewDiagnosticColors::CoreRegion, x, y);
-                    drawDiagnosticLegendEntry(window, "MATERIAL ZONE", PreviewDiagnosticColors::CoreSecondary, x, y);
-                    drawDiagnosticLegendEntry(window, "RAISED", PreviewDiagnosticColors::CoreRaised, x, y);
-                    drawDiagnosticLegendEntry(window, "RECESSED", PreviewDiagnosticColors::CoreRecessed, x, y);
-                    drawDiagnosticLegendEntry(window, "LUMINOUS", PreviewDiagnosticColors::CoreLuminous, x, y);
-                    break;
-                case DiagnosticViewMode::SEMANTIC_LOAD:
-                    drawDiagnosticLegendEntry(window, "LOW LOAD", PreviewDiagnosticColors::SpatialLow, x, y);
-                    drawDiagnosticLegendEntry(window, "MODERATE", PreviewDiagnosticColors::SpatialModerate, x, y);
-                    drawDiagnosticLegendEntry(window, "HIGH", PreviewDiagnosticColors::SpatialHigh, x, y);
-                    drawDiagnosticLegendEntry(window, "OVERLOADED", PreviewDiagnosticColors::SpatialOverloaded, x, y);
-                    break;
-                case DiagnosticViewMode::MACRO_ASYMMETRY:
-                    drawDiagnosticLegendEntry(window, "BASE HULL", PreviewDiagnosticColors::MacroAsymmetryBase, x, y);
-                    drawDiagnosticLegendEntry(window, "ASYMMETRIC FEATURE", PreviewDiagnosticColors::MacroAsymmetryFeature, x, y);
-                    break;
-                case DiagnosticViewMode::COMBINED:
-                    drawDiagnosticLegendEntry(window, "HULL", PreviewDiagnosticColors::Hull, x, y);
-                    drawDiagnosticLegendEntry(window, "COCKPIT", PreviewDiagnosticColors::Cockpit, x, y);
-                    drawDiagnosticLegendEntry(window, "ENGINE", PreviewDiagnosticColors::Engine, x, y);
-                    drawDiagnosticLegendEntry(window, "EXHAUST", PreviewDiagnosticColors::Exhaust, x, y);
-                    drawDiagnosticLegendEntry(window, "ACCENT", PreviewDiagnosticColors::Accent, x, y);
-                    drawDiagnosticLegendEntry(window, "MECHANICAL", PreviewDiagnosticColors::Mechanical, x, y);
-                    drawDiagnosticLegendEntry(window, "LIGHT", PreviewDiagnosticColors::Light, x, y);
-                    drawDiagnosticLegendEntry(window, "ATTACHMENT", PreviewDiagnosticColors::Attachment, x, y);
-                    drawDiagnosticLegendEntry(window, "OVERLAP", PreviewDiagnosticColors::Overlap, x, y);
-                    break;
-                default:
-                    break;
-                }
-
-                y += 3.0f;
-            }
-        }
 
         if (data.Mode == PreviewMode::GALLERY && data.Gallery != nullptr)
         {
@@ -1564,6 +1407,181 @@ namespace PixelShipGeneratorPreview
         }
     }
 
+    void PreviewRenderer::renderInspectionEmptyState(sf::RenderWindow& window) const
+    {
+        drawDebugText(window, "INSPECT", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 42.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, "No current ship to inspect.", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 74.0f, sf::Color(210, 215, 225), TextScale);
+        drawDebugText(window, "Generate or load a ship, then return to Inspect.", 36.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 98.0f, sf::Color(150, 180, 205), SmallTextScale);
+    }
+
+    void PreviewRenderer::renderInspectionStatePanel(sf::RenderWindow& window, const PreviewRenderData& data, float x, float& y) const
+    {
+        if (data.Ship == nullptr || data.GenerationDebugInfo == nullptr || data.Recipe == nullptr)
+        {
+            drawLabelValue(window, "SHIP", "NONE", x, y);
+            drawDebugText(window, "Generate or load a ship to inspect.", x, y + 4.0f, sf::Color(180, 185, 195), SmallTextScale);
+            return;
+        }
+
+        const PixelShipGenerator::GeneratedShip& ship = *data.Ship;
+        const PixelShipGenerator::ShipGenerationDebugInfo& debug = *data.GenerationDebugInfo;
+        const PreviewGenerationRecipe& recipe = *data.Recipe;
+        const auto sourceName = [](PixelShipGenerator::ShipGenerationRecipeProfileSource source)
+        {
+            return source == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
+        };
+        const auto paletteSourceName = [](PixelShipGenerator::ShipPaletteSourceMode mode)
+        {
+            switch (mode)
+            {
+            case PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED: return "FACTION GENERATED";
+            case PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED: return "EXPLICIT GENERATED";
+            case PixelShipGenerator::ShipPaletteSourceMode::FIXED: return "FIXED";
+            default: return "UNKNOWN";
+            }
+        };
+        const auto randomModeName = [](PixelShipGenerator::GenerationRandomStreamMode mode)
+        {
+            return mode == PixelShipGenerator::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS ? "DOMAIN SUBSTREAMS" : "LEGACY TOP-LEVEL";
+        };
+
+        drawSectionHeader(window, "CONFIGURATION", x, y);
+        drawLabelValue(window, "RES", std::to_string(recipe.Dimensions.Width) + "X" + std::to_string(recipe.Dimensions.Height), x, y);
+        drawLabelValue(window, "MASTER", std::to_string(recipe.Seeds.Master), x, y);
+        drawLabelValue(window, "STRUCT", fitDebugTextToWidth(data.StructuralDisplayName, 190.0f, SmallTextScale), x, y);
+        drawLabelValue(window, "STRUCT SRC", sourceName(recipe.StructuralSource), x, y);
+        drawLabelValue(window, "FACTION", fitDebugTextToWidth(data.FactionDisplayName, 190.0f, SmallTextScale), x, y);
+        drawLabelValue(window, "FACTION SRC", sourceName(recipe.FactionSource), x, y);
+        drawLabelValue(window, "PALETTE", fitDebugTextToWidth(data.PaletteDisplayName, 190.0f, SmallTextScale), x, y);
+        drawLabelValue(window, "PALETTE SRC", paletteSourceName(recipe.PaletteConfiguration.Mode), x, y);
+        if (!data.ConfigurationBundleDisplayName.empty() && data.ConfigurationBundleDisplayName != "INDIVIDUAL COMPONENTS")
+        {
+            drawLabelValue(window, "FULL CFG", fitDebugTextToWidth(data.ConfigurationBundleDisplayName, 190.0f, SmallTextScale), x, y);
+        }
+        drawLabelValue(window, "RNG", randomModeName(recipe.RandomStreamMode), x, y);
+
+        y += 4.0f;
+        drawSectionHeader(window, "INSPECTION", x, y);
+        if (data.Diagnostics != nullptr)
+        {
+            drawLabelValue(window, "GROUP", getPreviewInspectionGroupName(data.Diagnostics->InspectionGroup), x, y);
+            drawLabelValue(window, "VIEW", data.Diagnostics->GenerationStageView ? "Generation Stage" : getDiagnosticViewModeName(data.Diagnostics->ViewMode), x, y);
+            drawLabelValue(window, "DISPLAY", getPreviewInspectionPresentationName(data.Diagnostics->InspectionPresentation), x, y);
+
+            y += 2.0f;
+            drawSectionHeader(window, "DEBUG COLORS", x, y);
+            if (data.Diagnostics->GenerationStageView)
+            {
+                drawDiagnosticLegendEntry(window, "HULL STAGE", PreviewDiagnosticColors::Hull, x, y);
+            }
+            else
+            {
+                switch (data.Diagnostics->ViewMode)
+                {
+                case DiagnosticViewMode::HULL:
+                    drawDiagnosticLegendEntry(window, "HULL", PreviewDiagnosticColors::Hull, x, y);
+                    break;
+                case DiagnosticViewMode::COCKPIT:
+                    drawDiagnosticLegendEntry(window, "COCKPIT", PreviewDiagnosticColors::Cockpit, x, y);
+                    break;
+                case DiagnosticViewMode::ENGINES:
+                    drawDiagnosticLegendEntry(window, "ENGINE", PreviewDiagnosticColors::Engine, x, y);
+                    drawDiagnosticLegendEntry(window, "EXHAUST", PreviewDiagnosticColors::Exhaust, x, y);
+                    break;
+                case DiagnosticViewMode::ATTACHMENTS:
+                    drawDiagnosticLegendEntry(window, "OCCUPIED", PreviewDiagnosticColors::Attachment, x, y);
+                    drawDiagnosticLegendEntry(window, "BOUNDS", PreviewDiagnosticColors::AttachmentBounds, x, y);
+                    drawDiagnosticLegendEntry(window, "ROOT", PreviewDiagnosticColors::AttachmentRoot, x, y);
+                    break;
+                case DiagnosticViewMode::HULL_LAYERS:
+                    drawDiagnosticLegendEntry(window, "LOWER LAYER", PreviewDiagnosticColors::HullLayerLower, x, y);
+                    drawDiagnosticLegendEntry(window, "UPPER LAYER", PreviewDiagnosticColors::HullLayerUpper, x, y);
+                    break;
+                case DiagnosticViewMode::CORE_TREATMENT:
+                    drawDiagnosticLegendEntry(window, "CORE REGION", PreviewDiagnosticColors::CoreRegion, x, y);
+                    drawDiagnosticLegendEntry(window, "SECONDARY", PreviewDiagnosticColors::CoreSecondary, x, y);
+                    drawDiagnosticLegendEntry(window, "RAISED", PreviewDiagnosticColors::CoreRaised, x, y);
+                    drawDiagnosticLegendEntry(window, "RECESSED", PreviewDiagnosticColors::CoreRecessed, x, y);
+                    drawDiagnosticLegendEntry(window, "LUMINOUS", PreviewDiagnosticColors::CoreLuminous, x, y);
+                    break;
+                case DiagnosticViewMode::WEAPONS:
+                    drawDiagnosticLegendEntry(window, "OCCUPIED", PreviewDiagnosticColors::Weapon, x, y);
+                    drawDiagnosticLegendEntry(window, "BOUNDS", PreviewDiagnosticColors::WeaponBounds, x, y);
+                    drawDiagnosticLegendEntry(window, "ROOT", PreviewDiagnosticColors::WeaponRoot, x, y);
+                    drawDiagnosticLegendEntry(window, "MUZZLE", PreviewDiagnosticColors::WeaponMuzzle, x, y);
+                    break;
+                case DiagnosticViewMode::DETAILS:
+                    drawDiagnosticLegendEntry(window, "ACCENT", PreviewDiagnosticColors::Accent, x, y);
+                    drawDiagnosticLegendEntry(window, "MECHANICAL", PreviewDiagnosticColors::Mechanical, x, y);
+                    drawDiagnosticLegendEntry(window, "LIGHT", PreviewDiagnosticColors::Light, x, y);
+                    break;
+                case DiagnosticViewMode::MATERIALS:
+                    drawDiagnosticLegendEntry(window, "SECONDARY HULL", PreviewDiagnosticColors::MaterialSecondary, x, y);
+                    drawDiagnosticLegendEntry(window, "MECHANICAL", PreviewDiagnosticColors::MaterialMechanical, x, y);
+                    break;
+                case DiagnosticViewMode::LIVERY:
+                    drawDiagnosticLegendEntry(window, "PRIMARY", PreviewDiagnosticColors::LiveryPrimary, x, y);
+                    drawDiagnosticLegendEntry(window, "SECONDARY", PreviewDiagnosticColors::LiverySecondary, x, y);
+                    break;
+                case DiagnosticViewMode::DETAIL_MOTIFS:
+                    drawDiagnosticLegendEntry(window, "PRIMARY", PreviewDiagnosticColors::MotifPrimary, x, y);
+                    drawDiagnosticLegendEntry(window, "SECONDARY", PreviewDiagnosticColors::MotifSecondary, x, y);
+                    break;
+                case DiagnosticViewMode::MACRO_ASYMMETRY:
+                    drawDiagnosticLegendEntry(window, "BASE HULL", PreviewDiagnosticColors::MacroAsymmetryBase, x, y);
+                    drawDiagnosticLegendEntry(window, "ASYMMETRIC FEATURE", PreviewDiagnosticColors::MacroAsymmetryFeature, x, y);
+                    break;
+                case DiagnosticViewMode::NEGATIVE_SPACE:
+                    drawDiagnosticLegendEntry(window, "RESERVED VOID", PreviewDiagnosticColors::NegativeSpace, x, y);
+                    break;
+                case DiagnosticViewMode::SEMANTIC_LOAD:
+                    drawDiagnosticLegendEntry(window, "LOW LOAD", PreviewDiagnosticColors::SpatialLow, x, y);
+                    drawDiagnosticLegendEntry(window, "MODERATE", PreviewDiagnosticColors::SpatialModerate, x, y);
+                    drawDiagnosticLegendEntry(window, "HIGH", PreviewDiagnosticColors::SpatialHigh, x, y);
+                    drawDiagnosticLegendEntry(window, "OVERLOADED", PreviewDiagnosticColors::SpatialOverloaded, x, y);
+                    break;
+                case DiagnosticViewMode::COMBINED:
+                    drawDiagnosticLegendEntry(window, "HULL", PreviewDiagnosticColors::Hull, x, y);
+                    drawDiagnosticLegendEntry(window, "COCKPIT", PreviewDiagnosticColors::Cockpit, x, y);
+                    drawDiagnosticLegendEntry(window, "ENGINE", PreviewDiagnosticColors::Engine, x, y);
+                    drawDiagnosticLegendEntry(window, "ATTACHMENT", PreviewDiagnosticColors::Attachment, x, y);
+                    drawDiagnosticLegendEntry(window, "WEAPON", PreviewDiagnosticColors::Weapon, x, y);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+
+        y += 4.0f;
+        drawSectionHeader(window, "GENERATION DECISIONS", x, y);
+        drawLabelValue(window, "HULL ATTEMPTS", std::to_string(debug.HullGenerationAttemptCount), x, y);
+        drawLabelValue(window, "PRIMARY ANCHOR", PixelShipGenerator::getShipVisualAnchorTypeName(debug.PrimaryVisualAnchor), x, y);
+        drawLabelValue(window, "ANCHOR REGION", PixelShipGenerator::getGenerationSpatialRegionName(debug.VisualAnchorTargetRegion), x, y);
+        drawLabelValue(window, "COMPLEXITY", std::to_string(debug.ComplexityConsumedBudget) + "/" + std::to_string(debug.ComplexityInitialBudget), x, y);
+        drawLabelValue(window, "SPATIAL REJECT", std::to_string(debug.SpatialOverloadRejectionCount), x, y);
+        drawLabelValue(window, "HULL LAYERS", std::to_string(debug.HullLayerCount), x, y);
+        drawLabelValue(window, "MAJOR FEATURES", std::to_string(debug.MajorFeatureCount), x, y);
+        drawLabelValue(window, "WEAPONS", std::to_string(debug.WeaponRealizedGroupCount) + "/" + std::to_string(debug.WeaponRequestedGroupCount) + " GROUPS", x, y);
+        drawLabelValue(window, "NEG SPACE", std::to_string(debug.StructuralNegativeSpaceSuccessCount) + "/" + std::to_string(debug.StructuralNegativeSpaceAttemptCount), x, y);
+        drawLabelValue(window, "MATERIAL ZONES", std::to_string(debug.MaterialZoneCount), x, y);
+        drawLabelValue(window, "LIVERY", std::to_string(debug.LiveryCoveragePermille / 10u) + "." + std::to_string(debug.LiveryCoveragePermille % 10u) + "%", x, y);
+
+        y += 4.0f;
+        drawSectionHeader(window, "DOMAIN SEEDS", x, y);
+        for (std::size_t index = 0u; index < PixelShipGenerator::GenerationDomainCount; ++index)
+        {
+            const auto domain = static_cast<PixelShipGenerator::GenerationDomain>(index);
+            const bool overridden = recipe.DomainSeedOverrides.Values[index].has_value();
+            const std::string label = std::string(overridden ? "*" : " ") + PixelShipGenerator::getGenerationDomainName(domain);
+            const std::string value = std::to_string(ship.DomainSeeds.Values[index]);
+            drawDebugText(window, fitDebugTextToWidth(label, 128.0f, SmallTextScale), x, y, overridden ? sf::Color(240, 205, 105) : sf::Color(180, 185, 195), SmallTextScale);
+            drawDebugText(window, value, x + 130.0f, y, sf::Color(145, 205, 235), SmallTextScale);
+            y += 14.0f;
+        }
+        drawDebugText(window, "* explicit domain override", x, y + 2.0f, sf::Color(150, 155, 165), SmallTextScale);
+    }
+
     void PreviewRenderer::renderWorkspaceNavigation(sf::RenderWindow& window, const PreviewWorkspaceNavigation& navigation) const
     {
         drawPanel(window, 0.0f, 0.0f, static_cast<float>(PreviewWindowWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), sf::Color(13, 14, 18, 252), sf::Color(72, 76, 88));
@@ -1634,344 +1652,85 @@ namespace PixelShipGeneratorPreview
         drawPanel(window, OverlayMargin, OverlayMargin, static_cast<float>(PreviewContentWidth) - OverlayMargin * 2.0f, static_cast<float>(PreviewWindowHeight) - OverlayMargin * 2.0f, sf::Color(8, 9, 12, 248), sf::Color(120, 125, 145));
         const PixelShipGenerator::GeneratedShip& ship = *data.Ship;
         const PixelShipGenerator::ShipGenerationDebugInfo& debug = *data.GenerationDebugInfo;
-        float x = OverlayMargin + 16.0f;
-        float y = OverlayMargin + 14.0f;
-        drawSectionHeader(window, "GENERATION INSPECTOR - ESC TO CLOSE", x, y);
+        const float leftX = OverlayMargin + 16.0f;
+        const float rightX = OverlayMargin + 430.0f;
+        float leftY = OverlayMargin + 14.0f;
+        float rightY = OverlayMargin + 54.0f;
+        drawSectionHeader(window, "DECISION DETAILS - ESC TO CLOSE", leftX, leftY);
 
         const Bounds finalBounds = calculateImageBounds(ship.FinalImage, ship.HullMask.getWidth(), ship.HullMask.getHeight());
         const Bounds hullBounds = calculateMaskBounds(ship.HullMask);
         const Bounds cockpitBounds = calculateMaskBounds(ship.CockpitMask);
-        drawLabelValue(window, "WIDTH", std::to_string(ship.FinalImage.getWidth()), x, y);
-        drawLabelValue(window, "HEIGHT", std::to_string(ship.FinalImage.getHeight()), x, y);
-        drawLabelValue(window, "ASPECT", getAspectRatioString(ship.FinalImage.getWidth(), ship.FinalImage.getHeight()), x, y);
-        drawLabelValue(window, "ATTEMPTS", std::to_string(debug.HullGenerationAttemptCount), x, y);
-        drawLabelValue(window, "PRIMARY ANCHOR", PixelShipGenerator::getShipVisualAnchorTypeName(debug.PrimaryVisualAnchor), x, y);
-        drawLabelValue(window, "SECONDARY ANCHOR", PixelShipGenerator::getShipVisualAnchorTypeName(debug.SecondaryVisualAnchor), x, y);
-        drawLabelValue(window, "ANCHOR REGION", PixelShipGenerator::getGenerationSpatialRegionName(debug.VisualAnchorTargetRegion), x, y);
-        drawLabelValue(window, "ANCHOR RESERVE", std::to_string(debug.VisualHierarchyReservedComplexity), x, y);
-        drawLabelValue(window, "ANCHOR FALLBACK", debug.VisualHierarchyFallbackOccurred ? "YES" : "NO", x, y);
-        drawLabelValue(window, "HULL USE", std::to_string(debug.SilhouetteMetrics.NormalizedWidthPercent) + "% W / " + std::to_string(debug.SilhouetteMetrics.NormalizedHeightPercent) + "% H", x, y);
-        drawLabelValue(window, "BOUNDS FILL", std::to_string(debug.SilhouetteMetrics.BoundingFillPercent) + "%", x, y);
-        drawLabelValue(window, "ARTICULATION", std::to_string(debug.SilhouetteMetrics.ArticulationCount), x, y);
-        drawLabelValue(window, "SHOULDER / WAIST", std::to_string(debug.SilhouetteMetrics.ShoulderProminencePercent) + "% / " + std::to_string(debug.SilhouetteMetrics.InteriorContractionPercent) + "%", x, y);
-        drawLabelValue(window, "NOSE / REAR TAPER", std::to_string(debug.SilhouetteMetrics.NoseTaperPercent) + "% / " + std::to_string(debug.SilhouetteMetrics.RearTaperPercent) + "%", x, y);
-        drawLabelValue(window, "STABLE WIDTH RUN", std::to_string(debug.SilhouetteMetrics.LongestStableWidthRunPercent) + "%", x, y);
-        drawLabelValue(window, "SILHOUETTE GUIDE", std::to_string(debug.SilhouetteGuidanceAppliedCount), x, y);
-        drawLabelValue(window, "MATERIAL ZONES", std::to_string(debug.MaterialZoneCount), x, y);
-        drawLabelValue(window, "MATERIAL PX", std::to_string(debug.MaterialSecondaryHullPixelCount) + " SECONDARY / " + std::to_string(debug.MaterialMechanicalPixelCount) + " MECH", x, y);
-        if (debug.MaterialZoneCount > 0u)
-        {
-            std::string materialZoneTypes;
-            for (uint32_t index = 0u; index < static_cast<uint32_t>(PixelShipGenerator::ShipMaterialZoneType::SHIP_MATERIAL_ZONE_TYPE_END); ++index)
-            {
-                if (debug.MaterialZoneTypeCounts[index] == 0u) { continue; }
-                if (!materialZoneTypes.empty()) { materialZoneTypes += " + "; }
-                materialZoneTypes += PixelShipGenerator::getShipMaterialZoneTypeName(static_cast<PixelShipGenerator::ShipMaterialZoneType>(index));
-            }
-            drawLabelValue(window, "MATERIAL TYPES", materialZoneTypes, x, y);
-        }
-        drawLabelValue(window, "LIVERY", std::to_string(debug.LiveryMarkingCount) + " / " + std::to_string(debug.LiveryPrimaryPixelCount + debug.LiverySecondaryPixelCount) + " PX", x, y);
-        drawLabelValue(window, "PRIMARY DETAIL MOTIF", PixelShipGenerator::getShipDetailMotifTypeName(debug.PrimaryDetailMotif), x, y);
-        drawLabelValue(window, "SECONDARY DETAIL MOTIF", PixelShipGenerator::getShipDetailMotifTypeName(debug.SecondaryDetailMotif), x, y);
-        drawLabelValue(window, "MOTIF OCCURRENCES", std::to_string(debug.PrimaryDetailMotifOccurrenceCount) + " PRIMARY / " + std::to_string(debug.SecondaryDetailMotifOccurrenceCount) + " SECONDARY", x, y);
-        drawLabelValue(window, "MOTIF REGION", PixelShipGenerator::getGenerationSpatialRegionName(debug.PrimaryDetailMotifRegion), x, y);
-        drawLabelValue(window, "MOTIF REJECTS", std::to_string(debug.DetailMotifRejectedPlacementCount), x, y);
-        if (debug.LiveryMarkingCount > 0u)
-        {
-            std::string liveryTypes;
-            for (uint32_t index = 0u; index < static_cast<uint32_t>(PixelShipGenerator::ShipLiveryType::SHIP_LIVERY_TYPE_END); ++index)
-            {
-                if (debug.LiveryTypeCounts[index] == 0u) { continue; }
-                if (!liveryTypes.empty()) { liveryTypes += " + "; }
-                liveryTypes += PixelShipGenerator::getShipLiveryTypeName(static_cast<PixelShipGenerator::ShipLiveryType>(index));
-            }
-            drawLabelValue(window, "LIVERY TYPES", liveryTypes, x, y);
-        }
-        drawLabelValue(window, "STRUCTURAL VOIDS", std::to_string(debug.StructuralNegativeSpaceCount) + " / " + std::to_string(debug.StructuralNegativeSpacePixelCount) + " PX", x, y);
-        if (debug.StructuralNegativeSpaceCount > 0u)
-        {
-            std::string negativeSpaceTypes;
-            for (uint32_t index = 0u; index < static_cast<uint32_t>(PixelShipGenerator::ShipStructuralNegativeSpaceType::SHIP_STRUCTURAL_NEGATIVE_SPACE_TYPE_END); ++index)
-            {
-                if (debug.StructuralNegativeSpaceTypeCounts[index] == 0u) { continue; }
-                if (!negativeSpaceTypes.empty()) { negativeSpaceTypes += " + "; }
-                negativeSpaceTypes += PixelShipGenerator::getShipStructuralNegativeSpaceTypeName(static_cast<PixelShipGenerator::ShipStructuralNegativeSpaceType>(index));
-            }
-            drawLabelValue(window, "VOID TYPES", negativeSpaceTypes, x, y);
-        }
-        drawLabelValue(window, "LAST HULL RETRY", PixelShipGenerator::getSilhouetteValidationFailureReasonName(debug.LastSilhouetteValidationFailure), x, y);
-        drawLabelValue(window, "FINAL BOUNDS", getBoundsString(finalBounds), x, y);
-        drawLabelValue(window, "HULL BOUNDS", getBoundsString(hullBounds), x, y);
-        drawLabelValue(window, "HULL PIXELS", std::to_string(countMaskPixels(ship.HullMask)), x, y);
-        drawLabelValue(window, "WING SHAPE", getWingShapeName(debug.WingShape), x, y);
+
+        drawSectionHeader(window, "STRUCTURE", leftX, leftY);
+        drawLabelValue(window, "FINAL BOUNDS", getBoundsString(finalBounds), leftX, leftY);
+        drawLabelValue(window, "HULL BOUNDS", getBoundsString(hullBounds), leftX, leftY);
+        drawLabelValue(window, "COCKPIT", getBoundsString(cockpitBounds), leftX, leftY);
+        drawLabelValue(window, "WING", getWingShapeName(debug.WingShape), leftX, leftY);
         if (debug.WingShape != PixelShipGenerator::WingShapeType::NONE)
         {
-            drawLabelValue(window, "WING SPAN", std::to_string(debug.WingMaximumSpan) + " PX", x, y);
-            drawLabelValue(window, "WING EXTENSION", std::to_string(debug.WingMaximumExtension) + " PX", x, y);
-            drawLabelValue(window, "WING ROOT", std::to_string(debug.WingRootThickness) + " PX", x, y);
-            drawLabelValue(window, "WING PIXELS", std::to_string(debug.WingPixelCount), x, y);
+            drawLabelValue(window, "WING SPAN / ROOT", std::to_string(debug.WingMaximumSpan) + " / " + std::to_string(debug.WingRootThickness) + " PX", leftX, leftY);
         }
-        drawLabelValue(window, "HULL LAYERS", std::to_string(debug.HullLayerCount), x, y);
-        drawLabelValue(window, "LAYER DEPTH", std::to_string(debug.HullLayerLowerCount) + " LOWER / " + std::to_string(debug.HullLayerUpperCount) + " UPPER", x, y);
-        drawLabelValue(window, "LAYER PX", std::to_string(debug.HullLayerPixelCount), x, y);
-        drawLabelValue(window, "LAYER REJECTS", std::to_string(debug.HullLayerPlacementRejectionCount), x, y);
-        drawLabelValue(window, "CORE TREATMENTS", std::to_string(debug.CoreTreatmentCount), x, y);
-        drawLabelValue(window, "CORE REGION PX", std::to_string(debug.CoreRegionPixelCount), x, y);
-        drawLabelValue(window, "CORE RAISED/RECESS", std::to_string(debug.CoreRaisedPixelCount) + " / " + std::to_string(debug.CoreRecessedPixelCount), x, y);
-        drawLabelValue(window, "CORE MATERIAL/LIGHT", std::to_string(debug.CoreSecondaryMaterialPixelCount) + " / " + std::to_string(debug.CoreLuminousPixelCount), x, y);
-        drawLabelValue(window, "CORE COST", std::to_string(debug.CoreTreatmentComplexityCost), x, y);
-        drawLabelValue(window, "CORE REJECTS", std::to_string(debug.CoreTreatmentPlacementRejectionCount), x, y);
-        drawLabelValue(window, "MAJOR FEATURES", std::to_string(debug.MajorFeatureCount), x, y);
-        drawLabelValue(window, "MAJOR PX", std::to_string(debug.MajorFeaturePixelCount), x, y);
-        drawLabelValue(window, "MAJOR REJECTS", std::to_string(debug.MajorFeaturePlacementRejectionCount) + "/" + std::to_string(debug.MajorFeaturePlacementAttemptCount), x, y);
-        drawLabelValue(window, "COCKPIT", getBoundsString(cockpitBounds), x, y);
-        drawLabelValue(window, "COCKPIT PX", std::to_string(countMaskPixels(ship.CockpitMask)), x, y);
-        drawLabelValue(window, "COCKPIT SIZE", PixelShipGenerator::getCockpitSizeClassName(debug.CockpitSize), x, y);
-        drawLabelValue(window, "COCKPIT SHAPE", PixelShipGenerator::getCockpitShapeTypeName(debug.CockpitShape), x, y);
-        drawLabelValue(window, "GLASS / FRAME", std::to_string(debug.CockpitGlassPixelCount) + " / " + std::to_string(debug.CockpitFramePixelCount), x, y);
-        drawLabelValue(window, "BASE / UPPER", std::to_string(debug.CockpitBasePixelCount) + " / " + std::to_string(debug.CockpitUpperSectionPixelCount), x, y);
-        drawLabelValue(window, "COCKPIT COST", std::to_string(debug.CockpitComplexityCost), x, y);
-        drawLabelValue(window, "ENGINES", std::to_string(debug.EngineCount), x, y);
-        drawLabelValue(window, "ENGINE LAYOUT", getEngineLayoutName(debug.EngineLayout), x, y);
-        if (!debug.EngineUnits.empty())
+        drawLabelValue(window, "HULL LAYERS", std::to_string(debug.HullLayerCount) + " (" + std::to_string(debug.HullLayerLowerCount) + " LOWER / " + std::to_string(debug.HullLayerUpperCount) + " UPPER)", leftX, leftY);
+        drawLabelValue(window, "CORE", std::to_string(debug.CoreTreatmentCount) + " TREATMENTS / " + std::to_string(debug.CoreRegionPixelCount) + " PX", leftX, leftY);
+        drawLabelValue(window, "ENGINES", std::to_string(debug.EngineCount) + " / " + getEngineLayoutName(debug.EngineLayout), leftX, leftY);
+        drawLabelValue(window, "ATTACHMENTS", std::to_string(ship.AttachmentPlacements.size()), leftX, leftY);
+        drawLabelValue(window, "MAJOR FEATURES", std::to_string(debug.MajorFeatureCount), leftX, leftY);
+
+        leftY += 6.0f;
+        drawSectionHeader(window, "VISUAL HIERARCHY", leftX, leftY);
+        drawLabelValue(window, "PRIMARY", PixelShipGenerator::getShipVisualAnchorTypeName(debug.PrimaryVisualAnchor), leftX, leftY);
+        drawLabelValue(window, "SECONDARY", PixelShipGenerator::getShipVisualAnchorTypeName(debug.SecondaryVisualAnchor), leftX, leftY);
+        drawLabelValue(window, "REGION", PixelShipGenerator::getGenerationSpatialRegionName(debug.VisualAnchorTargetRegion), leftX, leftY);
+        drawLabelValue(window, "RESERVED COST", std::to_string(debug.VisualHierarchyReservedComplexity), leftX, leftY);
+        drawLabelValue(window, "FALLBACK", debug.VisualHierarchyFallbackOccurred ? "YES" : "NO", leftX, leftY);
+
+        leftY += 6.0f;
+        drawSectionHeader(window, "GENERATION / BUDGET", leftX, leftY);
+        drawLabelValue(window, "HULL ATTEMPTS", std::to_string(debug.HullGenerationAttemptCount), leftX, leftY);
+        drawLabelValue(window, "LAST HULL RETRY", PixelShipGenerator::getSilhouetteValidationFailureReasonName(debug.LastSilhouetteValidationFailure), leftX, leftY);
+        drawLabelValue(window, "COMPLEXITY", std::to_string(debug.ComplexityConsumedBudget) + "/" + std::to_string(debug.ComplexityInitialBudget), leftX, leftY);
+        drawLabelValue(window, "UNUSED", std::to_string(debug.ComplexityUnusedBudget), leftX, leftY);
+        drawLabelValue(window, "SPATIAL REJECTS", std::to_string(debug.SpatialOverloadRejectionCount), leftX, leftY);
+
+        drawSectionHeader(window, "COMPOSITION", rightX, rightY);
+        drawLabelValue(window, "MATERIAL ZONES", std::to_string(debug.MaterialZoneCount), rightX, rightY);
+        drawLabelValue(window, "MATERIAL PX", std::to_string(debug.MaterialSecondaryHullPixelCount) + " SECONDARY / " + std::to_string(debug.MaterialMechanicalPixelCount) + " MECH", rightX, rightY);
+        drawLabelValue(window, "LIVERY", std::to_string(debug.LiveryMarkingCount) + " MARKS / " + std::to_string(debug.LiveryCoveragePermille / 10u) + "." + std::to_string(debug.LiveryCoveragePermille % 10u) + "%", rightX, rightY);
+        drawLabelValue(window, "PRIMARY MOTIF", PixelShipGenerator::getShipDetailMotifTypeName(debug.PrimaryDetailMotif), rightX, rightY);
+        drawLabelValue(window, "SECONDARY MOTIF", PixelShipGenerator::getShipDetailMotifTypeName(debug.SecondaryDetailMotif), rightX, rightY);
+        drawLabelValue(window, "MOTIF REGION", PixelShipGenerator::getGenerationSpatialRegionName(debug.PrimaryDetailMotifRegion), rightX, rightY);
+        const std::string macroState = !debug.MacroAsymmetryPlanned ? "OFF" : debug.MacroAsymmetryFulfilled ? "FULFILLED" : debug.MacroAsymmetryRejected ? "REJECTED" : "PLANNED";
+        drawLabelValue(window, "MACRO ASYM", macroState, rightX, rightY);
+
+        rightY += 6.0f;
+        drawSectionHeader(window, "WEAPONS", rightX, rightY);
+        drawLabelValue(window, "GROUPS", std::to_string(debug.WeaponRealizedGroupCount) + "/" + std::to_string(debug.WeaponRequestedGroupCount) + " REALIZED", rightX, rightY);
+        drawLabelValue(window, "UNITS", std::to_string(debug.WeaponCount), rightX, rightY);
+        drawLabelValue(window, "HARDPOINTS", std::to_string(debug.WeaponHardpointCount), rightX, rightY);
+        drawLabelValue(window, "PLACEMENT", std::to_string(debug.WeaponPlacementRejectionCount) + " REJECT / " + std::to_string(debug.WeaponPlacementAttemptCount) + " TRY", rightX, rightY);
+        const std::size_t weaponDetailCount = std::min<std::size_t>(debug.WeaponUnits.size(), 4u);
+        for (std::size_t index = 0u; index < weaponDetailCount; ++index)
         {
-            uint32_t maximumHousingWidth = 0u;
-            uint32_t maximumExhaustLength = 0u;
-            uint32_t nacelleCount = 0u;
-            std::array<uint32_t, static_cast<std::size_t>(PixelShipGenerator::EngineSizeClass::ENGINE_SIZE_CLASS_END)> sizeCounts = {};
-
-            for (const PixelShipGenerator::EngineUnitDebugInfo& engineUnit : debug.EngineUnits)
-            {
-                maximumHousingWidth = std::max(maximumHousingWidth, engineUnit.HousingWidth);
-                maximumExhaustLength = std::max(maximumExhaustLength, engineUnit.ExhaustLength);
-                if (engineUnit.Nacelle) { ++nacelleCount; }
-                if (engineUnit.SizeClass != PixelShipGenerator::EngineSizeClass::ENGINE_SIZE_CLASS_END) { ++sizeCounts[static_cast<std::size_t>(engineUnit.SizeClass)]; }
-            }
-
-            PixelShipGenerator::EngineSizeClass dominantSize = PixelShipGenerator::EngineSizeClass::SMALL;
-            for (uint32_t index = 1u; index < sizeCounts.size(); ++index) { if (sizeCounts[index] > sizeCounts[static_cast<std::size_t>(dominantSize)]) { dominantSize = static_cast<PixelShipGenerator::EngineSizeClass>(index); } }
-            drawLabelValue(window, "ENGINE SIZE", getEngineSizeName(dominantSize), x, y);
-            drawLabelValue(window, "MAX HOUSING", std::to_string(maximumHousingWidth) + " PX", x, y);
-            drawLabelValue(window, "MAX EXHAUST", std::to_string(maximumExhaustLength) + " PX", x, y);
-            drawLabelValue(window, "NACELLES", std::to_string(nacelleCount), x, y);
+            const PixelShipGenerator::WeaponUnitDebugInfo& weapon = debug.WeaponUnits[index];
+            const std::string weaponFlags = std::string(weapon.MovableBarrel ? " MOV" : "") + (weapon.Emissive ? " EM" : "");
+            drawDebugText(window, "W" + std::to_string(index + 1u) + " " + getWeaponTypeName(weapon.Type) + " / " + getWeaponRegionName(weapon.Region) + " G" + std::to_string(weapon.SymmetryGroup) + weaponFlags, rightX, rightY, sf::Color(220, 222, 228), SmallTextScale);
+            rightY += 14.0f;
+            drawDebugText(window, "  ROOT " + std::to_string(weapon.AnchorX) + "," + std::to_string(weapon.AnchorY) + "  MUZZLE " + std::to_string(weapon.MuzzleX) + "," + std::to_string(weapon.MuzzleY), rightX, rightY, sf::Color(145, 205, 235), SmallTextScale);
+            rightY += 14.0f;
         }
-        drawLabelValue(window, "LARGE WEAPONS", std::to_string(debug.WeaponCount), x, y);
-        drawLabelValue(window, "WEAPON HARDPOINTS", std::to_string(debug.WeaponHardpointCount), x, y);
-        drawLabelValue(window, "WEAPON REJECTS", std::to_string(debug.WeaponPlacementRejectionCount) + "/" + std::to_string(debug.WeaponPlacementAttemptCount), x, y);
-        if (!debug.WeaponUnits.empty())
+        if (debug.WeaponUnits.size() > weaponDetailCount)
         {
-            const PixelShipGenerator::WeaponUnitDebugInfo& firstWeapon = debug.WeaponUnits.front();
-            drawLabelValue(window, "FIRST WEAPON", getWeaponTypeName(firstWeapon.Type), x, y);
-            drawLabelValue(window, "HARDPOINT", getWeaponRegionName(firstWeapon.Region), x, y);
-        }
-        drawLabelValue(window, "ATTACHMENTS", std::to_string(ship.AttachmentPlacements.size()), x, y);
-
-        std::set<uint32_t> symmetryGroups;
-        std::array<uint32_t, static_cast<std::size_t>(PixelShipGenerator::ShipAttachmentType::SHIP_ATTACHMENT_TYPE_END)> attachmentCounts = {};
-
-        for (const PixelShipGenerator::ShipAttachmentPlacement& placement : ship.AttachmentPlacements)
-        {
-            if (placement.SymmetryGroup != 0u) { symmetryGroups.insert(placement.SymmetryGroup); }
-            const std::size_t typeIndex = static_cast<std::size_t>(placement.Type);
-            if (typeIndex < attachmentCounts.size()) { ++attachmentCounts[typeIndex]; }
+            drawDebugText(window, "+ " + std::to_string(debug.WeaponUnits.size() - weaponDetailCount) + " more weapon units", rightX, rightY, sf::Color(150, 155, 165), SmallTextScale);
+            rightY += 14.0f;
         }
 
-        drawLabelValue(window, "SYM GROUPS", std::to_string(symmetryGroups.size()), x, y);
-        y += 5.0f;
-        drawSectionHeader(window, "MACRO ASYMMETRY", x, y);
-        if (!debug.MacroAsymmetryPlanned)
-        {
-            drawLabelValue(window, "PLAN", "OFF", x, y);
-        }
-        else
-        {
-            const std::string state = debug.MacroAsymmetryFulfilled ? "FULFILLED" : (debug.MacroAsymmetryRejected ? "REJECTED" : "PLANNED");
-            drawLabelValue(window, "PLAN", state, x, y);
-            drawLabelValue(window, "SIDE", PixelShipGenerator::getMacroAsymmetrySideName(debug.MacroAsymmetryDominantSide), x, y);
-            drawLabelValue(window, "FEATURE", PixelShipGenerator::getMacroAsymmetryCategoryName(debug.MacroAsymmetryFeatureCategory), x, y);
-            drawLabelValue(window, "TARGET", PixelShipGenerator::getGenerationSpatialRegionName(debug.MacroAsymmetryTargetRegion), x, y);
-            drawLabelValue(window, "BALANCE", std::to_string(debug.MacroAsymmetryBalanceScore) + "%", x, y);
-            drawLabelValue(window, "VISUAL WEIGHT", std::to_string(debug.MacroAsymmetryActualVisualWeight) + "/" + std::to_string(debug.MacroAsymmetryDesiredVisualWeight), x, y);
-        }
-        y += 5.0f;
-        drawSectionHeader(window, "SEMANTIC SPATIAL LOAD", x, y);
-        drawLabelValue(window, "LOAD REJECTIONS", std::to_string(debug.SpatialOverloadRejectionCount), x, y);
-        for (uint32_t index = 0u; index < static_cast<uint32_t>(PixelShipGenerator::GenerationSpatialRegion::GENERATION_SPATIAL_REGION_END); ++index)
-        {
-            if (debug.SpatialRegionCapacities[index] == 0u) { continue; }
-            const auto region = static_cast<PixelShipGenerator::GenerationSpatialRegion>(index);
-            const uint32_t utilization = debug.SpatialRegionLoads[index] * 100u / debug.SpatialRegionCapacities[index];
-            drawLabelValue(window, PixelShipGenerator::getGenerationSpatialRegionName(region), std::to_string(utilization) + "%  D" + std::to_string(debug.SpatialRegionDominantCounts[index]), x, y);
-        }
-        y += 5.0f;
-        drawSectionHeader(window, "SILHOUETTE MODIFIERS", x, y);
-        drawLabelValue(window, "COUNT", std::to_string(debug.AppliedHullModifiers.size()), x, y);
-
-        if (debug.AppliedHullModifiers.empty())
-        {
-            drawDebugText(window, "NONE", x, y, sf::Color(220, 222, 228), TextScale);
-            y += LargeTextLineHeight;
-        }
-        else
-        {
-            for (PixelShipGenerator::HullModifierType type : debug.AppliedHullModifiers)
-            {
-                drawDebugText(window, "- " + getHullModifierName(type), x, y, sf::Color(220, 222, 228), TextScale);
-                y += LargeTextLineHeight;
-            }
-        }
-
-        y += 5.0f;
-        drawSectionHeader(window, "HULL LAYER TYPES", x, y);
-        bool hasHullLayerType = false;
-        for (uint32_t index = 0u; index < static_cast<uint32_t>(PixelShipGenerator::ShipHullLayerType::SHIP_HULL_LAYER_TYPE_END); ++index)
-        {
-            if (debug.HullLayerTypeCounts[index] == 0u) { continue; }
-            hasHullLayerType = true;
-            drawLabelValue(window, PixelShipGenerator::getShipHullLayerTypeName(static_cast<PixelShipGenerator::ShipHullLayerType>(index)), std::to_string(debug.HullLayerTypeCounts[index]), x, y);
-        }
-        if (!hasHullLayerType)
-        {
-            drawDebugText(window, "NONE", x, y, sf::Color(220, 222, 228), TextScale);
-            y += LargeTextLineHeight;
-        }
-
-        y += 5.0f;
-        drawSectionHeader(window, "MAJOR FEATURE TYPES", x, y);
-        bool hasMajorFeatureType = false;
-        for (uint32_t index = 0u; index < static_cast<uint32_t>(PixelShipGenerator::ShipMajorFeatureType::SHIP_MAJOR_FEATURE_TYPE_END); ++index)
-        {
-            if (debug.MajorFeatureTypeCounts[index] == 0u)
-            {
-                continue;
-            }
-
-            hasMajorFeatureType = true;
-            drawLabelValue(window, getMajorFeatureName(static_cast<PixelShipGenerator::ShipMajorFeatureType>(index)), std::to_string(debug.MajorFeatureTypeCounts[index]), x, y);
-        }
-        if (!hasMajorFeatureType)
-        {
-            drawDebugText(window, "NONE", x, y, sf::Color(220, 222, 228), TextScale);
-            y += LargeTextLineHeight;
-        }
-
-        y += 5.0f;
-        drawSectionHeader(window, "LARGE WEAPON TYPES", x, y);
-        bool hasWeaponType = false;
-        for (uint32_t index = 0u; index < static_cast<uint32_t>(PixelShipGenerator::ShipWeaponType::SHIP_WEAPON_TYPE_END); ++index)
-        {
-            if (debug.WeaponTypeCounts[index] == 0u)
-            {
-                continue;
-            }
-
-            hasWeaponType = true;
-            drawLabelValue(window, getWeaponTypeName(static_cast<PixelShipGenerator::ShipWeaponType>(index)), std::to_string(debug.WeaponTypeCounts[index]), x, y);
-        }
-        if (!hasWeaponType)
-        {
-            drawDebugText(window, "NONE", x, y, sf::Color(220, 222, 228), TextScale);
-            y += LargeTextLineHeight;
-        }
-
-        float rightX = OverlayMargin + 430.0f;
-        float rightY = OverlayMargin + 54.0f;
-        drawSectionHeader(window, "ATTACHMENT TYPES", rightX, rightY);
-
-        for (uint32_t index = 0u; index < static_cast<uint32_t>(PixelShipGenerator::ShipAttachmentType::SHIP_ATTACHMENT_TYPE_END); ++index)
-        {
-            const PixelShipGenerator::ShipAttachmentType type = static_cast<PixelShipGenerator::ShipAttachmentType>(index);
-            drawLabelValue(window, getAttachmentTypeName(type), std::to_string(attachmentCounts[index]), rightX, rightY);
-        }
-
-        rightY += 5.0f;
-        drawSectionHeader(window, "DETAIL MASKS", rightX, rightY);
-        drawLabelValue(window, "ACCENT", std::to_string(countMaskPixels(ship.AccentMask)), rightX, rightY);
-        drawLabelValue(window, "MECHANICAL", std::to_string(countMaskPixels(ship.MechanicalDetailMask)), rightX, rightY);
-        drawLabelValue(window, "LIGHT", std::to_string(countMaskPixels(ship.LightMask)), rightX, rightY);
-
-        if (debug.HasSurfaceDetailProfile)
-        {
-            rightY += 5.0f;
-            drawSectionHeader(window, "RESOLVED DETAIL PROFILE", rightX, rightY);
-            drawLabelValue(window, "DENSITY %", std::to_string(debug.SurfaceDetailProfile.DetailDensityPercent), rightX, rightY);
-            drawLabelValue(window, "MECH %", std::to_string(debug.SurfaceDetailProfile.MechanicalPatternCountPercent), rightX, rightY);
-            drawLabelValue(window, "LIGHT %", std::to_string(debug.SurfaceDetailProfile.LightPatternCountPercent), rightX, rightY);
-            drawLabelValue(window, "ASYM %", std::to_string(debug.SurfaceDetailProfile.AsymmetricDetailChance), rightX, rightY);
-            drawLabelValue(window, "PANEL WT", std::to_string(debug.SurfaceDetailProfile.AccentPanelWeight), rightX, rightY);
-            drawLabelValue(window, "STRIPE WT", std::to_string(debug.SurfaceDetailProfile.AccentStripeWeight), rightX, rightY);
-            drawLabelValue(window, "ARMOR WT", std::to_string(debug.SurfaceDetailProfile.AccentArmorWeight), rightX, rightY);
-        }
-
-        if (data.SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE && data.IdleAnimation != nullptr && data.IdleAnimationSettings != nullptr && !data.IdleAnimation->Frames.empty())
-        {
-            rightY += 5.0f;
-            drawSectionHeader(window, "ANIMATION", rightX, rightY);
-            drawLabelValue(window, "TYPE", getAnimationTypeDisplayName(data.SelectedAnimationType), rightX, rightY);
-            drawLabelValue(window, "SEED", std::to_string(data.IdleAnimation->Seed), rightX, rightY);
-            drawLabelValue(window, "DURATION", std::to_string(data.IdleAnimation->DurationMilliseconds) + " ms", rightX, rightY);
-            drawLabelValue(window, "FRAMES", std::to_string(data.IdleAnimation->Sampling.ActualFrameCount), rightX, rightY);
-            drawLabelValue(window, "SAMPLING", data.IdleAnimation->Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", rightX, rightY);
-            drawLabelValue(window, "FRAME TIME", getMillisecondsString(data.IdleAnimation->FrameDurationMilliseconds), rightX, rightY);
-            drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(data.IdleAnimation->Frames.size()), rightX, rightY);
-            drawLabelValue(window, "COMPONENTS", std::to_string(data.IdleAnimation->Sampling.ActiveAnimatedComponentCount), rightX, rightY);
-            drawLabelValue(window, "MAX TRAVEL", std::to_string(std::max(data.IdleAnimation->Sampling.MaximumMechanicalTravelPixels, data.IdleAnimation->Sampling.MaximumExhaustTravelPixels)) + " px", rightX, rightY);
-            drawLabelValue(window, "PHASE GROUPS", std::to_string(data.IdleAnimation->Sampling.IndependentPhaseGroupCount), rightX, rightY);
-            drawLabelValue(window, "ENGINE FX", getOnOff(data.IdleAnimationSettings->EngineFlicker), rightX, rightY);
-            drawLabelValue(window, "LIGHT FX", getOnOff(data.IdleAnimationSettings->LightBlinking), rightX, rightY);
-            drawLabelValue(window, "MICRO MOVE", getOnOff(data.IdleAnimationSettings->MechanicalMicroMovement), rightX, rightY);
-            drawLabelValue(window, "HOVER", getOnOff(data.IdleAnimationSettings->HoverOffset), rightX, rightY);
-            drawLabelValue(window, "DETAIL FX", getOnOff(data.IdleAnimationSettings->SmallDetailVariation), rightX, rightY);
-        }
-        else if (data.SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE && data.FiringAnimation != nullptr && data.FiringAnimationSettings != nullptr && !data.FiringAnimation->Frames.empty())
-        {
-            rightY += 5.0f;
-            drawSectionHeader(window, "ANIMATION", rightX, rightY);
-            drawLabelValue(window, "TYPE", "FIRE", rightX, rightY);
-            drawLabelValue(window, "SEED", std::to_string(data.FiringAnimation->Seed), rightX, rightY);
-            drawLabelValue(window, "TARGET", std::to_string(data.FiringAnimation->Target.WeaponComponentIndex), rightX, rightY);
-            drawLabelValue(window, "PHASE", getCurrentFiringPhaseDisplayName(*data.FiringAnimation, data.AnimationFrameIndex), rightX, rightY);
-            drawLabelValue(window, "GROUP", std::to_string(data.FiringAnimation->Diagnostics.TargetSymmetryGroup), rightX, rightY);
-            drawLabelValue(window, "DURATION", std::to_string(data.FiringAnimation->DurationMilliseconds) + " ms", rightX, rightY);
-            drawLabelValue(window, "FRAMES", std::to_string(data.FiringAnimation->Sampling.ActualFrameCount), rightX, rightY);
-            drawLabelValue(window, "SAMPLING", data.FiringAnimation->Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", rightX, rightY);
-            drawLabelValue(window, "FRAME TIME", getMillisecondsString(data.FiringAnimation->FrameDurationMilliseconds), rightX, rightY);
-            drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(data.FiringAnimation->Frames.size()), rightX, rightY);
-            drawLabelValue(window, "WEAPONS", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount), rightX, rightY);
-            drawLabelValue(window, "RECOIL", std::to_string(data.FiringAnimation->Diagnostics.MaximumRecoilTravelPixels) + " px", rightX, rightY);
-            drawLabelValue(window, "PRE-FIRE", std::to_string(data.FiringAnimation->Diagnostics.MaximumPreFireExtensionPixels) + " px", rightX, rightY);
-            if (data.TransientStatePreviewActive)
-            {
-                drawLabelValue(window, "UNDERLYING", getAnimationTypeDisplayName(data.RuntimeMovementType), rightX, rightY);
-                drawLabelValue(window, "OVERRIDES", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount) + " weapon", rightX, rightY);
-            }
-        }
-        else if (data.MovementAnimation != nullptr && data.MovementAnimationSettings != nullptr && data.MovementAnimation->Type == data.SelectedAnimationType)
-        {
-            const PixelShipGenerator::ShipMovementAnimationClip& clip = PixelShipGenerator::getMovementAnimationClip(*data.MovementAnimation, data.MovementPhase);
-            if (!clip.Frames.empty())
-            {
-                rightY += 5.0f;
-                drawSectionHeader(window, "ANIMATION", rightX, rightY);
-                drawLabelValue(window, "TYPE", getAnimationTypeDisplayName(data.SelectedAnimationType), rightX, rightY);
-                drawLabelValue(window, "PHASE", getMovementPhaseDisplayName(data.MovementPhase), rightX, rightY);
-                if (data.MovementTransitionPending) { drawLabelValue(window, "NEXT", getAnimationTypeDisplayName(data.PendingMovementType), rightX, rightY); }
-                drawLabelValue(window, "SEED", std::to_string(data.MovementAnimation->Seed), rightX, rightY);
-                drawLabelValue(window, "DURATION", std::to_string(clip.DurationMilliseconds) + " ms", rightX, rightY);
-                drawLabelValue(window, "FRAMES", std::to_string(clip.Sampling.ActualFrameCount), rightX, rightY);
-                drawLabelValue(window, "SAMPLING", clip.Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", rightX, rightY);
-                drawLabelValue(window, "FRAME TIME", getMillisecondsString(clip.FrameDurationMilliseconds), rightX, rightY);
-                drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(clip.Frames.size()), rightX, rightY);
-                drawLabelValue(window, "COMPONENTS", std::to_string(clip.Sampling.ActiveAnimatedComponentCount), rightX, rightY);
-                drawLabelValue(window, "MAX TRAVEL", std::to_string(data.MovementAnimation->Diagnostics.MaximumMechanicalTravelPixels) + " px", rightX, rightY);
-                drawLabelValue(window, "EXHAUST TRAVEL", std::to_string(data.MovementAnimation->Diagnostics.MaximumExhaustTravelPixels) + " px", rightX, rightY);
-                drawLabelValue(window, "PHASE GROUPS", std::to_string(data.MovementAnimation->Diagnostics.IndependentPhaseGroupCount), rightX, rightY);
-                drawLabelValue(window, "ENGINES", std::to_string(data.MovementAnimation->Diagnostics.ActiveEngineCount), rightX, rightY);
-                drawLabelValue(window, "WEAPONS", std::to_string(data.MovementAnimation->Diagnostics.ActiveWeaponCount), rightX, rightY);
-                drawLabelValue(window, "ATTACH", std::to_string(data.MovementAnimation->Diagnostics.ActiveAttachmentCount), rightX, rightY);
-                drawLabelValue(window, "BRAKES", std::to_string(data.MovementAnimation->Diagnostics.ActiveBrakingComponentCount), rightX, rightY);
-            }
-        }
+        rightY += 6.0f;
+        drawSectionHeader(window, "CONSTRAINTS", rightX, rightY);
+        drawLabelValue(window, "NEG SPACE", std::to_string(debug.StructuralNegativeSpaceSuccessCount) + "/" + std::to_string(debug.StructuralNegativeSpaceAttemptCount) + " SUCCESS", rightX, rightY);
+        drawLabelValue(window, "VOID PX", std::to_string(debug.StructuralNegativeSpacePixelCount), rightX, rightY);
+        drawLabelValue(window, "MAJOR REJECTS", std::to_string(debug.MajorFeaturePlacementRejectionCount) + "/" + std::to_string(debug.MajorFeaturePlacementAttemptCount), rightX, rightY);
+        drawLabelValue(window, "MOTIF REJECTS", std::to_string(debug.DetailMotifRejectedPlacementCount), rightX, rightY);
     }
 
     void PreviewRenderer::renderPaletteInspector(sf::RenderWindow& window, const PreviewRenderData& data) const
