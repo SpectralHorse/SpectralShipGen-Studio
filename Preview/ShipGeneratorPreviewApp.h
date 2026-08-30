@@ -139,7 +139,9 @@ namespace PixelShipGeneratorPreview
         void moveFavoritesSelection(int32_t deltaX, int32_t deltaY);
         void moveGallerySelection(int32_t deltaX, int32_t deltaY);
         void moveGenerationStage(int32_t delta);
-        void loadFavorite(uint32_t index);
+        bool loadFavorite(uint32_t index);
+        void openSelectedFavoriteInWorkspace(PreviewWorkspace workspace);
+        void exportSelectedFavoriteImage();
         void loadFavoriteCollection();
         void loadPreviewAppPreferences();
         void loadUserPresetLibraryState();
@@ -147,6 +149,7 @@ namespace PixelShipGeneratorPreview
         void pinCurrentShip();
         void previous();
         void removeCurrentFromFavorites();
+        void removeSelectedFavorite();
         void removeFavoriteThumbnail(std::size_t index);
         void removeResolutionBookmark();
         void printControls() const;
@@ -267,5 +270,6 @@ namespace PixelShipGeneratorPreview
         sf::Sprite m_PreviewSprite;
         std::string m_StartupRecipePath;
         std::string m_StatusMessage;
+        std::optional<uint32_t> m_PendingFavoriteRemovalIndex;
     };
 }

@@ -68,9 +68,10 @@ namespace PixelShipGeneratorPreview
             }, 2u },
             PreviewHelpSection{ {
                 PreviewHelpEntry{ "ARROWS", "Move Favorite selection" },
-                PreviewHelpEntry{ "ENTER", "Load selected Favorite" },
+                PreviewHelpEntry{ "ENTER", "Open selected Favorite in Generate" },
+                PreviewHelpEntry{ "DELETE", "Remove selected Favorite (confirm twice)" },
                 PreviewHelpEntry{ "CTRL+E", "Export selected Favorite recipe" }
-            }, 3u },
+            }, 4u },
             PreviewHelpSection{ {
                 PreviewHelpEntry{ "SPACE", "Play / Pause animation" },
                 PreviewHelpEntry{ "LEFT / RIGHT", "Previous / next frame while paused" }

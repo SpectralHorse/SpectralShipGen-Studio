@@ -1521,9 +1521,12 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::enterFavoritesMode()
     {
-        if (m_FavoritesState.Grid.Items.empty()) { return; }
-        m_FavoritesState.Grid.SelectedIndex = std::min(m_FavoritesState.Grid.SelectedIndex, static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u));
+        if (!m_FavoritesState.Grid.Items.empty())
+        {
+            m_FavoritesState.Grid.SelectedIndex = std::min(m_FavoritesState.Grid.SelectedIndex, static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u));
+        }
         m_FavoritesState.Grid.HoveredIndex = -1;
+        m_PendingFavoriteRemovalIndex.reset();
         m_PreviewMode = PreviewMode::FAVORITES;
         updateWindowTitle();
     }
@@ -1798,7 +1801,12 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::FAVORITES_RIGHT: moveFavoritesSelection(1, 0); break;
         case PreviewCommandType::FAVORITES_UP: moveFavoritesSelection(0, -1); break;
         case PreviewCommandType::FAVORITES_DOWN: moveFavoritesSelection(0, 1); break;
-        case PreviewCommandType::SELECT_FAVORITE: loadFavorite(m_FavoritesState.Grid.SelectedIndex); break;
+        case PreviewCommandType::SELECT_FAVORITE: openSelectedFavoriteInWorkspace(PreviewWorkspace::GENERATE); break;
+        case PreviewCommandType::OPEN_FAVORITE_INSPECT: openSelectedFavoriteInWorkspace(PreviewWorkspace::INSPECT); break;
+        case PreviewCommandType::OPEN_FAVORITE_ANIMATION: openSelectedFavoriteInWorkspace(PreviewWorkspace::ANIMATION); break;
+        case PreviewCommandType::OPEN_FAVORITE_REROLL: openSelectedFavoriteInWorkspace(PreviewWorkspace::REROLL); break;
+        case PreviewCommandType::REMOVE_SELECTED_FAVORITE: removeSelectedFavorite(); break;
+        case PreviewCommandType::EXPORT_FAVORITE_IMAGE: exportSelectedFavoriteImage(); break;
         case PreviewCommandType::SELECT_STYLE:
             if (command.Value < SupportedPreviewStyles.size()) { setStyle(SupportedPreviewStyles[command.Value]); }
             break;
@@ -2036,6 +2044,7 @@ namespace PixelShipGeneratorPreview
             case sf::Keyboard::Up: return PreviewCommand{ PreviewCommandType::FAVORITES_UP, 0u };
             case sf::Keyboard::Down: return PreviewCommand{ PreviewCommandType::FAVORITES_DOWN, 0u };
             case sf::Keyboard::Enter: return PreviewCommand{ PreviewCommandType::SELECT_FAVORITE, 0u };
+            case sf::Keyboard::Delete: return PreviewCommand{ PreviewCommandType::REMOVE_SELECTED_FAVORITE, 0u };
             default: return std::nullopt;
             }
         }
@@ -2224,7 +2233,8 @@ namespace PixelShipGeneratorPreview
             const int32_t favoriteIndex = findPreviewThumbnailItemAtPosition(position, m_FavoritesState.Grid);
             if (favoriteIndex < 0) { return; }
             m_FavoritesState.Grid.SelectedIndex = static_cast<uint32_t>(favoriteIndex);
-            executeCommand({ PreviewCommandType::SELECT_FAVORITE, static_cast<uint32_t>(favoriteIndex) });
+            m_PendingFavoriteRemovalIndex.reset();
+            updateWindowTitle();
         }
     }
 
@@ -2428,10 +2438,18 @@ namespace PixelShipGeneratorPreview
             if (type == PreviewCommandType::ADD_CURRENT_TO_FAVORITES) { return !isCurrentFavorite(); }
             if (type == PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES) { return isCurrentFavorite(); }
             if (type == PreviewCommandType::CLEAR_PIN) { return m_Comparison.Pinned.Valid; }
-            if (type == PreviewCommandType::EXPORT_RECIPE) { return !m_FavoritesState.Grid.Items.empty() && m_FavoritesState.Grid.SelectedIndex < m_FavoritesState.Grid.Items.size() && m_FavoritesState.Grid.Items[m_FavoritesState.Grid.SelectedIndex].Valid; }
-            if (type == PreviewCommandType::SELECT_FAVORITE) { return !m_FavoritesState.Grid.Items.empty() && m_FavoritesState.Grid.SelectedIndex < m_FavoritesState.Grid.Items.size() && m_FavoritesState.Grid.Items[m_FavoritesState.Grid.SelectedIndex].Valid; }
-            if (m_FavoritesState.Grid.Items.empty()) { return false; }
-            const uint32_t selectedIndex = std::min(m_FavoritesState.Grid.SelectedIndex, static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u));
+
+            const bool hasSelection = !m_FavoritesState.Grid.Items.empty() && m_FavoritesState.Grid.SelectedIndex < m_FavoritesState.Grid.Items.size();
+            const bool selectedValid = hasSelection && m_FavoritesState.Grid.Items[m_FavoritesState.Grid.SelectedIndex].Valid;
+            if (type == PreviewCommandType::EXPORT_RECIPE || type == PreviewCommandType::EXPORT_FAVORITE_IMAGE ||
+                type == PreviewCommandType::SELECT_FAVORITE || type == PreviewCommandType::OPEN_FAVORITE_INSPECT ||
+                type == PreviewCommandType::OPEN_FAVORITE_ANIMATION || type == PreviewCommandType::OPEN_FAVORITE_REROLL)
+            {
+                return selectedValid;
+            }
+            if (type == PreviewCommandType::REMOVE_SELECTED_FAVORITE) { return hasSelection; }
+            if (!hasSelection) { return false; }
+            const uint32_t selectedIndex = m_FavoritesState.Grid.SelectedIndex;
             const uint32_t columns = std::max(1u, m_FavoritesState.Grid.Columns);
             if (type == PreviewCommandType::FAVORITES_LEFT) { return selectedIndex % columns > 0u; }
             if (type == PreviewCommandType::FAVORITES_RIGHT) { return selectedIndex % columns + 1u < columns && selectedIndex + 1u < m_FavoritesState.Grid.Items.size(); }
@@ -2454,7 +2472,12 @@ namespace PixelShipGeneratorPreview
         }
         if (type == PreviewCommandType::SELECT_RESOLUTION_BOOKMARK) { return command.Value < m_Collections.getResolutionBookmarks().size(); }
         if (type == PreviewCommandType::OPEN_FAVORITES) { return !m_FavoritesState.Grid.Items.empty(); }
-        if (type == PreviewCommandType::CLOSE_FAVORITES || type == PreviewCommandType::FAVORITES_LEFT || type == PreviewCommandType::FAVORITES_RIGHT || type == PreviewCommandType::FAVORITES_UP || type == PreviewCommandType::FAVORITES_DOWN || type == PreviewCommandType::SELECT_FAVORITE) { return false; }
+        if (type == PreviewCommandType::CLOSE_FAVORITES || type == PreviewCommandType::FAVORITES_LEFT || type == PreviewCommandType::FAVORITES_RIGHT || type == PreviewCommandType::FAVORITES_UP || type == PreviewCommandType::FAVORITES_DOWN ||
+            type == PreviewCommandType::SELECT_FAVORITE || type == PreviewCommandType::OPEN_FAVORITE_INSPECT || type == PreviewCommandType::OPEN_FAVORITE_ANIMATION ||
+            type == PreviewCommandType::OPEN_FAVORITE_REROLL || type == PreviewCommandType::REMOVE_SELECTED_FAVORITE || type == PreviewCommandType::EXPORT_FAVORITE_IMAGE)
+        {
+            return false;
+        }
         if (type == PreviewCommandType::PIN_CURRENT) { return true; }
         if (type == PreviewCommandType::CLEAR_PIN) { return m_Comparison.Pinned.Valid; }
         if (type == PreviewCommandType::TOGGLE_COMPARISON) { return m_Comparison.Pinned.Valid; }
@@ -2529,7 +2552,9 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::moveFavoritesSelection(int32_t deltaX, int32_t deltaY)
     {
-        if (movePreviewThumbnailSelection(m_FavoritesState.Grid, deltaX, deltaY)) { updateWindowTitle(); }
+        if (!movePreviewThumbnailSelection(m_FavoritesState.Grid, deltaX, deltaY)) { return; }
+        m_PendingFavoriteRemovalIndex.reset();
+        updateWindowTitle();
     }
 
     void ShipGeneratorPreviewApp::moveGallerySelection(int32_t deltaX, int32_t deltaY)
@@ -2537,19 +2562,20 @@ namespace PixelShipGeneratorPreview
         if (movePreviewThumbnailSelection(m_GalleryState.Grid, deltaX, deltaY)) { updateWindowTitle(); }
     }
 
-    void ShipGeneratorPreviewApp::loadFavorite(uint32_t index)
+    bool ShipGeneratorPreviewApp::loadFavorite(uint32_t index)
     {
         const PreviewGenerationRecipe* favorite = m_Collections.getFavorite(index);
-        if (favorite == nullptr || index >= m_FavoritesState.Grid.Items.size() || !m_FavoritesState.Grid.Items[index].Valid) { return; }
+        if (favorite == nullptr || index >= m_FavoritesState.Grid.Items.size() || !m_FavoritesState.Grid.Items[index].Valid) { return false; }
 
         const PreviewGenerationRecipe recipe = *favorite;
         m_FavoritesState.Grid.HoveredIndex = -1;
+        m_PendingFavoriteRemovalIndex.reset();
 
         if (recipe == getCurrentRecipe())
         {
             refreshDisplayedTexture();
             updateWindowTitle();
-            return;
+            return true;
         }
 
         m_SelectedStructuralPresetId.reset();
@@ -2558,6 +2584,31 @@ namespace PixelShipGeneratorPreview
         m_SelectedPalettePresetId.reset();
         m_SelectedConfigurationBundleId.reset();
         appendHistoryEntry(recipe);
+        return true;
+    }
+
+    void ShipGeneratorPreviewApp::openSelectedFavoriteInWorkspace(PreviewWorkspace workspace)
+    {
+        if (!loadFavorite(m_FavoritesState.Grid.SelectedIndex)) { return; }
+        switchWorkspace(workspace);
+        setStatusMessage("Favorite opened in " + std::string(getPreviewWorkspaceName(workspace)) + ".");
+    }
+
+    void ShipGeneratorPreviewApp::exportSelectedFavoriteImage()
+    {
+        const uint32_t index = m_FavoritesState.Grid.SelectedIndex;
+        const PreviewGenerationRecipe* favorite = m_Collections.getFavorite(index);
+        if (favorite == nullptr || index >= m_FavoritesState.Grid.Items.size() || !m_FavoritesState.Grid.Items[index].Valid) { return; }
+
+        PixelShipGenerator::GeneratedShip ship;
+        if (!generateShipFromRecipe(*favorite, ship))
+        {
+            setStatusMessage("Favorite image export failed: recipe could not be regenerated.");
+            return;
+        }
+
+        const std::filesystem::path path = getAvailableSavePath(getSaveBaseName(*favorite));
+        if (saveCoreImage(ship.FinalImage, path)) { setStatusMessage("Favorite image exported: " + path.string()); }
     }
 
     void ShipGeneratorPreviewApp::loadUserPresetLibraryState()
@@ -2661,8 +2712,34 @@ namespace PixelShipGeneratorPreview
         std::cout << "Removed Favorite. Remaining: " << m_Collections.getFavorites().size() << '\n';
     }
 
+    void ShipGeneratorPreviewApp::removeSelectedFavorite()
+    {
+        if (m_FavoritesState.Grid.Items.empty()) { return; }
+        const uint32_t index = std::min(m_FavoritesState.Grid.SelectedIndex, static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u));
+        const PreviewGenerationRecipe* favorite = m_Collections.getFavorite(index);
+        if (favorite == nullptr) { return; }
+
+        if (!m_PendingFavoriteRemovalIndex.has_value() || *m_PendingFavoriteRemovalIndex != index)
+        {
+            m_PendingFavoriteRemovalIndex = index;
+            setStatusMessage("Remove Favorite confirmation: press Delete or Remove again.");
+            return;
+        }
+
+        const PreviewGenerationRecipe recipe = *favorite;
+        m_PendingFavoriteRemovalIndex.reset();
+        if (!m_Collections.removeFavorite(recipe)) { return; }
+        removeFavoriteThumbnail(index);
+        refreshGalleryFavoriteMarkers();
+        saveFavoriteCollection();
+        updateWindowTitle();
+        setStatusMessage("Selected Favorite removed. Current ship and History were not changed.");
+        std::cout << "Removed selected Favorite. Remaining: " << m_Collections.getFavorites().size() << '\n';
+    }
+
     void ShipGeneratorPreviewApp::removeFavoriteThumbnail(std::size_t index)
     {
+        m_PendingFavoriteRemovalIndex.reset();
         if (index >= m_FavoritesState.Grid.Items.size()) { return; }
         m_FavoritesState.Grid.Items.erase(m_FavoritesState.Grid.Items.begin() + static_cast<std::ptrdiff_t>(index));
         if (m_FavoritesState.Grid.Items.empty())
@@ -2767,6 +2844,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::rebuildFavoriteThumbnails()
     {
+        m_PendingFavoriteRemovalIndex.reset();
         m_FavoritesState.Grid.Items.clear();
         m_FavoritesState.Grid.Items.reserve(m_Collections.getFavorites().size());
 
@@ -3682,6 +3760,7 @@ namespace PixelShipGeneratorPreview
     void ShipGeneratorPreviewApp::switchWorkspace(PreviewWorkspace workspace)
     {
         if (workspace == m_WorkspaceSession.getActiveWorkspace()) { return; }
+        if (workspace != PreviewWorkspace::FAVORITES) { m_PendingFavoriteRemovalIndex.reset(); }
 
         PreviewMode targetMode = m_WorkspaceSession.switchTo(workspace, m_PreviewMode);
         m_WorkspaceNavigation.setActiveWorkspace(workspace);

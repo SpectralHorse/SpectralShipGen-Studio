@@ -497,12 +497,15 @@ namespace PixelShipGeneratorPreview
 
         if (mode == PreviewCommandPanelMode::FAVORITES)
         {
-            addGroupHeader("FAVORITES", y);
+            addGroupHeader("COLLECTION", y);
             addQuadButtons({ PreviewCommandType::FAVORITES_LEFT, 0u }, { PreviewCommandType::FAVORITES_UP, 0u }, { PreviewCommandType::FAVORITES_DOWN, 0u }, { PreviewCommandType::FAVORITES_RIGHT, 0u }, y);
             addFullButton({ PreviewCommandType::SELECT_FAVORITE, 0u }, y);
-            addPairButtons({ PreviewCommandType::ADD_CURRENT_TO_FAVORITES, 0u }, { PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES, 0u }, y);
-            addGroupHeader("FILES", y);
-            addFullButton({ PreviewCommandType::EXPORT_RECIPE, 0u }, y);
+            addPairButtons({ PreviewCommandType::OPEN_FAVORITE_INSPECT, 0u }, { PreviewCommandType::OPEN_FAVORITE_ANIMATION, 0u }, y);
+            addFullButton({ PreviewCommandType::OPEN_FAVORITE_REROLL, 0u }, y);
+            addGroupHeader("EXPORT", y);
+            addPairButtons({ PreviewCommandType::EXPORT_FAVORITE_IMAGE, 0u }, { PreviewCommandType::EXPORT_RECIPE, 0u }, y);
+            addGroupHeader("MANAGE", y);
+            addFullButton({ PreviewCommandType::REMOVE_SELECTED_FAVORITE, 0u }, y);
             return;
         }
 

@@ -1085,6 +1085,12 @@ namespace PixelShipGeneratorPreview
 
     void PreviewRenderer::renderFavorites(sf::RenderWindow& window, const FavoritesState& favoritesState) const
     {
+        if (favoritesState.Grid.Items.empty())
+        {
+            drawDebugText(window, "No Favorites yet.", 28.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 28.0f, sf::Color(205, 208, 216), TextScale);
+            drawDebugText(window, "Bookmark ships from Generate, Gallery, Inspect or Animation to add them here.", 28.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 52.0f, sf::Color(155, 160, 172), SmallTextScale);
+            return;
+        }
         renderThumbnailGrid(window, favoritesState.Grid, false);
     }
 
@@ -1132,6 +1138,10 @@ namespace PixelShipGeneratorPreview
                     drawPanel(window, markerX, markerY, markerWidth, markerHeight, sf::Color(28, 29, 34, 235), sf::Color(220, 190, 80));
                     drawDebugText(window, "FAV", markerX + 4.0f, markerY + 3.0f, sf::Color(235, 210, 95), SmallTextScale);
                 }
+            }
+            else
+            {
+                drawDebugText(window, "UNAVAILABLE", cellBounds.left + 12.0f, cellBounds.top + cellBounds.height * 0.5f - 5.0f, sf::Color(190, 105, 105), SmallTextScale);
             }
         }
     }
@@ -1275,17 +1285,37 @@ namespace PixelShipGeneratorPreview
         {
             const PreviewThumbnailGridState& grid = data.Favorites->Grid;
             const uint32_t pageCount = getPreviewThumbnailPageCount(grid);
+            y += 4.0f;
+            drawSectionHeader(window, "SELECTED FAVORITE", x, y);
             drawLabelValue(window, "SELECT", grid.Items.empty() ? "0/0" : std::to_string(grid.SelectedIndex + 1u) + "/" + std::to_string(grid.Items.size()), x, y);
             drawLabelValue(window, "PAGE", pageCount == 0u ? "0/0" : std::to_string(getPreviewThumbnailCurrentPage(grid) + 1u) + "/" + std::to_string(pageCount), x, y);
 
             if (!grid.Items.empty() && grid.SelectedIndex < grid.Items.size())
             {
-                const PreviewGenerationRecipe& favoriteRecipe = grid.Items[grid.SelectedIndex].Recipe;
-                drawLabelValue(window, "FAV SEED", std::to_string(favoriteRecipe.Seeds.Master), x, y);
-                drawLabelValue(window, "FAV RES", std::to_string(favoriteRecipe.Dimensions.Width) + "X" + std::to_string(favoriteRecipe.Dimensions.Height), x, y);
-                drawLabelValue(window, "FAV STYLE", getStyleName(favoriteRecipe.Style), x, y);
-                drawLabelValue(window, "FAV FACT", getFactionName(favoriteRecipe.Faction), x, y);
+                const PreviewThumbnailItem& item = grid.Items[grid.SelectedIndex];
+                const PreviewGenerationRecipe& favoriteRecipe = item.Recipe;
+                const std::string structuralSource = favoriteRecipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
+                const std::string factionSource = favoriteRecipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
+                std::string paletteSource = "UNKNOWN";
+                switch (favoriteRecipe.PaletteConfiguration.Mode)
+                {
+                case PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED: paletteSource = "FACTION GENERATED"; break;
+                case PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED: paletteSource = "EXPLICIT GENERATED"; break;
+                case PixelShipGenerator::ShipPaletteSourceMode::FIXED: paletteSource = "FIXED"; break;
+                default: break;
+                }
+                drawLabelValue(window, "STATUS", item.Valid ? "AVAILABLE" : "UNAVAILABLE", x, y);
+                drawLabelValue(window, "SEED", std::to_string(favoriteRecipe.Seeds.Master), x, y);
+                drawLabelValue(window, "RES", std::to_string(favoriteRecipe.Dimensions.Width) + "X" + std::to_string(favoriteRecipe.Dimensions.Height), x, y);
+                drawLabelValue(window, "STRUCT", getStyleName(favoriteRecipe.Style), x, y);
+                drawLabelValue(window, "STRUCT SRC", structuralSource, x, y);
+                drawLabelValue(window, "FACTION", getFactionName(favoriteRecipe.Faction), x, y);
+                drawLabelValue(window, "FACTION SRC", factionSource, x, y);
+                drawLabelValue(window, "PALETTE", paletteSource, x, y);
             }
+
+            y += 4.0f;
+            drawSectionHeader(window, "CURRENT SHIP", x, y);
         }
 
         if (data.Recipe != nullptr)
