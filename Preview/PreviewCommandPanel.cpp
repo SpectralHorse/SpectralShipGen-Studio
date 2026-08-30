@@ -442,7 +442,7 @@ namespace PixelShipGeneratorPreview
         addFullButton({ PreviewCommandType::SELECT_GALLERY_CANDIDATE, 0u }, y);
 
         addGroupHeader("APPEARANCE", y);
-        addSelector("STYLE", { PreviewCommandType::PREVIOUS_STYLE, 0u }, { PreviewCommandType::NEXT_STYLE, 0u }, y);
+        addSelector("PROFILE", { PreviewCommandType::PREVIOUS_STYLE, 0u }, { PreviewCommandType::NEXT_STYLE, 0u }, y);
         addSelector("FACTION", { PreviewCommandType::PREVIOUS_FACTION, 0u }, { PreviewCommandType::NEXT_FACTION, 0u }, y);
         addDimensionSliders(y);
         addDimensionControlButtons(y);

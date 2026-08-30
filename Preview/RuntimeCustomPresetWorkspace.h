@@ -43,6 +43,7 @@ namespace PixelShipGeneratorPreview
         RuntimeCustomPresetId addFaction(std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
         RuntimeCustomPresetId addPalette(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
 
+        bool updateStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
         bool removeStructural(RuntimeCustomPresetId id);
         bool removeFaction(RuntimeCustomPresetId id);
         bool removePalette(RuntimeCustomPresetId id);

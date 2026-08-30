@@ -427,8 +427,10 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::changeStyle(int32_t delta)
     {
-        const std::size_t currentIndex = findOrderedValueIndex(SupportedPreviewStyles, getCurrentRecipe().Style);
-        setStyle(SupportedPreviewStyles[getWrappedIndex(currentIndex, delta, SupportedPreviewStyles.size())]);
+        const std::vector<StructuralProfileSelectionEntry> entries = buildStructuralProfileSelection(m_CustomPresetWorkspace);
+        if (entries.empty()) { return; }
+        const std::size_t currentIndex = findStructuralProfileSelectionIndex(entries, getCurrentRecipe(), m_SelectedStructuralPresetId);
+        selectStructuralProfileEntry(entries[getWrappedIndex(currentIndex, delta, entries.size())]);
     }
 
     void ShipGeneratorPreviewApp::clearPinnedShip()
@@ -982,10 +984,24 @@ namespace PixelShipGeneratorPreview
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         PixelShipGenerator::ShipGenerationProfile profile;
         std::string name;
+        m_ConfigurationEditorTargetPresetId.reset();
         if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
         {
-            profile = recipe.StructuralProfile;
-            name = "Current Custom";
+            if (m_SelectedStructuralPresetId.has_value())
+            {
+                const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(*m_SelectedStructuralPresetId);
+                if (preset != nullptr)
+                {
+                    profile = preset->Profile;
+                    name = preset->Name;
+                    m_ConfigurationEditorTargetPresetId = preset->Id;
+                }
+            }
+            if (name.empty())
+            {
+                profile = recipe.StructuralProfile;
+                name = "Current Custom";
+            }
         }
         else
         {
@@ -1001,32 +1017,61 @@ namespace PixelShipGeneratorPreview
         updateWindowTitle();
     }
 
+    void ShipGeneratorPreviewApp::enterConfigurationEditorDefault()
+    {
+        if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
+        m_ConfigurationEditorReturnMode = m_PreviewMode;
+        m_ConfigurationEditorTargetPresetId.reset();
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.openStructuralProfile("Custom Profile", PixelShipGenerator::ShipGenerationProfile{});
+        m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
+        setDisplayedStaticFrame();
+        updateWindowTitle();
+    }
+
     void ShipGeneratorPreviewApp::handleConfigurationEditorEvent(const ConfigurationEditorEvent& event)
     {
         switch (event.Action)
         {
         case ConfigurationEditorAction::APPLY:
         {
-            const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile());
+            RuntimeCustomPresetId id = 0u;
+            if (m_ConfigurationEditorTargetPresetId.has_value() &&
+                m_CustomPresetWorkspace.updateStructural(*m_ConfigurationEditorTargetPresetId, m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile()))
+            {
+                id = *m_ConfigurationEditorTargetPresetId;
+            }
+            else
+            {
+                id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile());
+            }
             const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
             PreviewGenerationRecipe recipe = getCurrentRecipe();
             recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
             recipe.Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
             recipe.StructuralProfile = m_ConfigurationEditor.getDraftProfile();
+            m_SelectedStructuralPresetId = id;
+            m_ConfigurationEditorTargetPresetId.reset();
             m_ConfigurationEditor.close();
             m_PreviewMode = PreviewMode::STATIC;
             appendHistoryEntry(recipe);
-            setStatusMessage("Applied runtime structural preset: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
+            setStatusMessage("Applied runtime structural profile: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
             break;
         }
         case ConfigurationEditorAction::DUPLICATE:
         {
             const RuntimeCustomPresetId id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile());
             const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
-            setStatusMessage("Runtime preset copy created: " + (preset != nullptr ? preset->Name : m_ConfigurationEditor.getName()));
+            if (preset != nullptr)
+            {
+                m_ConfigurationEditorTargetPresetId = id;
+                m_ConfigurationEditor.openStructuralProfile(preset->Name, preset->Profile);
+                setStatusMessage("Editing duplicated runtime profile: " + preset->Name);
+            }
             break;
         }
         case ConfigurationEditorAction::CANCEL:
+            m_ConfigurationEditorTargetPresetId.reset();
             m_ConfigurationEditor.close();
             m_PreviewMode = m_ConfigurationEditorReturnMode;
             if (m_PreviewMode == PreviewMode::ANIMATION) { m_AnimationClock.restart(); }
@@ -1192,7 +1237,7 @@ namespace PixelShipGeneratorPreview
         m_Collections.clearGallery();
         m_FavoritesState.Grid.HoveredIndex = -1;
         if (document.Recipe == getCurrentRecipe()) { regenerate(); }
-        else { appendHistoryEntry(document.Recipe); }
+        else { m_SelectedStructuralPresetId.reset(); appendHistoryEntry(document.Recipe); }
 
         const std::string message = "Recipe loaded: " + path.string();
         setStatusMessage(message);
@@ -1252,7 +1297,7 @@ namespace PixelShipGeneratorPreview
             state.RerollStudioSelectedDomains = m_RerollStudio.SelectedDomains;
         }
 
-        state.StyleValue = getStyleName(getCurrentRecipe().Style);
+        state.StyleValue = getCurrentStructuralProfileDisplayName();
         state.FactionValue = getFactionDisplayName(getCurrentRecipe().Faction);
         state.CurrentDimensions = getCurrentRecipe().Dimensions;
         state.AspectRatioLocked = m_AspectRatioLocked;
@@ -1967,6 +2012,7 @@ namespace PixelShipGeneratorPreview
             return;
         }
 
+        m_SelectedStructuralPresetId.reset();
         appendHistoryEntry(recipe);
     }
 
@@ -2001,7 +2047,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::next()
     {
-        if (m_Collections.moveHistoryNext()) { regenerate(); }
+        if (m_Collections.moveHistoryNext()) { m_SelectedStructuralPresetId.reset(); regenerate(); }
     }
 
     void ShipGeneratorPreviewApp::pinCurrentShip()
@@ -2032,7 +2078,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::previous()
     {
-        if (m_Collections.moveHistoryPrevious()) { regenerate(); }
+        if (m_Collections.moveHistoryPrevious()) { m_SelectedStructuralPresetId.reset(); regenerate(); }
     }
 
     void ShipGeneratorPreviewApp::removeCurrentFromFavorites()
@@ -2572,9 +2618,46 @@ namespace PixelShipGeneratorPreview
             return;
         }
 
+        m_SelectedStructuralPresetId.reset();
         recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
         recipe.Style = style;
         regenerate();
+    }
+
+    void ShipGeneratorPreviewApp::selectRuntimeStructuralPreset(RuntimeCustomPresetId id)
+    {
+        const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
+        if (preset == nullptr) { return; }
+        PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+        recipe.Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
+        recipe.StructuralProfile = preset->Profile;
+        m_SelectedStructuralPresetId = id;
+        regenerate();
+        setStatusMessage("Selected runtime structural profile: " + preset->Name);
+    }
+
+    void ShipGeneratorPreviewApp::selectStructuralProfileEntry(const StructuralProfileSelectionEntry& entry)
+    {
+        switch (entry.Kind)
+        {
+        case StructuralProfileSelectionKind::BUILT_IN: setStyle(entry.Style); break;
+        case StructuralProfileSelectionKind::RUNTIME_CUSTOM: selectRuntimeStructuralPreset(entry.CustomPresetId); break;
+        case StructuralProfileSelectionKind::ADD_PROFILE: enterConfigurationEditorDefault(); break;
+        default: break;
+        }
+    }
+
+    std::string ShipGeneratorPreviewApp::getCurrentStructuralProfileDisplayName() const
+    {
+        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getStyleName(recipe.Style); }
+        if (m_SelectedStructuralPresetId.has_value())
+        {
+            const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(*m_SelectedStructuralPresetId);
+            if (preset != nullptr) { return preset->Name; }
+        }
+        return "CUSTOM";
     }
 
     void ShipGeneratorPreviewApp::toggleAspectRatioLock()
@@ -2790,7 +2873,7 @@ namespace PixelShipGeneratorPreview
 
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         const std::string attachmentState = recipe.AttachmentsEnabled ? "ON" : "OFF";
-        std::string title = "Pixel Ship Generator | Seed: " + std::to_string(recipe.Seeds.Master) + " | " + std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height) + " | Style: " + getStyleName(recipe.Style) + " | Faction: " + getFactionName(recipe.Faction) + " | Attachments: " + attachmentState + " | Favorite: " + (isCurrentFavorite() ? "YES" : "NO") + " | Favorites: " + std::to_string(m_Collections.getFavorites().size()) + " | S:" + getLockDisplay(m_Locks.Structure) + " P:" + getLockDisplay(m_Locks.Palette) + " D:" + getLockDisplay(m_Locks.Details) + " A:" + getLockDisplay(m_Locks.Attachments) + " | History " + std::to_string(m_Collections.getHistoryIndex() + 1u) + "/" + std::to_string(m_Collections.getHistoryCount());
+        std::string title = "Pixel Ship Generator | Seed: " + std::to_string(recipe.Seeds.Master) + " | " + std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height) + " | Profile: " + getCurrentStructuralProfileDisplayName() + " | Faction: " + getFactionName(recipe.Faction) + " | Attachments: " + attachmentState + " | Favorite: " + (isCurrentFavorite() ? "YES" : "NO") + " | Favorites: " + std::to_string(m_Collections.getFavorites().size()) + " | S:" + getLockDisplay(m_Locks.Structure) + " P:" + getLockDisplay(m_Locks.Palette) + " D:" + getLockDisplay(m_Locks.Details) + " A:" + getLockDisplay(m_Locks.Attachments) + " | History " + std::to_string(m_Collections.getHistoryIndex() + 1u) + "/" + std::to_string(m_Collections.getHistoryCount());
 
         if (m_Comparison.ViewEnabled && m_Comparison.Pinned.Valid)
         {

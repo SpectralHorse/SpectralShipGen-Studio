@@ -231,6 +231,74 @@ namespace PixelShipGeneratorPreview
     std::size_t ConfigurationWeightGroupControl::getRowCount() const { return m_RowCount; }
     ConfigurationEditorRect ConfigurationWeightGroupControl::getBounds() const { return m_Bounds; }
 
+    void ConfigurationToggleControl::configure(std::string label, bool value)
+    {
+        Label = std::move(label);
+        Value = value;
+    }
+
+    void ConfigurationToggleControl::setRowBounds(const ConfigurationEditorRect& bounds)
+    {
+        RowBounds = bounds;
+        constexpr float ToggleWidth = 78.0f;
+        ToggleBounds = { bounds.Left + bounds.Width - ToggleWidth, bounds.Top, ToggleWidth, bounds.Height };
+    }
+
+    bool ConfigurationToggleControl::activate(float x, float y)
+    {
+        if (!ToggleBounds.contains(x, y)) { return false; }
+        Value = !Value;
+        return true;
+    }
+
+    std::string ConfigurationToggleControl::getDisplayValue() const
+    {
+        return Value ? "ON" : "OFF";
+    }
+
+    void ConfigurationChoiceControl::configure(std::string label, std::vector<std::string> options, uint32_t value)
+    {
+        Label = std::move(label);
+        Options = std::move(options);
+        setValue(value);
+    }
+
+    void ConfigurationChoiceControl::setRowBounds(const ConfigurationEditorRect& bounds)
+    {
+        RowBounds = bounds;
+        constexpr float ButtonWidth = 30.0f;
+        constexpr float Gap = 4.0f;
+        const float right = bounds.Left + bounds.Width;
+        NextBounds = { right - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
+        PreviousBounds = { NextBounds.Left - Gap - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
+    }
+
+    void ConfigurationChoiceControl::setValue(uint32_t value)
+    {
+        Value = Options.empty() ? 0u : value % static_cast<uint32_t>(Options.size());
+    }
+
+    bool ConfigurationChoiceControl::activate(float x, float y)
+    {
+        if (Options.empty()) { return false; }
+        if (PreviousBounds.contains(x, y))
+        {
+            Value = Value == 0u ? static_cast<uint32_t>(Options.size() - 1u) : Value - 1u;
+            return true;
+        }
+        if (NextBounds.contains(x, y))
+        {
+            Value = (Value + 1u) % static_cast<uint32_t>(Options.size());
+            return true;
+        }
+        return false;
+    }
+
+    std::string ConfigurationChoiceControl::getDisplayValue() const
+    {
+        return Options.empty() || Value >= Options.size() ? std::string("-") : Options[Value];
+    }
+
     bool ConfigurationTextField::activate(float x, float y)
     {
         Focused = Bounds.contains(x, y);

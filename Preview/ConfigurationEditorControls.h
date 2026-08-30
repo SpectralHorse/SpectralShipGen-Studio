@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace PixelShipGeneratorPreview
 {
@@ -105,6 +106,36 @@ namespace PixelShipGeneratorPreview
         std::size_t m_RowCount = 0u;
         uint32_t m_MaximumWeight = 500u;
         ConfigurationEditorRect m_Bounds;
+    };
+
+
+    struct ConfigurationToggleControl
+    {
+        std::string Label;
+        bool Value = false;
+        ConfigurationEditorRect RowBounds;
+        ConfigurationEditorRect ToggleBounds;
+
+        void configure(std::string label, bool value);
+        void setRowBounds(const ConfigurationEditorRect& bounds);
+        bool activate(float x, float y);
+        std::string getDisplayValue() const;
+    };
+
+    struct ConfigurationChoiceControl
+    {
+        std::string Label;
+        std::vector<std::string> Options;
+        uint32_t Value = 0u;
+        ConfigurationEditorRect RowBounds;
+        ConfigurationEditorRect PreviousBounds;
+        ConfigurationEditorRect NextBounds;
+
+        void configure(std::string label, std::vector<std::string> options, uint32_t value);
+        void setRowBounds(const ConfigurationEditorRect& bounds);
+        void setValue(uint32_t value);
+        bool activate(float x, float y);
+        std::string getDisplayValue() const;
     };
 
     struct ConfigurationTextField

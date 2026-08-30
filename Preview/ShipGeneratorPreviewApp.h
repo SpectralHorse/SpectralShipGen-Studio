@@ -23,6 +23,7 @@
 #include "PreviewCommandPanel.h"
 #include "PreviewConfigurationEditor.h"
 #include "RuntimeCustomPresetWorkspace.h"
+#include "StructuralProfileSelection.h"
 #include "PreviewAnimationSession.h"
 #include "PreviewCollectionSession.h"
 #include "PreviewRenderer.h"
@@ -75,6 +76,7 @@ namespace PixelShipGeneratorPreview
         CalibrationContextFilter getCalibrationContextFilter() const;
         void enterFrameInspection();
         void enterConfigurationEditor();
+        void enterConfigurationEditorDefault();
         void handleConfigurationEditorEvent(const ConfigurationEditorEvent& event);
         void enterGalleryMode();
         void enterGalleryModeFromKnownSeed();
@@ -139,6 +141,9 @@ namespace PixelShipGeneratorPreview
         void setResolution(uint32_t resolution);
         void setWidth(uint32_t width);
         void setStyle(PixelShipGenerator::ShipStyle style);
+        void selectRuntimeStructuralPreset(RuntimeCustomPresetId id);
+        void selectStructuralProfileEntry(const StructuralProfileSelectionEntry& entry);
+        std::string getCurrentStructuralProfileDisplayName() const;
         void toggleAspectRatioLock();
         void toggleAttachments();
         void toggleComparisonView();
@@ -167,6 +172,8 @@ namespace PixelShipGeneratorPreview
 
         PreviewMode m_PreviewMode = PreviewMode::STATIC;
         PreviewMode m_ConfigurationEditorReturnMode = PreviewMode::STATIC;
+        std::optional<RuntimeCustomPresetId> m_SelectedStructuralPresetId;
+        std::optional<RuntimeCustomPresetId> m_ConfigurationEditorTargetPresetId;
         PreviewDiagnosticState m_Diagnostics;
         GalleryState m_GalleryState;
         FavoritesState m_FavoritesState;

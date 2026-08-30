@@ -5,12 +5,13 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <vector>
+#include <string_view>
 
 #include "ShipGenerationProfile.h"
 #include "Validation.h"
 
 #include "ConfigurationEditorControls.h"
+#include "ShipGenerationProfileEditorBindings.h"
 
 namespace PixelShipGeneratorPreview
 {
@@ -46,8 +47,6 @@ namespace PixelShipGeneratorPreview
     class PreviewConfigurationEditor
     {
     public:
-        static constexpr std::size_t SectionCount = 6u;
-
         PreviewConfigurationEditor();
 
         void openStructuralProfile(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
@@ -74,15 +73,22 @@ namespace PixelShipGeneratorPreview
         float getMaximumScrollOffset() const;
         ConfigurationEditorRect getPanelBounds() const;
         ConfigurationEditorRect getContentViewport() const;
-        const std::array<ConfigurationEditorSectionState, SectionCount>& getSections() const;
-        const std::array<ConfigurationEditorActionButton, 4u>& getActionButtons() const;
         const ConfigurationTextField& getNameField() const;
-        const ConfigurationIntegerControl& getWeaponChanceControl() const;
-        const ConfigurationIntegerControl& getWeaponScaleControl() const;
-        const ConfigurationIntegerControl& getWeaponGroupCountControl() const;
-        const ConfigurationIntegerControl& getPaletteValueOffsetControl() const;
-        const ConfigurationRangeControl& getNoseWidthRangeControl() const;
-        const ConfigurationWeightGroupControl& getVisualAnchorWeightsControl() const;
+        const std::vector<StructuralProfileEditorSection>& getProfileSections() const;
+        const ConfigurationEditorSectionState& getValidationSection() const;
+        const std::array<ConfigurationEditorActionButton, 4u>& getActionButtons() const;
+        std::size_t getBoundValueCount() const;
+
+        const StructuralIntegerFieldBinding* findIntegerField(std::string_view path) const;
+        StructuralIntegerFieldBinding* findIntegerField(std::string_view path);
+        const StructuralRangeFieldBinding* findRangeField(std::string_view path) const;
+        StructuralRangeFieldBinding* findRangeField(std::string_view path);
+        const StructuralToggleFieldBinding* findToggleField(std::string_view path) const;
+        StructuralToggleFieldBinding* findToggleField(std::string_view path);
+        const StructuralChoiceFieldBinding* findChoiceField(std::string_view path) const;
+        StructuralChoiceFieldBinding* findChoiceField(std::string_view path);
+        const StructuralWeightGroupBinding* findWeightGroup(std::string_view path) const;
+        StructuralWeightGroupBinding* findWeightGroup(std::string_view path);
 
         void setSectionExpanded(std::size_t sectionIndex, bool expanded);
 
@@ -95,6 +101,7 @@ namespace PixelShipGeneratorPreview
         bool activateSectionHeader(float x, float y);
         std::optional<ConfigurationEditorEvent> activateAction(float x, float y);
         void resetDraft();
+        void cancelDragging();
 
     private:
         bool m_Open = false;
@@ -109,13 +116,8 @@ namespace PixelShipGeneratorPreview
         float m_ContentHeight = 0.0f;
 
         ConfigurationTextField m_NameField;
-        ConfigurationIntegerControl m_WeaponChance;
-        ConfigurationIntegerControl m_WeaponScale;
-        ConfigurationIntegerControl m_WeaponGroupCount;
-        ConfigurationIntegerControl m_PaletteValueOffset;
-        ConfigurationRangeControl m_NoseWidthRange;
-        ConfigurationWeightGroupControl m_VisualAnchorWeights;
-        std::array<ConfigurationEditorSectionState, SectionCount> m_Sections = {};
+        ShipGenerationProfileEditorBindings m_ProfileBindings;
+        ConfigurationEditorSectionState m_ValidationSection = { "VALIDATION", {}, true };
         std::array<ConfigurationEditorActionButton, 4u> m_ActionButtons = {};
     };
 }
