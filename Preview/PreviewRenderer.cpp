@@ -119,6 +119,7 @@ namespace
         case PixelShipGenerator::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
         case PixelShipGenerator::ShipStyle::SPEARHEAD: return "SPEARHEAD";
         case PixelShipGenerator::ShipStyle::DELTA: return "DELTA";
+        case PixelShipGenerator::ShipStyle::SHIP_STYLE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
@@ -133,6 +134,7 @@ namespace
         case PixelShipGenerator::ShipFactionType::XENO: return "XENO";
         case PixelShipGenerator::ShipFactionType::CORPORATE: return "CORPORATE";
         case PixelShipGenerator::ShipFactionType::RELIC: return "RELIC";
+        case PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }

@@ -109,6 +109,7 @@ namespace
         case PixelShipGenerator::ShipFactionType::XENO: return "xeno";
         case PixelShipGenerator::ShipFactionType::CORPORATE: return "corporate";
         case PixelShipGenerator::ShipFactionType::RELIC: return "relic";
+        case PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END: return "custom";
         default: return "unknown";
         }
     }
@@ -123,6 +124,7 @@ namespace
         case PixelShipGenerator::ShipFactionType::XENO: return "XENO";
         case PixelShipGenerator::ShipFactionType::CORPORATE: return "CORPORATE";
         case PixelShipGenerator::ShipFactionType::RELIC: return "RELIC";
+        case PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
@@ -152,6 +154,7 @@ namespace
         case PixelShipGenerator::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
         case PixelShipGenerator::ShipStyle::SPEARHEAD: return "SPEARHEAD";
         case PixelShipGenerator::ShipStyle::DELTA: return "DELTA";
+        case PixelShipGenerator::ShipStyle::SHIP_STYLE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
@@ -1154,25 +1157,9 @@ namespace PixelShipGeneratorPreview
 
     bool ShipGeneratorPreviewApp::generateShipFromRecipe(const PreviewGenerationRecipe& recipe, PixelShipGenerator::GeneratedShip& outShip, PixelShipGenerator::ShipGenerationDebugInfo* debugInfo)
     {
-        PixelShipGenerator::ShipGenerationSettings settings;
-        settings.Seed = recipe.Seeds.Master;
-        settings.Dimensions.Width = recipe.Dimensions.Width;
-        settings.Dimensions.Height = recipe.Dimensions.Height;
-        settings.Style = recipe.Style;
-        settings.Faction = recipe.Faction;
-        settings.DetailDensity = recipe.DetailDensity;
-        settings.AsymmetricDetailChance = recipe.AsymmetricDetailChance;
-        settings.AttachmentsEnabled = recipe.AttachmentsEnabled;
-        settings.SeedOverrides.Structure = recipe.Seeds.Structure;
-        settings.SeedOverrides.Palette = recipe.Seeds.Palette;
-        settings.SeedOverrides.Details = recipe.Seeds.Details;
-        settings.SeedOverrides.Attachments = recipe.Seeds.Attachments;
-        settings.DomainSeedOverrides = recipe.DomainSeedOverrides;
-        settings.RandomStreamMode = recipe.RandomStreamMode;
-
         try
         {
-            outShip = debugInfo != nullptr ? m_Generator.generate(settings, debugInfo) : m_Generator.generate(settings);
+            outShip = m_Generator.generate(recipe, debugInfo);
             return true;
         }
         catch (const std::exception& exception)
@@ -2418,11 +2405,12 @@ namespace PixelShipGeneratorPreview
     {
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
 
-        if (recipe.Faction == faction)
+        if (recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET && recipe.Faction == faction)
         {
             return;
         }
 
+        recipe.FactionSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
         recipe.Faction = faction;
         regenerate();
     }
@@ -2465,11 +2453,12 @@ namespace PixelShipGeneratorPreview
     {
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
 
-        if (recipe.Style == style)
+        if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET && recipe.Style == style)
         {
             return;
         }
 
+        recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
         recipe.Style = style;
         regenerate();
     }

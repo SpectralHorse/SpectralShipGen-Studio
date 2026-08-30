@@ -11,6 +11,7 @@
 #include "PreviewFavoritesPersistence.h"
 #include "ShipGenerationRecipeSerializer.h"
 #include "ShipGenerationSeeds.h"
+#include "ShipPaletteGenerationProfile.h"
 #include "ShipGenerationSettings.h"
 #include "ShipGenerator.h"
 
@@ -31,23 +32,28 @@ namespace
         return recipe;
     }
 
+
+    PreviewGenerationRecipe makeCustomRecipe()
+    {
+        using namespace PixelShipGenerator;
+        PreviewGenerationRecipe recipe = makeRecipe(0x7800000000000004ull, 96u, 64u, ShipStyle::FIGHTER, ShipFactionType::FRONTIER);
+        recipe.StructuralSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+        recipe.Style = ShipStyle::SHIP_STYLE_END;
+        recipe.StructuralProfile = getShipGenerationProfile(ShipStyle::INDUSTRIAL);
+        recipe.StructuralProfile.LargeWeaponChance = 81u;
+        recipe.FactionSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+        recipe.Faction = ShipFactionType::SHIP_FACTION_TYPE_END;
+        recipe.FactionProfile = getShipFactionProfile(ShipFactionType::CORPORATE);
+        recipe.FactionProfile.SurfaceDetails.DetailDensityPercent = 87u;
+        recipe.PaletteConfiguration.Mode = ShipPaletteSourceMode::FIXED;
+        recipe.PaletteConfiguration.Fixed.HullBase = Color(41u, 73u, 109u, 255u);
+        recipe.PaletteConfiguration.Fixed.HullAccent = Color(216u, 84u, 143u, 255u);
+        return recipe;
+    }
+
     PixelShipGenerator::Image generateImage(const PreviewGenerationRecipe& recipe)
     {
-        PixelShipGenerator::ShipGenerationSettings settings;
-        settings.Seed = recipe.Seeds.Master;
-        settings.Dimensions = recipe.Dimensions;
-        settings.Style = recipe.Style;
-        settings.Faction = recipe.Faction;
-        settings.DetailDensity = recipe.DetailDensity;
-        settings.AsymmetricDetailChance = recipe.AsymmetricDetailChance;
-        settings.AttachmentsEnabled = recipe.AttachmentsEnabled;
-        settings.SeedOverrides.Structure = recipe.Seeds.Structure;
-        settings.SeedOverrides.Palette = recipe.Seeds.Palette;
-        settings.SeedOverrides.Details = recipe.Seeds.Details;
-        settings.SeedOverrides.Attachments = recipe.Seeds.Attachments;
-        settings.DomainSeedOverrides = recipe.DomainSeedOverrides;
-        settings.RandomStreamMode = recipe.RandomStreamMode;
-        return PixelShipGenerator::ShipGenerator{}.generate(settings).FinalImage;
+        return PixelShipGenerator::ShipGenerator{}.generate(recipe).FinalImage;
     }
 
     std::string recipeJson(const PreviewGenerationRecipe& recipe)
@@ -92,6 +98,7 @@ int PixelShipGeneratorTests::runPreviewFavoritesPersistenceRegression()
     const PreviewGenerationRecipe recipeA = makeRecipe(0x7800000000000001ull, 64u, 64u, PixelShipGenerator::ShipStyle::FIGHTER, PixelShipGenerator::ShipFactionType::MILITARY);
     const PreviewGenerationRecipe recipeB = makeRecipe(0x7800000000000002ull, 96u, 64u, PixelShipGenerator::ShipStyle::DELTA, PixelShipGenerator::ShipFactionType::CORPORATE);
     const PreviewGenerationRecipe recipeC = makeRecipe(0x7800000000000003ull, 128u, 128u, PixelShipGenerator::ShipStyle::INDUSTRIAL, PixelShipGenerator::ShipFactionType::FRONTIER);
+    const PreviewGenerationRecipe customRecipe = makeCustomRecipe();
 
     const std::filesystem::path directory = std::filesystem::temp_directory_path() / "pixel_ship_generator_favorites_regression";
     const std::filesystem::path path = directory / "favorites.json";
@@ -129,6 +136,18 @@ int PixelShipGeneratorTests::runPreviewFavoritesPersistenceRegression()
         std::cerr << "Favorite ordering did not survive save/reload.\n";
     }
 
+    if (!firstSession.addFavorite(customRecipe) || !savePreviewFavorites(firstSession.getFavorites(), path, error))
+    {
+        success = false;
+        std::cerr << (error.empty() ? "Custom Favorite save failed." : error) << '\n';
+    }
+    const PreviewFavoritesLoadResult customReload = loadPreviewFavorites(path);
+    if (!customReload.Success || customReload.Favorites.size() != 3u || customReload.Favorites[2] != customRecipe || generateImage(customReload.Favorites[2]).getPixels() != generateImage(customRecipe).getPixels())
+    {
+        success = false;
+        std::cerr << "Self-contained custom Favorite did not survive persistence/regeneration.\n";
+    }
+
     PreviewCollectionSession secondSession(recipeC);
     secondSession.setFavorites(firstReload.Favorites);
     if (secondSession.getFavorites() != std::vector<PreviewGenerationRecipe>{ recipeA, recipeB })
@@ -163,9 +182,11 @@ int PixelShipGeneratorTests::runPreviewFavoritesPersistenceRegression()
         std::cerr << "Favorites safe-write left a temporary or backup file behind.\n";
     }
 
-    PreviewGenerationRecipe invalidRecipe = recipeB;
-    invalidRecipe.Dimensions.Width = 0u;
-    const std::string partialJson = makeFavoritesJson({ favoriteEntry(recipeA), favoriteEntry(invalidRecipe), favoriteEntry(recipeC) });
+    std::string invalidEntry = favoriteEntry(recipeB);
+    const std::string validDimensions = "\"width\": 96";
+    const std::size_t dimensionsPosition = invalidEntry.find(validDimensions);
+    if (dimensionsPosition != std::string::npos) { invalidEntry.replace(dimensionsPosition, validDimensions.size(), "\"width\": 0"); }
+    const std::string partialJson = makeFavoritesJson({ favoriteEntry(recipeA), invalidEntry, favoriteEntry(recipeC) });
     const PreviewFavoritesLoadResult partial = deserializePreviewFavorites(partialJson);
     if (!partial.Success || partial.Favorites != std::vector<PreviewGenerationRecipe>{ recipeA, recipeC } || partial.SkippedEntryCount != 1u)
     {
