@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -113,6 +114,28 @@ int PixelShipGeneratorTests::runPreviewFavoritesPersistenceRegression()
     {
         success = false;
         std::cerr << "Missing Favorites file did not load as an empty collection.\n";
+    }
+
+    PreviewCollectionSession gallerySession(recipeA);
+    gallerySession.beginGallery(0x9500000000000001ull, recipeA);
+    gallerySession.addGalleryRecipe(recipeB);
+    gallerySession.addGalleryRecipe(recipeC);
+    const std::optional<bool> galleryFavoriteB = gallerySession.toggleGalleryFavorite(0u);
+    const std::optional<bool> galleryFavoriteC = gallerySession.toggleGalleryFavorite(1u);
+    gallerySession.clearGallery();
+    std::string galleryError;
+    if (!galleryFavoriteB.has_value() || !*galleryFavoriteB || !galleryFavoriteC.has_value() || !*galleryFavoriteC ||
+        gallerySession.getFavorites() != std::vector<PreviewGenerationRecipe>{ recipeB, recipeC } ||
+        !savePreviewFavorites(gallerySession.getFavorites(), path, galleryError))
+    {
+        success = false;
+        std::cerr << (galleryError.empty() ? "Gallery multi-Favorite commit/cancel behavior failed." : galleryError) << '\n';
+    }
+    const PreviewFavoritesLoadResult galleryReload = loadPreviewFavorites(path);
+    if (!galleryReload.Success || galleryReload.Favorites != std::vector<PreviewGenerationRecipe>{ recipeB, recipeC })
+    {
+        success = false;
+        std::cerr << "Committed Gallery Favorites did not survive Gallery dismissal/save/reload.\n";
     }
 
     PreviewCollectionSession firstSession(recipeA);

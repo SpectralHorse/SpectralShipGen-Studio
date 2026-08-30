@@ -1145,15 +1145,15 @@ namespace PixelShipGeneratorPreview
 
     void PreviewRenderer::renderFavorites(sf::RenderWindow& window, const FavoritesState& favoritesState) const
     {
-        renderThumbnailGrid(window, favoritesState.Grid);
+        renderThumbnailGrid(window, favoritesState.Grid, false);
     }
 
     void PreviewRenderer::renderGallery(sf::RenderWindow& window, const GalleryState& galleryState) const
     {
-        renderThumbnailGrid(window, galleryState.Grid);
+        renderThumbnailGrid(window, galleryState.Grid, true);
     }
 
-    void PreviewRenderer::renderThumbnailGrid(sf::RenderWindow& window, const PreviewThumbnailGridState& gridState) const
+    void PreviewRenderer::renderThumbnailGrid(sf::RenderWindow& window, const PreviewThumbnailGridState& gridState, bool showFavoriteMarkers) const
     {
         const uint32_t pageStart = getPreviewThumbnailPageStart(gridState);
         const uint32_t pageEnd = std::min(static_cast<uint32_t>(gridState.Items.size()), pageStart + getPreviewThumbnailPageCapacity(gridState));
@@ -1182,6 +1182,16 @@ namespace PixelShipGeneratorPreview
                 thumbnailSprite.setScale(static_cast<float>(thumbnailScale), static_cast<float>(thumbnailScale));
                 thumbnailSprite.setPosition(calculatePreviewThumbnailPosition(item.Recipe.Dimensions.Width, item.Recipe.Dimensions.Height, thumbnailScale, cellBounds));
                 window.draw(thumbnailSprite);
+
+                if (showFavoriteMarkers && item.Favorite)
+                {
+                    constexpr float markerWidth = 26.0f;
+                    constexpr float markerHeight = 14.0f;
+                    const float markerX = cellBounds.left + cellBounds.width - markerWidth - 4.0f;
+                    const float markerY = cellBounds.top + 4.0f;
+                    drawPanel(window, markerX, markerY, markerWidth, markerHeight, sf::Color(28, 29, 34, 235), sf::Color(220, 190, 80));
+                    drawDebugText(window, "FAV", markerX + 4.0f, markerY + 3.0f, sf::Color(235, 210, 95), SmallTextScale);
+                }
             }
         }
     }

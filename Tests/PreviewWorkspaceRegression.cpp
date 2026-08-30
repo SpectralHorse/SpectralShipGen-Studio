@@ -7,6 +7,9 @@
 
 #include "PreviewCollectionSession.h"
 #include "PreviewCommand.h"
+#if PIXEL_SHIP_GENERATOR_PREVIEW_HAS_SFML
+#include "PreviewCommandPanel.h"
+#endif
 #include "FactionProfileSelection.h"
 #include "PaletteProfileSelection.h"
 #include "PreviewConfigurationEditor.h"
@@ -172,7 +175,26 @@ namespace PixelShipGeneratorTests
 
         const PreviewHelpSection& globalHelp = getPreviewGlobalHelpSection();
         if (!containsShortcut(globalHelp, "1-6") || !containsShortcut(globalHelp, "F1") || !containsShortcut(globalHelp, "ESC")) { return fail("global contextual Help is incomplete"); }
-        if (!containsShortcut(getPreviewWorkspaceHelpSection(PreviewWorkspace::GENERATE), "SPACE") || !containsShortcut(getPreviewWorkspaceHelpSection(PreviewWorkspace::ANIMATION), "SPACE")) { return fail("workspace Help does not expose contextual primary actions"); }
+        const PreviewHelpSection& generateHelp = getPreviewWorkspaceHelpSection(PreviewWorkspace::GENERATE);
+        if (!containsShortcut(generateHelp, "SPACE") || !containsShortcut(generateHelp, "ENTER") || !containsShortcut(generateHelp, "GALLERY RMB") || !containsShortcut(getPreviewWorkspaceHelpSection(PreviewWorkspace::ANIMATION), "SPACE"))
+        {
+            return fail("workspace Help does not expose Generate/Gallery contextual actions");
+        }
+
+        const PreviewCommandData& spritesheetCommand = getPreviewCommandData(PreviewCommandType::SAVE_SPRITESHEET);
+        if (std::string(spritesheetCommand.Label) != "Save Spritesheet" || std::string(spritesheetCommand.Description).find("IDLE") == std::string::npos)
+        {
+            return fail("Generate IDLE spritesheet export command metadata is missing");
+        }
+#if PIXEL_SHIP_GENERATOR_PREVIEW_HAS_SFML
+        PreviewCommandPanel generatePanel;
+        bool generateHasSpritesheet = false;
+        for (const PreviewCommandPanelButton& button : generatePanel.getButtons())
+        {
+            if (button.Command.Type == PreviewCommandType::SAVE_SPRITESHEET) { generateHasSpritesheet = true; break; }
+        }
+        if (!generateHasSpritesheet) { return fail("Generate command panel does not expose Save Spritesheet"); }
+#endif
 
         const PreviewCommandData& helpCommand = getPreviewCommandData(PreviewCommandType::TOGGLE_HELP);
         const PreviewCommandData& backCommand = getPreviewCommandData(PreviewCommandType::BACK_OR_EXIT);

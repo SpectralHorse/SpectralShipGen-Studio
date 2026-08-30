@@ -402,26 +402,27 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::addCurrentToFavorites()
     {
-        if (isCurrentFavorite()) { return; }
+        const PreviewGenerationRecipe recipe = getCurrentRecipe();
+        if (!m_Collections.addFavorite(recipe)) { return; }
+        addFavoriteThumbnail(recipe, m_PreviewTexture);
+        refreshGalleryFavoriteMarkers();
+        saveFavoriteCollection();
+        updateWindowTitle();
+        setStatusMessage("Favorite added.");
+        std::cout << "Added Favorite: seed " << recipe.Seeds.Master << '\n';
+    }
 
+    void ShipGeneratorPreviewApp::addFavoriteThumbnail(const PreviewGenerationRecipe& recipe, const sf::Texture& texture)
+    {
         PreviewThumbnailItem favorite;
-        favorite.Recipe = getCurrentRecipe();
-        const sf::Image favoriteImage = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(m_GeneratedShip.FinalImage);
-        if (!favorite.Texture.loadFromImage(favoriteImage))
-        {
-            std::cerr << "Failed to create Favorite thumbnail texture.\n";
-            return;
-        }
-        if (!m_Collections.addFavorite(favorite.Recipe)) { return; }
-
+        favorite.Recipe = recipe;
+        favorite.Texture = texture;
         favorite.Texture.setSmooth(false);
         favorite.Valid = true;
+        favorite.Favorite = true;
         m_FavoritesState.Grid.Items.push_back(std::move(favorite));
         m_FavoritesState.Grid.SelectedIndex = static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u);
         m_FavoritesState.Grid.HoveredIndex = -1;
-        saveFavoriteCollection();
-        updateWindowTitle();
-        std::cout << "Added Favorite: seed " << getCurrentRecipe().Seeds.Master << '\n';
     }
 
     void ShipGeneratorPreviewApp::addResolutionBookmark()
@@ -527,6 +528,7 @@ namespace PixelShipGeneratorPreview
             else { m_Collections.addInvalidGalleryRecipe(); }
             m_GalleryState.Grid.Items.push_back(std::move(candidate));
         }
+        refreshGalleryFavoriteMarkers();
 
         m_PreviewMode = PreviewMode::GALLERY;
         updateWindowTitle();
@@ -2085,10 +2087,19 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::handleMousePressed(const sf::Event::MouseButtonEvent& event)
     {
-        if (event.button != sf::Mouse::Left) { return; }
+        if (event.button != sf::Mouse::Left && event.button != sf::Mouse::Right) { return; }
 
         const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
         if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible) { return; }
+
+        if (event.button == sf::Mouse::Right)
+        {
+            if (m_PreviewMode != PreviewMode::GALLERY) { return; }
+            const int32_t candidateIndex = findPreviewThumbnailItemAtPosition(position, m_GalleryState.Grid);
+            if (candidateIndex >= 0) { toggleGalleryCandidateFavorite(static_cast<uint32_t>(candidateIndex)); }
+            return;
+        }
+
         if (m_WorkspaceNavigation.onMousePress(position)) { return; }
 
         if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
@@ -2105,7 +2116,7 @@ namespace PixelShipGeneratorPreview
             const int32_t candidateIndex = findPreviewThumbnailItemAtPosition(position, m_GalleryState.Grid);
             if (candidateIndex < 0) { return; }
             m_GalleryState.Grid.SelectedIndex = static_cast<uint32_t>(candidateIndex);
-            executeCommand({ PreviewCommandType::SELECT_GALLERY_CANDIDATE, static_cast<uint32_t>(candidateIndex) });
+            updateWindowTitle();
             return;
         }
 
@@ -2309,7 +2320,10 @@ namespace PixelShipGeneratorPreview
         if (type == PreviewCommandType::PREVIOUS_GENERATION_STAGE || type == PreviewCommandType::NEXT_GENERATION_STAGE) { return m_Diagnostics.GenerationStageView && !m_GenerationDebugInfo.HullStages.empty(); }
         if (type == PreviewCommandType::SAVE_CURRENT) { return true; }
         if (type == PreviewCommandType::EXPORT_RECIPE || type == PreviewCommandType::IMPORT_RECIPE) { return true; }
-        if (type == PreviewCommandType::SAVE_SPRITESHEET) { return !getActiveAnimationFrames().empty(); }
+        if (type == PreviewCommandType::SAVE_SPRITESHEET)
+        {
+            return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? !m_AnimationSession.getIdleAnimation().Frames.empty() : !getActiveAnimationFrames().empty();
+        }
         if (type == PreviewCommandType::TOGGLE_ANIMATION)
         {
             return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? !m_AnimationSession.getIdleAnimation().Frames.empty() : !getActiveAnimationFrames().empty();
@@ -2492,24 +2506,29 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::removeCurrentFromFavorites()
     {
-        const std::optional<std::size_t> favoriteIndex = m_Collections.findFavoriteIndex(getCurrentRecipe());
-        if (!favoriteIndex.has_value() || !m_Collections.removeFavorite(getCurrentRecipe())) { return; }
+        const PreviewGenerationRecipe recipe = getCurrentRecipe();
+        const std::optional<std::size_t> favoriteIndex = m_Collections.findFavoriteIndex(recipe);
+        if (!favoriteIndex.has_value() || !m_Collections.removeFavorite(recipe)) { return; }
+        removeFavoriteThumbnail(*favoriteIndex);
+        refreshGalleryFavoriteMarkers();
+        saveFavoriteCollection();
+        updateWindowTitle();
+        setStatusMessage("Favorite removed.");
+        std::cout << "Removed Favorite. Remaining: " << m_Collections.getFavorites().size() << '\n';
+    }
 
-        m_FavoritesState.Grid.Items.erase(m_FavoritesState.Grid.Items.begin() + static_cast<std::ptrdiff_t>(*favoriteIndex));
+    void ShipGeneratorPreviewApp::removeFavoriteThumbnail(std::size_t index)
+    {
+        if (index >= m_FavoritesState.Grid.Items.size()) { return; }
+        m_FavoritesState.Grid.Items.erase(m_FavoritesState.Grid.Items.begin() + static_cast<std::ptrdiff_t>(index));
         if (m_FavoritesState.Grid.Items.empty())
         {
             m_FavoritesState.Grid.SelectedIndex = 0u;
             m_FavoritesState.Grid.HoveredIndex = -1;
+            return;
         }
-        else
-        {
-            m_FavoritesState.Grid.SelectedIndex = std::min(m_FavoritesState.Grid.SelectedIndex, static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u));
-            if (m_FavoritesState.Grid.HoveredIndex >= static_cast<int32_t>(m_FavoritesState.Grid.Items.size())) { m_FavoritesState.Grid.HoveredIndex = -1; }
-        }
-
-        saveFavoriteCollection();
-        updateWindowTitle();
-        std::cout << "Removed Favorite. Remaining: " << m_Collections.getFavorites().size() << '\n';
+        m_FavoritesState.Grid.SelectedIndex = std::min(m_FavoritesState.Grid.SelectedIndex, static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u));
+        if (m_FavoritesState.Grid.HoveredIndex >= static_cast<int32_t>(m_FavoritesState.Grid.Items.size())) { m_FavoritesState.Grid.HoveredIndex = -1; }
     }
 
     void ShipGeneratorPreviewApp::removeResolutionBookmark()
@@ -2592,6 +2611,16 @@ namespace PixelShipGeneratorPreview
         }
     }
 
+    void ShipGeneratorPreviewApp::refreshGalleryFavoriteMarkers()
+    {
+        const std::vector<PreviewGalleryRecipeEntry>& galleryRecipes = m_Collections.getGalleryRecipes();
+        const std::size_t count = std::min(m_GalleryState.Grid.Items.size(), galleryRecipes.size());
+        for (std::size_t index = 0u; index < count; ++index)
+        {
+            m_GalleryState.Grid.Items[index].Favorite = galleryRecipes[index].Valid && galleryRecipes[index].Favorite;
+        }
+    }
+
     void ShipGeneratorPreviewApp::rebuildFavoriteThumbnails()
     {
         m_FavoritesState.Grid.Items.clear();
@@ -2610,6 +2639,7 @@ namespace PixelShipGeneratorPreview
                 {
                     favorite.Texture.setSmooth(false);
                     favorite.Valid = true;
+                    favorite.Favorite = true;
                 }
                 else
                 {
@@ -2900,14 +2930,22 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::saveSpritesheet()
     {
+        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
+        const std::string baseName = getSaveBaseName(recipe);
+
+        if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE)
+        {
+            if (m_AnimationSession.getIdleAnimation().Frames.empty()) { return; }
+            const PixelShipGenerator::Image spritesheet = PixelShipGenerator::createHorizontalSpritesheet(m_AnimationSession.getIdleAnimation());
+            saveCoreImage(spritesheet, getAvailableSavePath(baseName + "_idle_" + std::to_string(m_AnimationSession.getIdleAnimation().Frames.size()) + "frames"));
+            return;
+        }
+
         if (m_AnimationSession.isTransientStatePreviewActive())
         {
             setStatusMessage("Composed transition/event previews are runtime-only. Export the base movement/FIRE assets separately.");
             return;
         }
-
-        const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        const std::string baseName = getSaveBaseName(recipe);
 
         if (m_AnimationSession.getSelectedAnimationType() == PixelShipGenerator::ShipAnimationType::IDLE)
         {
@@ -2953,6 +2991,31 @@ namespace PixelShipGeneratorPreview
             const std::string fileName = baseName + "_" + getAnimationTypeFileToken(m_AnimationSession.getSelectedAnimationType()) + "_" + getMovementPhaseFileToken(clip->Phase) + "_" + std::to_string(clip->Frames.size()) + "frames";
             saveCoreImage(spritesheet, getAvailableSavePath(fileName));
         }
+    }
+
+    void ShipGeneratorPreviewApp::toggleGalleryCandidateFavorite(uint32_t index)
+    {
+        const PreviewGenerationRecipe* candidate = m_Collections.getGalleryRecipe(index);
+        if (candidate == nullptr || index >= m_GalleryState.Grid.Items.size() || !m_GalleryState.Grid.Items[index].Valid) { return; }
+        const PreviewGenerationRecipe recipe = *candidate;
+        const std::optional<std::size_t> previousFavoriteIndex = m_Collections.findFavoriteIndex(recipe);
+        const std::optional<bool> favorite = m_Collections.toggleGalleryFavorite(index);
+        if (!favorite.has_value()) { return; }
+
+        if (*favorite)
+        {
+            addFavoriteThumbnail(recipe, m_GalleryState.Grid.Items[index].Texture);
+            setStatusMessage("Gallery candidate bookmarked.");
+        }
+        else
+        {
+            if (previousFavoriteIndex.has_value()) { removeFavoriteThumbnail(*previousFavoriteIndex); }
+            setStatusMessage("Gallery candidate removed from Favorites.");
+        }
+
+        refreshGalleryFavoriteMarkers();
+        saveFavoriteCollection();
+        updateWindowTitle();
     }
 
     void ShipGeneratorPreviewApp::selectGalleryCandidate(uint32_t index)

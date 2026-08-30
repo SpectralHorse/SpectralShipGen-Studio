@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <optional>
 
 #include "PreviewAnimationSession.h"
 #include "PreviewCollectionSession.h"
@@ -74,8 +75,22 @@ namespace
         if (session.getGalleryBatchSeed() != 999u || session.getGalleryTemplateRecipe() != second) { return false; }
         if (session.getGalleryRecipe(0u) == nullptr || *session.getGalleryRecipe(0u) != third) { return false; }
         if (session.getGalleryRecipe(1u) != nullptr || session.getGalleryRecipe(2u) == nullptr || *session.getGalleryRecipe(2u) != fourth) { return false; }
+        if (!session.isGalleryFavorite(0u) || session.isGalleryFavorite(1u) || session.isGalleryFavorite(2u)) { return false; }
+        const PreviewGenerationRecipe currentBeforeGalleryFavorite = session.getCurrentRecipe();
+        const std::optional<bool> fourthFavorite = session.toggleGalleryFavorite(2u);
+        if (!fourthFavorite.has_value() || !*fourthFavorite || !session.isFavorite(fourth) || !session.isGalleryFavorite(2u)) { return false; }
+        if (session.getFavorites().size() != 2u || session.getCurrentRecipe() != currentBeforeGalleryFavorite) { return false; }
+        if (session.toggleGalleryFavorite(1u).has_value()) { return false; }
         session.clearGallery();
-        if (!session.getGalleryRecipes().empty()) { return false; }
+        if (!session.getGalleryRecipes().empty() || !session.isFavorite(third) || !session.isFavorite(fourth)) { return false; }
+
+        session.beginGallery(1000u, second);
+        session.addGalleryRecipe(third);
+        session.addGalleryRecipe(fourth);
+        const std::optional<bool> thirdFavorite = session.toggleGalleryFavorite(0u);
+        if (!thirdFavorite.has_value() || *thirdFavorite || session.isFavorite(third) || session.isGalleryFavorite(0u) || !session.isGalleryFavorite(1u)) { return false; }
+        session.clearGallery();
+        if (!session.isFavorite(fourth) || session.isFavorite(third)) { return false; }
 
         if (!session.addResolutionBookmark({ 96u, 64u })) { return false; }
         if (!session.addResolutionBookmark({ 44u, 44u })) { return false; }

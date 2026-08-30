@@ -513,12 +513,14 @@ namespace PixelShipGeneratorPreview
         addDimensionControlButtons(y);
         addBookmarkButtons(y);
 
-        addGroupHeader("FAVORITE", y);
-        addPairButtons({ PreviewCommandType::ADD_CURRENT_TO_FAVORITES, 0u }, { PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES, 0u }, y);
+        addGroupHeader("SAVE OUTPUT", y);
+        addPairButtons({ PreviewCommandType::SAVE_CURRENT, 0u }, { PreviewCommandType::SAVE_SPRITESHEET, 0u }, y);
 
-        addGroupHeader("FILES", y);
-        addPairButtons({ PreviewCommandType::SAVE_CURRENT, 0u }, { PreviewCommandType::EXPORT_RECIPE, 0u }, y);
-        addFullButton({ PreviewCommandType::IMPORT_RECIPE, 0u }, y);
+        addGroupHeader("RECIPE", y);
+        addPairButtons({ PreviewCommandType::IMPORT_RECIPE, 0u }, { PreviewCommandType::EXPORT_RECIPE, 0u }, y);
+
+        addGroupHeader("COLLECTION", y);
+        addPairButtons({ PreviewCommandType::ADD_CURRENT_TO_FAVORITES, 0u }, { PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES, 0u }, y);
     }
 
     int32_t PreviewCommandPanel::findButtonIndex(sf::Vector2f position) const

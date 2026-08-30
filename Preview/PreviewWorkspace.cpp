@@ -28,8 +28,10 @@ namespace PixelShipGeneratorPreview
                 PreviewHelpEntry{ "SHIFT+SPACE", "Generate / open Gallery" },
                 PreviewHelpEntry{ "CTRL+O", "Import generation recipe" },
                 PreviewHelpEntry{ "CTRL+E", "Export current generation recipe" },
-                PreviewHelpEntry{ "LEFT / RIGHT", "Move through generation History" }
-            }, 5u },
+                PreviewHelpEntry{ "LEFT / RIGHT", "Move through generation History" },
+                PreviewHelpEntry{ "ENTER", "Accept primary Gallery candidate" },
+                PreviewHelpEntry{ "GALLERY RMB", "Bookmark / unbookmark candidate" }
+            }, 7u },
             PreviewHelpSection{ {
                 PreviewHelpEntry{ "CTRL+D", "Duplicate the open profile / palette" },
                 PreviewHelpEntry{ "CTRL+O", "Import the open preset category" },

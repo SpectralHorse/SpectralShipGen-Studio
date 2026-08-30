@@ -58,6 +58,10 @@ namespace PixelShipGeneratorPreview
     {
         if (isFavorite(recipe)) { return false; }
         m_Favorites.push_back(recipe);
+        for (PreviewGalleryRecipeEntry& entry : m_GalleryRecipes)
+        {
+            if (entry.Valid && entry.Recipe == recipe) { entry.Favorite = true; }
+        }
         return true;
     }
 
@@ -66,6 +70,10 @@ namespace PixelShipGeneratorPreview
         const std::optional<std::size_t> index = findFavoriteIndex(recipe);
         if (!index.has_value()) { return false; }
         m_Favorites.erase(m_Favorites.begin() + static_cast<std::ptrdiff_t>(*index));
+        for (PreviewGalleryRecipeEntry& entry : m_GalleryRecipes)
+        {
+            if (entry.Valid && entry.Recipe == recipe) { entry.Favorite = false; }
+        }
         return true;
     }
 
@@ -97,6 +105,10 @@ namespace PixelShipGeneratorPreview
             if (std::find(unique.begin(), unique.end(), recipe) == unique.end()) { unique.push_back(std::move(recipe)); }
         }
         m_Favorites = std::move(unique);
+        for (PreviewGalleryRecipeEntry& entry : m_GalleryRecipes)
+        {
+            entry.Favorite = entry.Valid && isFavorite(entry.Recipe);
+        }
     }
 
     void PreviewCollectionSession::beginGallery(uint64_t batchSeed, const PreviewGenerationRecipe& templateRecipe)
@@ -113,7 +125,7 @@ namespace PixelShipGeneratorPreview
 
     void PreviewCollectionSession::addGalleryRecipe(const PreviewGenerationRecipe& recipe)
     {
-        m_GalleryRecipes.push_back({ recipe, true });
+        m_GalleryRecipes.push_back({ recipe, true, isFavorite(recipe) });
     }
 
     void PreviewCollectionSession::addInvalidGalleryRecipe()
@@ -124,6 +136,24 @@ namespace PixelShipGeneratorPreview
     const PreviewGenerationRecipe* PreviewCollectionSession::getGalleryRecipe(std::size_t index) const
     {
         return index < m_GalleryRecipes.size() && m_GalleryRecipes[index].Valid ? &m_GalleryRecipes[index].Recipe : nullptr;
+    }
+
+    bool PreviewCollectionSession::isGalleryFavorite(std::size_t index) const
+    {
+        return index < m_GalleryRecipes.size() && m_GalleryRecipes[index].Valid && m_GalleryRecipes[index].Favorite;
+    }
+
+    std::optional<bool> PreviewCollectionSession::toggleGalleryFavorite(std::size_t index)
+    {
+        if (index >= m_GalleryRecipes.size() || !m_GalleryRecipes[index].Valid) { return std::nullopt; }
+        const PreviewGenerationRecipe recipe = m_GalleryRecipes[index].Recipe;
+        if (m_GalleryRecipes[index].Favorite)
+        {
+            if (!removeFavorite(recipe)) { return std::nullopt; }
+            return false;
+        }
+        if (!addFavorite(recipe)) { return std::nullopt; }
+        return true;
     }
 
     const std::vector<PreviewGalleryRecipeEntry>& PreviewCollectionSession::getGalleryRecipes() const { return m_GalleryRecipes; }

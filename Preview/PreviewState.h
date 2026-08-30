@@ -101,6 +101,7 @@ namespace PixelShipGeneratorPreview
         PreviewGenerationRecipe Recipe;
         sf::Texture Texture;
         bool Valid = false;
+        bool Favorite = false;
     };
 
     struct PreviewThumbnailGridState

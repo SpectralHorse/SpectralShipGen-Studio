@@ -14,6 +14,7 @@ namespace PixelShipGeneratorPreview
     {
         PreviewGenerationRecipe Recipe;
         bool Valid = false;
+        bool Favorite = false;
     };
 
     class PreviewCollectionSession
@@ -43,6 +44,8 @@ namespace PixelShipGeneratorPreview
         void addGalleryRecipe(const PreviewGenerationRecipe& recipe);
         void addInvalidGalleryRecipe();
         const PreviewGenerationRecipe* getGalleryRecipe(std::size_t index) const;
+        bool isGalleryFavorite(std::size_t index) const;
+        std::optional<bool> toggleGalleryFavorite(std::size_t index);
         const std::vector<PreviewGalleryRecipeEntry>& getGalleryRecipes() const;
         uint64_t getGalleryBatchSeed() const;
         const PreviewGenerationRecipe& getGalleryTemplateRecipe() const;

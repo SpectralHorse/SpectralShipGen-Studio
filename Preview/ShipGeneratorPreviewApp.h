@@ -44,6 +44,7 @@ namespace PixelShipGeneratorPreview
 
     private:
         void addCurrentToFavorites();
+        void addFavoriteThumbnail(const PreviewGenerationRecipe& recipe, const sf::Texture& texture);
         void addResolutionBookmark();
         void appendHistoryEntry(const PreviewGenerationRecipe& recipe);
         void changeFaction(int32_t delta);
@@ -131,12 +132,14 @@ namespace PixelShipGeneratorPreview
         void pinCurrentShip();
         void previous();
         void removeCurrentFromFavorites();
+        void removeFavoriteThumbnail(std::size_t index);
         void removeResolutionBookmark();
         void printControls() const;
         void printCurrentSeeds() const;
         void processEvents();
         bool refreshDiagnosticTexture();
         void refreshDisplayedTexture();
+        void refreshGalleryFavoriteMarkers();
         void rebuildFavoriteThumbnails();
         bool regenerate();
         bool regenerateAnimation();
@@ -174,6 +177,7 @@ namespace PixelShipGeneratorPreview
         void toggleGenerationInspector();
         void toggleHelpOverlay();
         void togglePaletteInspector();
+        void toggleGalleryCandidateFavorite(uint32_t index);
         void update();
         void updateCommandPanelState();
         void updateWindowTitle();

@@ -83,7 +83,7 @@ namespace PixelShipGeneratorPreview
         uint32_t renderSideBySideSprites(sf::RenderWindow& window, const PreviewGenerationRecipe& leftRecipe, const sf::Texture& leftTexture, const std::string& leftLabel, const sf::Color& leftColor, const PreviewGenerationRecipe& rightRecipe, const sf::Texture& rightTexture, const std::string& rightLabel, const sf::Color& rightColor, float spriteRegionTop, float spriteRegionHeight) const;
         void renderFavorites(sf::RenderWindow& window, const FavoritesState& favoritesState) const;
         void renderGallery(sf::RenderWindow& window, const GalleryState& galleryState) const;
-        void renderThumbnailGrid(sf::RenderWindow& window, const PreviewThumbnailGridState& gridState) const;
+        void renderThumbnailGrid(sf::RenderWindow& window, const PreviewThumbnailGridState& gridState, bool showFavoriteMarkers) const;
         void renderSingle(sf::RenderWindow& window, const sf::Sprite& previewSprite) const;
         void renderNativePreview(sf::RenderWindow& window, const PreviewRenderData& data) const;
         void renderPersistentStatePanel(sf::RenderWindow& window, const PreviewRenderData& data) const;
