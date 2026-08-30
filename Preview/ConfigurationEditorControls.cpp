@@ -36,7 +36,7 @@ namespace PixelShipGeneratorPreview
         constexpr float ButtonGap = 4.0f;
         constexpr float ValueWidth = 74.0f;
         constexpr float MinimumTrackWidth = 80.0f;
-        constexpr float LabelAreaWidth = 210.0f;
+        constexpr float LabelAreaWidth = 250.0f;
         const float right = bounds.Left + bounds.Width;
         IncrementBounds = { right - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
         DecrementBounds = { IncrementBounds.Left - ButtonGap - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
@@ -183,8 +183,8 @@ namespace PixelShipGeneratorPreview
     void ConfigurationWeightGroupControl::setBounds(const ConfigurationEditorRect& bounds)
     {
         m_Bounds = bounds;
-        constexpr float HeaderHeight = 22.0f;
-        constexpr float RowHeight = 30.0f;
+        constexpr float HeaderHeight = 28.0f;
+        constexpr float RowHeight = 38.0f;
         for (std::size_t index = 0u; index < m_RowCount; ++index)
         {
             m_Rows[index].Control.setRowBounds({ bounds.Left, bounds.Top + HeaderHeight + static_cast<float>(index) * RowHeight, bounds.Width, RowHeight - 2.0f });
@@ -310,10 +310,10 @@ namespace PixelShipGeneratorPreview
     void ConfigurationColorControl::setRowBounds(const ConfigurationEditorRect& bounds)
     {
         RowBounds = bounds;
-        constexpr float LabelWidth = 198.0f;
+        constexpr float LabelWidth = 220.0f;
         constexpr float SwatchSize = 52.0f;
         constexpr float SwatchGap = 12.0f;
-        constexpr float ValueWidth = 30.0f;
+        constexpr float ValueWidth = 42.0f;
         constexpr float ChannelHeight = 14.0f;
         constexpr float TrackHeight = 5.0f;
         const float right = bounds.Left + bounds.Width;

@@ -141,6 +141,7 @@ namespace PixelShipGeneratorPreview
         bool isDiagnosticImageViewActive() const;
         void moveAnimationFrame(int32_t delta);
         void moveFavoritesSelection(int32_t deltaX, int32_t deltaY);
+        void changeFavoritesPage(int32_t delta);
         void moveGallerySelection(int32_t deltaX, int32_t deltaY);
         void moveGenerationStage(int32_t delta);
         bool loadFavorite(uint32_t index);

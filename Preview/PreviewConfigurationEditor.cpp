@@ -14,12 +14,12 @@ namespace PixelShipGeneratorPreview
         constexpr float PanelPadding = 18.0f;
         constexpr float HeaderHeight = 62.0f;
         constexpr float ActionAreaHeight = 150.0f;
-        constexpr float SectionHeaderHeight = 26.0f;
-        constexpr float RowHeight = 34.0f;
-        constexpr float WeightRowHeight = 30.0f;
-        constexpr float WeightHeaderHeight = 22.0f;
-        constexpr float SectionGap = 10.0f;
-        constexpr float ScrollStep = 52.0f;
+        constexpr float SectionHeaderHeight = 32.0f;
+        constexpr float RowHeight = 40.0f;
+        constexpr float WeightRowHeight = 38.0f;
+        constexpr float WeightHeaderHeight = 28.0f;
+        constexpr float SectionGap = 12.0f;
+        constexpr float ScrollStep = 64.0f;
     }
 
     PreviewConfigurationEditor::PreviewConfigurationEditor()
@@ -479,7 +479,7 @@ namespace PixelShipGeneratorPreview
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION) { layoutSections(m_FactionProfileBindings.getSections()); }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE)
         {
-            constexpr float ColorRowHeight = 66.0f;
+            constexpr float ColorRowHeight = 72.0f;
             for (auto& section : m_PaletteBindings.getSections())
             {
                 if (!m_PaletteBindings.isSectionVisible(section)) { section.HeaderBounds = {}; continue; }

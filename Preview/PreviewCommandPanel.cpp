@@ -110,7 +110,7 @@ namespace PixelShipGeneratorPreview
                 slider.DetailText = row.Valid ? ("D " + std::to_string(row.DefaultWeight) + "  S " + std::to_string(row.SuggestedWeight) + "  " + std::to_string(row.ProbabilityPercent) + "%") : std::string();
             }
         }
-        else if (state.Mode == PreviewCommandPanelMode::GENERATE || state.Mode == PreviewCommandPanelMode::PROFILES || state.Mode == PreviewCommandPanelMode::INSPECT)
+        else if (state.Mode == PreviewCommandPanelMode::GENERATE || state.Mode == PreviewCommandPanelMode::PROFILES || state.Mode == PreviewCommandPanelMode::INSPECT || state.Mode == PreviewCommandPanelMode::FAVORITES)
         {
             if (state.Mode == PreviewCommandPanelMode::GENERATE && m_Selectors.size() >= 4u)
             {
@@ -128,6 +128,10 @@ namespace PixelShipGeneratorPreview
             {
                 m_Selectors[0u].Value = state.InspectionGroupValue;
                 m_Selectors[1u].Value = state.InspectionViewValue;
+            }
+            else if (state.Mode == PreviewCommandPanelMode::FAVORITES && !m_Selectors.empty())
+            {
+                m_Selectors[0u].Value = state.FavoritesPageValue;
             }
 
             if (state.Mode == PreviewCommandPanelMode::GENERATE)
@@ -534,6 +538,7 @@ namespace PixelShipGeneratorPreview
         if (mode == PreviewCommandPanelMode::FAVORITES)
         {
             addGroupHeader("COLLECTION", y);
+            addSelector("PAGE", { PreviewCommandType::FAVORITES_PREVIOUS_PAGE, 0u }, { PreviewCommandType::FAVORITES_NEXT_PAGE, 0u }, y);
             addQuadButtons({ PreviewCommandType::FAVORITES_LEFT, 0u }, { PreviewCommandType::FAVORITES_UP, 0u }, { PreviewCommandType::FAVORITES_DOWN, 0u }, { PreviewCommandType::FAVORITES_RIGHT, 0u }, y);
             addFullButton({ PreviewCommandType::SELECT_FAVORITE, 0u }, y);
             addPairButtons({ PreviewCommandType::OPEN_FAVORITE_INSPECT, 0u }, { PreviewCommandType::OPEN_FAVORITE_ANIMATION, 0u }, y);

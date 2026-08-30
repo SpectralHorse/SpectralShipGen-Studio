@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cmath>
 
+#include "PreviewPagination.h"
 #include "PreviewState.h"
 
 namespace PixelShipGeneratorPreview
@@ -18,18 +19,20 @@ namespace PixelShipGeneratorPreview
     inline uint32_t getPreviewThumbnailPageStart(const PreviewThumbnailGridState& grid)
     {
         const uint32_t pageCapacity = getPreviewThumbnailPageCapacity(grid);
-        return (grid.SelectedIndex / pageCapacity) * pageCapacity;
+        const std::size_t currentPage = getPreviewPageForItem(grid.SelectedIndex, pageCapacity);
+        return static_cast<uint32_t>(getPreviewPageStart(currentPage, grid.Items.size(), pageCapacity));
     }
 
     inline uint32_t getPreviewThumbnailPageCount(const PreviewThumbnailGridState& grid)
     {
-        const uint32_t pageCapacity = getPreviewThumbnailPageCapacity(grid);
-        return grid.Items.empty() ? 0u : static_cast<uint32_t>((grid.Items.size() + pageCapacity - 1u) / pageCapacity);
+        return static_cast<uint32_t>(getPreviewPageCount(grid.Items.size(), getPreviewThumbnailPageCapacity(grid)));
     }
 
     inline uint32_t getPreviewThumbnailCurrentPage(const PreviewThumbnailGridState& grid)
     {
-        return grid.Items.empty() ? 0u : getPreviewThumbnailPageStart(grid) / getPreviewThumbnailPageCapacity(grid);
+        if (grid.Items.empty()) { return 0u; }
+        const std::size_t page = getPreviewPageForItem(std::min<std::size_t>(grid.SelectedIndex, grid.Items.size() - 1u), getPreviewThumbnailPageCapacity(grid));
+        return static_cast<uint32_t>(clampPreviewPageIndex(page, grid.Items.size(), getPreviewThumbnailPageCapacity(grid)));
     }
 
     inline sf::FloatRect getPreviewThumbnailCellBounds(const PreviewThumbnailGridState& grid, uint32_t itemIndex)

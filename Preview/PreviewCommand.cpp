@@ -27,6 +27,8 @@ namespace PixelShipGeneratorPreview
             { PreviewCommandType::FAVORITES_RIGHT, "Favorites Right", "", "Move the Favorites selection right.", PreviewCommandGroup::FAVORITES },
             { PreviewCommandType::FAVORITES_UP, "Favorites Up", "", "Move the Favorites selection up.", PreviewCommandGroup::FAVORITES },
             { PreviewCommandType::FAVORITES_DOWN, "Favorites Down", "", "Move the Favorites selection down.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::FAVORITES_PREVIOUS_PAGE, "Previous Page", "", "Show the previous Favorites page without wrapping.", PreviewCommandGroup::FAVORITES },
+            { PreviewCommandType::FAVORITES_NEXT_PAGE, "Next Page", "", "Show the next Favorites page without wrapping.", PreviewCommandGroup::FAVORITES },
             { PreviewCommandType::SELECT_FAVORITE, "Open", "ENTER", "Open the selected Favorite as the exact current ship in Generate.", PreviewCommandGroup::FAVORITES },
             { PreviewCommandType::OPEN_FAVORITE_INSPECT, "Inspect", "", "Open the selected Favorite as the exact current ship in Inspect.", PreviewCommandGroup::FAVORITES },
             { PreviewCommandType::OPEN_FAVORITE_ANIMATION, "Animate", "", "Open the selected Favorite as the exact current ship in Animation.", PreviewCommandGroup::FAVORITES },
@@ -153,6 +155,67 @@ namespace PixelShipGeneratorPreview
     {
         const std::size_t index = static_cast<std::size_t>(type);
         return index < CommandData.size() ? CommandData[index] : CommandData.back();
+    }
+
+    const char* getPreviewCommandCompactLabel(PreviewCommandType type)
+    {
+        switch (type)
+        {
+        case PreviewCommandType::PREVIOUS_STYLE:
+        case PreviewCommandType::PREVIOUS_FACTION:
+        case PreviewCommandType::PREVIOUS_PALETTE:
+        case PreviewCommandType::PREVIOUS_CONFIGURATION_BUNDLE:
+        case PreviewCommandType::PROFILES_PREVIOUS_SECTION:
+        case PreviewCommandType::PROFILES_PREVIOUS_ITEM:
+        case PreviewCommandType::PREVIOUS_RESOLUTION:
+        case PreviewCommandType::INSPECTION_PREVIOUS_GROUP:
+        case PreviewCommandType::INSPECTION_PREVIOUS_VIEW:
+        case PreviewCommandType::FAVORITES_PREVIOUS_PAGE:
+        case PreviewCommandType::FAVORITES_LEFT:
+            return "<";
+        case PreviewCommandType::NEXT_STYLE:
+        case PreviewCommandType::NEXT_FACTION:
+        case PreviewCommandType::NEXT_PALETTE:
+        case PreviewCommandType::NEXT_CONFIGURATION_BUNDLE:
+        case PreviewCommandType::PROFILES_NEXT_SECTION:
+        case PreviewCommandType::PROFILES_NEXT_ITEM:
+        case PreviewCommandType::NEXT_RESOLUTION:
+        case PreviewCommandType::INSPECTION_NEXT_GROUP:
+        case PreviewCommandType::INSPECTION_NEXT_VIEW:
+        case PreviewCommandType::FAVORITES_NEXT_PAGE:
+        case PreviewCommandType::FAVORITES_RIGHT:
+            return ">";
+        case PreviewCommandType::FAVORITES_UP:
+            return "^";
+        case PreviewCommandType::FAVORITES_DOWN:
+            return "v";
+        default:
+            return getPreviewCommandData(type).Label;
+        }
+    }
+
+    bool isGalleryGenerationConfigurationCommand(PreviewCommandType type)
+    {
+        switch (type)
+        {
+        case PreviewCommandType::PREVIOUS_STYLE:
+        case PreviewCommandType::NEXT_STYLE:
+        case PreviewCommandType::PREVIOUS_FACTION:
+        case PreviewCommandType::NEXT_FACTION:
+        case PreviewCommandType::PREVIOUS_PALETTE:
+        case PreviewCommandType::NEXT_PALETTE:
+        case PreviewCommandType::PREVIOUS_CONFIGURATION_BUNDLE:
+        case PreviewCommandType::NEXT_CONFIGURATION_BUNDLE:
+        case PreviewCommandType::PREVIOUS_RESOLUTION:
+        case PreviewCommandType::NEXT_RESOLUTION:
+        case PreviewCommandType::SET_WIDTH:
+        case PreviewCommandType::SET_HEIGHT:
+        case PreviewCommandType::TOGGLE_ASPECT_RATIO_LOCK:
+        case PreviewCommandType::TOGGLE_ATTACHMENTS_ENABLED:
+            return true;
+        default:
+            return false;
+        }
     }
 
     const std::array<PreviewCommandData, static_cast<std::size_t>(PreviewCommandType::PREVIEW_COMMAND_TYPE_END)>& getPreviewCommandDataTable()

@@ -96,6 +96,7 @@ namespace PixelShipGeneratorPreview
         std::string InspectionGroupValue;
         std::string InspectionViewValue;
         std::string InspectionPresentationValue;
+        std::string FavoritesPageValue;
         std::string AnimationTypeValue;
         std::string AnimationBaseStateValue;
         std::string AnimationPhaseValue;

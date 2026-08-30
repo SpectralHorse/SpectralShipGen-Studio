@@ -43,6 +43,8 @@ namespace PixelShipGeneratorPreview
         FAVORITES_RIGHT,
         FAVORITES_UP,
         FAVORITES_DOWN,
+        FAVORITES_PREVIOUS_PAGE,
+        FAVORITES_NEXT_PAGE,
         SELECT_FAVORITE,
         OPEN_FAVORITE_INSPECT,
         OPEN_FAVORITE_ANIMATION,
@@ -174,5 +176,7 @@ namespace PixelShipGeneratorPreview
 
     std::size_t getWrappedPreviewSelectorIndex(std::size_t currentIndex, int32_t delta, std::size_t valueCount);
     const PreviewCommandData& getPreviewCommandData(PreviewCommandType type);
+    const char* getPreviewCommandCompactLabel(PreviewCommandType type);
+    bool isGalleryGenerationConfigurationCommand(PreviewCommandType type);
     const std::array<PreviewCommandData, static_cast<std::size_t>(PreviewCommandType::PREVIEW_COMMAND_TYPE_END)>& getPreviewCommandDataTable();
 }

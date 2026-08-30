@@ -21,6 +21,8 @@ namespace
     constexpr float OverlayMargin = 24.0f;
     constexpr uint32_t TextScale = 2u;
     constexpr uint32_t SmallTextScale = 1u;
+    constexpr uint32_t EditorTextScale = 2u;
+    constexpr uint32_t EditorSecondaryTextScale = 1u;
     constexpr float PanelPadding = 12.0f;
     constexpr float TextLineHeight = 14.0f;
     constexpr float LargeTextLineHeight = 20.0f;
@@ -74,25 +76,11 @@ namespace
         using PixelShipGeneratorPreview::PreviewCommandType;
         switch (type)
         {
-        case PreviewCommandType::PREVIOUS_STYLE:
-        case PreviewCommandType::PREVIOUS_FACTION:
-        case PreviewCommandType::PREVIOUS_PALETTE:
-        case PreviewCommandType::PREVIOUS_CONFIGURATION_BUNDLE:
-        case PreviewCommandType::PROFILES_PREVIOUS_SECTION:
-        case PreviewCommandType::PROFILES_PREVIOUS_ITEM:
-        case PreviewCommandType::PREVIOUS_RESOLUTION: return "<";
-        case PreviewCommandType::NEXT_STYLE:
-        case PreviewCommandType::NEXT_FACTION:
-        case PreviewCommandType::NEXT_PALETTE:
-        case PreviewCommandType::NEXT_CONFIGURATION_BUNDLE:
-        case PreviewCommandType::PROFILES_NEXT_SECTION:
-        case PreviewCommandType::PROFILES_NEXT_ITEM:
-        case PreviewCommandType::NEXT_RESOLUTION: return ">";
         case PreviewCommandType::GALLERY_LEFT: return "LEFT";
         case PreviewCommandType::GALLERY_RIGHT: return "RIGHT";
         case PreviewCommandType::GALLERY_UP: return "UP";
         case PreviewCommandType::GALLERY_DOWN: return "DOWN";
-        default: return PixelShipGeneratorPreview::getPreviewCommandData(type).Label;
+        default: return PixelShipGeneratorPreview::getPreviewCommandCompactLabel(type);
         }
     }
 
@@ -659,8 +647,8 @@ namespace PixelShipGeneratorPreview
         const char* editorTitle = bundleEditor ? "FULL CONFIGURATION BUNDLE" : paletteEditor ? "PALETTE CONFIGURATION EDITOR" : factionEditor ? "FACTION PROFILE EDITOR" : "STRUCTURAL PROFILE EDITOR";
         const char* editorSubtitle = bundleEditor ? "APPLICATION BUNDLE / STRUCTURAL + FACTION + PALETTE" : paletteEditor ? "PUBLIC ShipPaletteConfiguration / GENERATED + FIXED" : factionEditor ? "PUBLIC ShipFactionProfile / USER PRESETS" : "PUBLIC ShipGenerationProfile / USER PRESETS";
         drawDebugText(window, editorTitle, panel.Left + 18.0f, panel.Top + 12.0f, sf::Color(240, 215, 105), TextScale);
-        drawDebugText(window, editorSubtitle, panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), SmallTextScale);
-        drawDebugText(window, "Ctrl+D duplicate | Ctrl+O import | Ctrl+E export", panel.Left + panel.Width - 360.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), SmallTextScale);
+        drawDebugText(window, editorSubtitle, panel.Left + 18.0f, panel.Top + 34.0f, sf::Color(125, 180, 215), EditorSecondaryTextScale);
+        drawDebugText(window, "Ctrl+D duplicate | Ctrl+O import | Ctrl+E export", panel.Left + panel.Width - 360.0f, panel.Top + 12.0f, sf::Color(130, 135, 150), EditorSecondaryTextScale);
 
         drawPanel(window, viewport.Left - 6.0f, viewport.Top - 4.0f, viewport.Width + 12.0f, viewport.Height + 8.0f, sf::Color(13, 14, 18, 248), sf::Color(48, 52, 62));
 
@@ -672,13 +660,15 @@ namespace PixelShipGeneratorPreview
             {
                 if (!visible(bounds)) { return; }
                 drawPanel(window, bounds.Left, bounds.Top, bounds.Width, bounds.Height, enabled ? sf::Color(38, 42, 51) : sf::Color(24, 25, 29), enabled ? sf::Color(82, 92, 110) : sf::Color(46, 48, 55));
-                const float textWidth = getDebugTextWidth(label, SmallTextScale);
-                drawDebugText(window, label, bounds.Left + std::max(2.0f, (bounds.Width - textWidth) * 0.5f), bounds.Top + 6.0f, enabled ? sf::Color(220, 224, 232) : sf::Color(90, 94, 105), SmallTextScale);
+                const std::string fittedLabel = fitDebugTextToWidth(label, std::max(4.0f, bounds.Width - 6.0f), EditorTextScale);
+                const float textWidth = getDebugTextWidth(fittedLabel, EditorTextScale);
+                drawDebugText(window, fittedLabel, bounds.Left + std::max(2.0f, (bounds.Width - textWidth) * 0.5f), bounds.Top + 6.0f, enabled ? sf::Color(220, 224, 232) : sf::Color(90, 94, 105), EditorTextScale);
             };
         const auto drawInteger = [&](const ConfigurationIntegerControl& control, bool showProbability = false, uint32_t probability = 0u)
             {
                 if (!visible(control.RowBounds)) { return; }
-                drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                const float labelWidth = showProbability ? 128.0f : 238.0f;
+                drawDebugText(window, fitDebugTextToWidth(control.Label, labelWidth, EditorTextScale), control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), EditorTextScale);
                 sf::RectangleShape track(sf::Vector2f(control.TrackBounds.Width, control.TrackBounds.Height));
                 track.setPosition(control.TrackBounds.Left, control.TrackBounds.Top);
                 track.setFillColor(sf::Color(58, 64, 76));
@@ -690,11 +680,11 @@ namespace PixelShipGeneratorPreview
                 knob.setFillColor(control.Dragging ? sf::Color(240, 215, 105) : sf::Color(120, 190, 230));
                 window.draw(knob);
                 const std::string value = control.getDisplayValue();
-                drawDebugText(window, value, control.TrackBounds.Left + control.TrackBounds.Width + 8.0f, control.RowBounds.Top + 8.0f, sf::Color(232, 234, 240), SmallTextScale);
+                drawDebugText(window, value, control.TrackBounds.Left + control.TrackBounds.Width + 8.0f, control.RowBounds.Top + 8.0f, sf::Color(232, 234, 240), EditorTextScale);
                 if (showProbability)
                 {
-                    const std::string probabilityText = std::to_string(probability) + "% share";
-                    drawDebugText(window, probabilityText, control.TrackBounds.Left - 74.0f, control.RowBounds.Top + 8.0f, sf::Color(125, 175, 205), SmallTextScale);
+                    const std::string probabilityText = fitDebugTextToWidth(std::to_string(probability) + "% share", 108.0f, EditorTextScale);
+                    drawDebugText(window, probabilityText, control.TrackBounds.Left - 110.0f, control.RowBounds.Top + 8.0f, sf::Color(125, 175, 205), EditorTextScale);
                 }
                 drawSmallButton(control.DecrementBounds, "-");
                 drawSmallButton(control.IncrementBounds, "+");
@@ -702,42 +692,43 @@ namespace PixelShipGeneratorPreview
         const auto drawRange = [&](const ConfigurationRangeControl& range)
             {
                 if (!visible(range.RowBounds)) { return; }
-                drawDebugText(window, range.Label, range.RowBounds.Left + 6.0f, range.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
-                drawDebugText(window, "MIN " + std::to_string(range.MinimumValue), range.MinimumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), SmallTextScale);
+                drawDebugText(window, fitDebugTextToWidth(range.Label, 280.0f, EditorTextScale), range.RowBounds.Left + 6.0f, range.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), EditorTextScale);
+                drawDebugText(window, "MIN " + std::to_string(range.MinimumValue), range.MinimumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), EditorTextScale);
                 drawSmallButton(range.MinimumDecrementBounds, "-");
                 drawSmallButton(range.MinimumIncrementBounds, "+");
-                drawDebugText(window, "MAX " + std::to_string(range.MaximumValue), range.MaximumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), SmallTextScale);
+                drawDebugText(window, "MAX " + std::to_string(range.MaximumValue), range.MaximumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), EditorTextScale);
                 drawSmallButton(range.MaximumDecrementBounds, "-");
                 drawSmallButton(range.MaximumIncrementBounds, "+");
             };
         const auto drawToggle = [&](const ConfigurationToggleControl& control)
             {
                 if (!visible(control.RowBounds)) { return; }
-                drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                drawDebugText(window, fitDebugTextToWidth(control.Label, 198.0f, EditorTextScale), control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), EditorTextScale);
                 drawPanel(window, control.ToggleBounds.Left, control.ToggleBounds.Top, control.ToggleBounds.Width, control.ToggleBounds.Height,
                     control.Value ? sf::Color(45, 78, 62) : sf::Color(38, 42, 51), control.Value ? sf::Color(100, 190, 130) : sf::Color(82, 92, 110));
                 const std::string text = control.getDisplayValue();
-                const float textWidth = getDebugTextWidth(text, SmallTextScale);
+                const float textWidth = getDebugTextWidth(text, EditorTextScale);
                 drawDebugText(window, text, control.ToggleBounds.Left + std::max(3.0f, (control.ToggleBounds.Width - textWidth) * 0.5f), control.ToggleBounds.Top + 8.0f,
-                    control.Value ? sf::Color(180, 235, 195) : sf::Color(210, 214, 224), SmallTextScale);
+                    control.Value ? sf::Color(180, 235, 195) : sf::Color(210, 214, 224), EditorTextScale);
             };
         const auto drawChoice = [&](const ConfigurationChoiceControl& control)
             {
                 if (!visible(control.RowBounds)) { return; }
-                drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
-                drawDebugText(window, control.getDisplayValue(), control.PreviousBounds.Left - 150.0f, control.RowBounds.Top + 9.0f, sf::Color(232, 234, 240), SmallTextScale);
+                drawDebugText(window, fitDebugTextToWidth(control.Label, 198.0f, EditorTextScale), control.RowBounds.Left + 6.0f, control.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), EditorTextScale);
+                const std::string choiceValue = fitDebugTextToWidth(control.getDisplayValue(), 140.0f, EditorTextScale);
+                drawDebugText(window, choiceValue, control.PreviousBounds.Left - 150.0f, control.RowBounds.Top + 9.0f, sf::Color(232, 234, 240), EditorTextScale);
                 drawSmallButton(control.PreviousBounds, "<");
                 drawSmallButton(control.NextBounds, ">");
             };
         const auto drawColor = [&](const ConfigurationColorControl& control)
             {
                 if (!visible(control.RowBounds)) { return; }
-                drawDebugText(window, control.Label, control.RowBounds.Left + 6.0f, control.RowBounds.Top + 8.0f, sf::Color(185, 190, 204), SmallTextScale);
+                drawDebugText(window, fitDebugTextToWidth(control.Label, 208.0f, EditorTextScale), control.RowBounds.Left + 6.0f, control.RowBounds.Top + 8.0f, sf::Color(185, 190, 204), EditorTextScale);
                 static constexpr std::array<const char*, 4u> channelLabels = { "R", "G", "B", "A" };
                 for (std::size_t channel = 0u; channel < control.TrackBounds.size(); ++channel)
                 {
                     const ConfigurationEditorRect& trackBounds = control.TrackBounds[channel];
-                    drawDebugText(window, channelLabels[channel], trackBounds.Left - 14.0f, trackBounds.Top - 3.0f, sf::Color(150, 160, 176), SmallTextScale);
+                    drawDebugText(window, channelLabels[channel], trackBounds.Left - 14.0f, trackBounds.Top - 3.0f, sf::Color(150, 160, 176), EditorTextScale);
                     sf::RectangleShape track(sf::Vector2f(trackBounds.Width, trackBounds.Height));
                     track.setPosition(trackBounds.Left, trackBounds.Top);
                     track.setFillColor(sf::Color(58, 64, 76));
@@ -747,7 +738,7 @@ namespace PixelShipGeneratorPreview
                     knob.setPosition(trackBounds.Left + normalized * trackBounds.Width - 2.0f, trackBounds.Top - 3.0f);
                     knob.setFillColor(control.DraggingChannel == static_cast<int32_t>(channel) ? sf::Color(240, 215, 105) : sf::Color(120, 190, 230));
                     window.draw(knob);
-                    drawDebugText(window, std::to_string(control.getChannel(channel)), trackBounds.Left + trackBounds.Width + 7.0f, trackBounds.Top - 3.0f, sf::Color(232, 234, 240), SmallTextScale);
+                    drawDebugText(window, std::to_string(control.getChannel(channel)), trackBounds.Left + trackBounds.Width + 7.0f, trackBounds.Top - 3.0f, sf::Color(232, 234, 240), EditorTextScale);
                 }
                 drawPanel(window, control.SwatchBounds.Left, control.SwatchBounds.Top, control.SwatchBounds.Width, control.SwatchBounds.Height,
                     sf::Color(static_cast<sf::Uint8>(control.Red), static_cast<sf::Uint8>(control.Green), static_cast<sf::Uint8>(control.Blue), static_cast<sf::Uint8>(control.Alpha)), sf::Color(130, 135, 150));
@@ -756,18 +747,18 @@ namespace PixelShipGeneratorPreview
             {
                 if (!visible(bounds)) { return; }
                 drawPanel(window, bounds.Left, bounds.Top, bounds.Width, bounds.Height, sf::Color(29, 32, 40), sf::Color(55, 64, 78));
-                drawDebugText(window, expanded ? "[-]" : "[+]", bounds.Left + 6.0f, bounds.Top + 7.0f, sf::Color(125, 190, 230), SmallTextScale);
-                drawDebugText(window, label, bounds.Left + 34.0f, bounds.Top + 7.0f, sf::Color(205, 212, 225), SmallTextScale);
+                drawDebugText(window, expanded ? "[-]" : "[+]", bounds.Left + 6.0f, bounds.Top + 7.0f, sf::Color(125, 190, 230), EditorTextScale);
+                drawDebugText(window, label, bounds.Left + 34.0f, bounds.Top + 7.0f, sf::Color(205, 212, 225), EditorTextScale);
             };
 
         const ConfigurationTextField& nameField = editor.getNameField();
         if (visible(nameField.Bounds))
         {
-            drawDebugText(window, nameField.Label, nameField.Bounds.Left + 6.0f, nameField.Bounds.Top + 7.0f, sf::Color(170, 175, 190), SmallTextScale);
+            drawDebugText(window, nameField.Label, nameField.Bounds.Left + 6.0f, nameField.Bounds.Top + 7.0f, sf::Color(170, 175, 190), EditorTextScale);
             const float boxLeft = nameField.Bounds.Left + 150.0f;
             const float boxWidth = nameField.Bounds.Width - 156.0f;
             drawPanel(window, boxLeft, nameField.Bounds.Top + 2.0f, boxWidth, nameField.Bounds.Height - 4.0f, sf::Color(23, 25, 31), nameField.Focused ? sf::Color(135, 185, 225) : sf::Color(61, 66, 78));
-            drawDebugText(window, nameField.Value + (nameField.Focused ? "_" : ""), boxLeft + 7.0f, nameField.Bounds.Top + 8.0f, sf::Color(232, 234, 240), SmallTextScale);
+            drawDebugText(window, nameField.Value + (nameField.Focused ? "_" : ""), boxLeft + 7.0f, nameField.Bounds.Top + 8.0f, sf::Color(232, 234, 240), EditorTextScale);
         }
 
         const auto drawProfileSections = [&](const auto& sections)
@@ -792,11 +783,11 @@ namespace PixelShipGeneratorPreview
             for (const ConfigurationBundleComponentControl& component : editor.getBundleComponentControls())
             {
                 if (!visible(component.RowBounds)) { continue; }
-                drawDebugText(window, component.Label, component.RowBounds.Left + 6.0f, component.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), SmallTextScale);
+                drawDebugText(window, component.Label, component.RowBounds.Left + 6.0f, component.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), EditorTextScale);
                 const float valueLeft = component.RowBounds.Left + 150.0f;
                 const float valueWidth = std::max(0.0f, component.ReplaceBounds.Left - valueLeft - 8.0f);
-                const std::string value = fitDebugTextToWidth(component.Value.empty() ? "CUSTOM" : component.Value, valueWidth, SmallTextScale);
-                drawDebugText(window, value, valueLeft, component.RowBounds.Top + 9.0f, sf::Color(232, 234, 240), SmallTextScale);
+                const std::string value = fitDebugTextToWidth(component.Value.empty() ? "CUSTOM" : component.Value, valueWidth, EditorTextScale);
+                drawDebugText(window, value, valueLeft, component.RowBounds.Top + 9.0f, sf::Color(232, 234, 240), EditorTextScale);
                 drawSmallButton(component.ReplaceBounds, "USE CURRENT");
             }
         }
@@ -826,15 +817,15 @@ namespace PixelShipGeneratorPreview
                     if (y > viewport.Top + viewport.Height) { return; }
                     if (y + 24.0f >= viewport.Top)
                     {
-                        drawDebugText(window, issue.Field.empty() ? "CONFIG" : issue.Field, viewport.Left + 8.0f, y, color, SmallTextScale);
-                        drawDebugText(window, wrapDebugText(issue.Message, 76u), viewport.Left + 170.0f, y, sf::Color(190, 194, 204), SmallTextScale);
+                        drawDebugText(window, fitDebugTextToWidth(issue.Field.empty() ? "CONFIG" : issue.Field, 160.0f, EditorTextScale), viewport.Left + 8.0f, y, color, EditorTextScale);
+                        drawDebugText(window, fitDebugTextToWidth(issue.Message, viewport.Width - 188.0f, EditorTextScale), viewport.Left + 180.0f, y, sf::Color(190, 194, 204), EditorTextScale);
                     }
                     y += 28.0f;
                 };
             const auto& validation = editor.getValidationResult();
             if (validation.Errors.empty() && validation.Warnings.empty())
             {
-                if (y >= viewport.Top && y <= viewport.Top + viewport.Height) { drawDebugText(window, "VALID / NO CORE VALIDATION ISSUES", viewport.Left + 8.0f, y, sf::Color(125, 215, 150), SmallTextScale); }
+                if (y >= viewport.Top && y <= viewport.Top + viewport.Height) { drawDebugText(window, "VALID / NO CORE VALIDATION ISSUES", viewport.Left + 8.0f, y, sf::Color(125, 215, 150), EditorTextScale); }
             }
             else
             {
@@ -862,13 +853,14 @@ namespace PixelShipGeneratorPreview
         for (const ConfigurationEditorActionButton& button : editor.getActionButtons())
         {
             drawPanel(window, button.Bounds.Left, button.Bounds.Top, button.Bounds.Width, button.Bounds.Height, button.Enabled ? sf::Color(39, 46, 57) : sf::Color(24, 25, 30), button.Enabled ? sf::Color(88, 104, 124) : sf::Color(45, 48, 56));
-            const float textWidth = getDebugTextWidth(button.Label, SmallTextScale);
-            drawDebugText(window, button.Label, button.Bounds.Left + std::max(4.0f, (button.Bounds.Width - textWidth) * 0.5f), button.Bounds.Top + 10.0f, button.Enabled ? sf::Color(225, 229, 237) : sf::Color(90, 94, 105), SmallTextScale);
+            const std::string actionLabel = fitDebugTextToWidth(button.Label, button.Bounds.Width - 8.0f, EditorTextScale);
+            const float textWidth = getDebugTextWidth(actionLabel, EditorTextScale);
+            drawDebugText(window, actionLabel, button.Bounds.Left + std::max(4.0f, (button.Bounds.Width - textWidth) * 0.5f), button.Bounds.Top + 8.0f, button.Enabled ? sf::Color(225, 229, 237) : sf::Color(90, 94, 105), EditorTextScale);
         }
 
         const std::string dirty = editor.hasUnsavedChanges() ? "UNAPPLIED CHANGES" : "NO CHANGES";
         const char* valueLabel = bundleEditor ? "COMPONENTS" : "PROFILE VALUES";
-        drawDebugText(window, dirty + "  |  " + std::to_string(editor.getBoundValueCount()) + " " + valueLabel, panel.Left + 18.0f, panel.Top + panel.Height - 22.0f, editor.hasUnsavedChanges() ? sf::Color(235, 195, 100) : sf::Color(120, 175, 140), SmallTextScale);
+        drawDebugText(window, dirty + "  |  " + std::to_string(editor.getBoundValueCount()) + " " + valueLabel, panel.Left + 18.0f, panel.Top + panel.Height - 22.0f, editor.hasUnsavedChanges() ? sf::Color(235, 195, 100) : sf::Color(120, 175, 140), EditorSecondaryTextScale);
     }
 
     void PreviewRenderer::renderCalibration(sf::RenderWindow& window, const PreviewRenderData& data) const
