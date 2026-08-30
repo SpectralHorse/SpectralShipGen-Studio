@@ -18,7 +18,11 @@ namespace PixelShipGeneratorPreview
 {
     enum class PreviewCommandPanelMode : uint32_t
     {
-        NORMAL = 0u,
+        GENERATE = 0u,
+        PROFILES,
+        INSPECT,
+        FAVORITES,
+        ANIMATION,
         CALIBRATION,
         REROLL_STUDIO
     };
@@ -86,7 +90,7 @@ namespace PixelShipGeneratorPreview
         std::string StyleValue;
         std::string FactionValue;
         std::string PaletteValue;
-        PreviewCommandPanelMode Mode = PreviewCommandPanelMode::NORMAL;
+        PreviewCommandPanelMode Mode = PreviewCommandPanelMode::GENERATE;
         std::array<bool, PixelShipGenerator::GenerationDomainCount> RerollStudioSelectedDomains = {};
         std::string CalibrationGroupValue;
         std::string CalibrationEvidenceValue;
@@ -128,7 +132,7 @@ namespace PixelShipGeneratorPreview
         void addDimensionControlButtons(float& y);
         void addCalibrationWeightSliders(float& y);
         void addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain domain, float x, float y, float width, float height);
-        void buildLayout(PreviewCommandPanelMode mode = PreviewCommandPanelMode::NORMAL);
+        void buildLayout(PreviewCommandPanelMode mode = PreviewCommandPanelMode::GENERATE);
         int32_t findButtonIndex(sf::Vector2f position) const;
         PreviewCommandPanelSlider* findSlider(sf::Vector2f position);
         const PreviewCommandPanelSlider* findSlider(sf::Vector2f position) const;
@@ -141,7 +145,7 @@ namespace PixelShipGeneratorPreview
         PreviewCommandPanelSlider m_HeightSlider;
         std::vector<PreviewCommandPanelSlider> m_CalibrationSliders;
         std::vector<PreviewCommandPanelGroupHeader> m_GroupHeaders;
-        PreviewCommandPanelMode m_Mode = PreviewCommandPanelMode::NORMAL;
+        PreviewCommandPanelMode m_Mode = PreviewCommandPanelMode::GENERATE;
         int32_t m_HoveredButtonIndex = -1;
         int32_t m_PressedButtonIndex = -1;
     };

@@ -44,20 +44,6 @@ namespace
         return iterator == values.end() ? 0u : static_cast<std::size_t>(std::distance(values.begin(), iterator));
     }
 
-    std::size_t getWrappedIndex(std::size_t currentIndex, int32_t delta, std::size_t valueCount)
-    {
-        if (valueCount == 0u)
-        {
-            return 0u;
-        }
-
-        const int32_t count = static_cast<int32_t>(valueCount);
-        int32_t index = static_cast<int32_t>(currentIndex) + delta;
-        while (index < 0) { index += count; }
-        while (index >= count) { index -= count; }
-        return static_cast<std::size_t>(index);
-    }
-
     uint32_t calculateDisplayScale(uint32_t imageWidth, uint32_t imageHeight, uint32_t availableWidth, uint32_t availableHeight)
     {
         if (imageWidth == 0u || imageHeight == 0u)
@@ -455,17 +441,19 @@ namespace PixelShipGeneratorPreview
     void ShipGeneratorPreviewApp::changeFaction(int32_t delta)
     {
         const std::vector<FactionProfileSelectionEntry> entries = buildFactionProfileSelection(m_CustomPresetWorkspace);
-        if (entries.empty()) { return; }
+        const std::size_t selectableCount = entries.empty() ? 0u : entries.size() - 1u;
+        if (selectableCount == 0u) { return; }
         const std::size_t currentIndex = findFactionProfileSelectionIndex(entries, getCurrentRecipe(), m_SelectedFactionPresetId);
-        selectFactionProfileEntry(entries[getWrappedIndex(currentIndex, delta, entries.size())]);
+        selectFactionProfileEntry(entries[getWrappedPreviewSelectorIndex(currentIndex, delta, selectableCount)]);
     }
 
     void ShipGeneratorPreviewApp::changePalette(int32_t delta)
     {
         const std::vector<PaletteProfileSelectionEntry> entries = buildPaletteProfileSelection(m_CustomPresetWorkspace);
-        if (entries.empty()) { return; }
+        const std::size_t selectableCount = entries.empty() ? 0u : entries.size() - 1u;
+        if (selectableCount == 0u) { return; }
         const std::size_t currentIndex = findPaletteProfileSelectionIndex(entries, getCurrentRecipe(), m_SelectedBuiltInPalettePreset, m_SelectedPalettePresetId);
-        selectPaletteProfileEntry(entries[getWrappedIndex(currentIndex, delta, entries.size())]);
+        selectPaletteProfileEntry(entries[getWrappedPreviewSelectorIndex(currentIndex, delta, selectableCount)]);
     }
 
     void ShipGeneratorPreviewApp::changeResolution(int32_t delta)
@@ -490,9 +478,10 @@ namespace PixelShipGeneratorPreview
     void ShipGeneratorPreviewApp::changeStyle(int32_t delta)
     {
         const std::vector<StructuralProfileSelectionEntry> entries = buildStructuralProfileSelection(m_CustomPresetWorkspace);
-        if (entries.empty()) { return; }
+        const std::size_t selectableCount = entries.empty() ? 0u : entries.size() - 1u;
+        if (selectableCount == 0u) { return; }
         const std::size_t currentIndex = findStructuralProfileSelectionIndex(entries, getCurrentRecipe(), m_SelectedStructuralPresetId);
-        selectStructuralProfileEntry(entries[getWrappedIndex(currentIndex, delta, entries.size())]);
+        selectStructuralProfileEntry(entries[getWrappedPreviewSelectorIndex(currentIndex, delta, selectableCount)]);
     }
 
     void ShipGeneratorPreviewApp::clearPinnedShip()
@@ -833,6 +822,18 @@ namespace PixelShipGeneratorPreview
         updateWindowTitle();
     }
 
+    void ShipGeneratorPreviewApp::enterGenerateIdlePlayback()
+    {
+        if (m_GenerateIdleAnimationTextures.empty()) { return; }
+
+        m_PreviewMode = PreviewMode::ANIMATION;
+        m_GenerateIdleFrameIndex %= static_cast<uint32_t>(m_GenerateIdleAnimationTextures.size());
+        m_GenerateIdlePlaybackAccumulatorMicroseconds = 0.0;
+        m_AnimationClock.restart();
+        refreshDisplayedTexture();
+        updateWindowTitle();
+    }
+
     CalibrationContextFilter ShipGeneratorPreviewApp::getCalibrationContextFilter() const
     {
         CalibrationContextFilter filter;
@@ -846,23 +847,22 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::enterAttributeRerollStudio()
     {
-        m_RerollStudioReturnMode = m_PreviewMode;
         beginAttributeRerollStudio(m_RerollStudio, getCurrentRecipe());
         m_PreviewMode = PreviewMode::REROLL_STUDIO;
         m_Diagnostics.HelpVisible = false;
         m_Diagnostics.GenerationInspectorVisible = false;
         m_Diagnostics.PaletteInspectorVisible = false;
-        setStatusMessage("Reroll Studio opened. Select attributes, then generate a non-destructive candidate.");
+        setStatusMessage("Reroll workspace ready. Select attributes, then generate a non-destructive candidate.");
         updateWindowTitle();
     }
 
     void ShipGeneratorPreviewApp::cancelAttributeRerollStudio()
     {
         if (!m_RerollStudio.Active) { return; }
-        resetAttributeRerollStudio(m_RerollStudio);
-        m_PreviewMode = m_RerollStudioReturnMode;
+        m_RerollStudio.CandidateValid = false;
+        m_RerollStudio.CandidateRecipe = m_RerollStudio.BaseRecipe;
         refreshDisplayedTexture();
-        setStatusMessage("Reroll candidate discarded. Original ship retained.");
+        setStatusMessage("Reroll candidate discarded. Base ship retained.");
         updateWindowTitle();
     }
 
@@ -870,10 +870,11 @@ namespace PixelShipGeneratorPreview
     {
         if (!m_RerollStudio.Active || !m_RerollStudio.CandidateValid) { return; }
         const PreviewGenerationRecipe acceptedRecipe = m_RerollStudio.CandidateRecipe;
-        resetAttributeRerollStudio(m_RerollStudio);
-        m_PreviewMode = PreviewMode::STATIC;
         appendHistoryEntry(acceptedRecipe);
+        beginAttributeRerollStudio(m_RerollStudio, getCurrentRecipe());
+        m_PreviewMode = PreviewMode::REROLL_STUDIO;
         setStatusMessage("Reroll candidate accepted and added to History.");
+        updateWindowTitle();
     }
 
     bool ShipGeneratorPreviewApp::generateAttributeRerollStudioCandidate()
@@ -1072,7 +1073,7 @@ namespace PixelShipGeneratorPreview
         }
 
         m_ConfigurationEditorReturnMode = m_PreviewMode;
-        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
         m_ConfigurationEditor.openStructuralProfile(std::move(name), profile);
         m_ConfigurationEditor.setExistingCustomPreset(m_ConfigurationEditorTargetPresetId.has_value());
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
@@ -1085,7 +1086,7 @@ namespace PixelShipGeneratorPreview
         if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditorTargetPresetId.reset();
-        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
         m_ConfigurationEditor.openStructuralProfile("Custom Profile", PixelShipGenerator::ShipGenerationProfile{});
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
         setDisplayedStaticFrame();
@@ -1125,7 +1126,7 @@ namespace PixelShipGeneratorPreview
         }
 
         m_ConfigurationEditorReturnMode = m_PreviewMode;
-        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
         m_ConfigurationEditor.openFactionProfile(std::move(name), profile);
         m_ConfigurationEditor.setExistingCustomPreset(m_ConfigurationEditorTargetFactionPresetId.has_value());
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
@@ -1138,7 +1139,7 @@ namespace PixelShipGeneratorPreview
         if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditorTargetFactionPresetId.reset();
-        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
         m_ConfigurationEditor.openFactionProfile("Custom Faction", PixelShipGenerator::ShipFactionProfile{});
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
         setDisplayedStaticFrame();
@@ -1188,7 +1189,7 @@ namespace PixelShipGeneratorPreview
         }
 
         m_ConfigurationEditorReturnMode = m_PreviewMode;
-        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
         m_ConfigurationEditor.openPaletteConfiguration(std::move(name), configuration);
         m_ConfigurationEditor.setExistingCustomPreset(m_ConfigurationEditorTargetPalettePresetId.has_value());
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
@@ -1208,7 +1209,7 @@ namespace PixelShipGeneratorPreview
         configuration.Fixed = m_GeneratedShip.Palette;
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditorTargetPalettePresetId.reset();
-        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), 0.0f, static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight) });
+        m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
         m_ConfigurationEditor.openPaletteConfiguration("Custom Palette", configuration);
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
         setDisplayedStaticFrame();
@@ -1641,7 +1642,20 @@ namespace PixelShipGeneratorPreview
             state.Active[index] = isCommandActive(command.Type);
         }
 
-        state.Mode = m_PreviewMode == PreviewMode::CALIBRATION ? PreviewCommandPanelMode::CALIBRATION : m_PreviewMode == PreviewMode::REROLL_STUDIO ? PreviewCommandPanelMode::REROLL_STUDIO : PreviewCommandPanelMode::NORMAL;
+        if (m_PreviewMode == PreviewMode::CALIBRATION) { state.Mode = PreviewCommandPanelMode::CALIBRATION; }
+        else if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::REROLL) { state.Mode = PreviewCommandPanelMode::REROLL_STUDIO; }
+        else
+        {
+            switch (m_WorkspaceSession.getActiveWorkspace())
+            {
+            case PreviewWorkspace::PROFILES: state.Mode = PreviewCommandPanelMode::PROFILES; break;
+            case PreviewWorkspace::INSPECT: state.Mode = PreviewCommandPanelMode::INSPECT; break;
+            case PreviewWorkspace::FAVORITES: state.Mode = PreviewCommandPanelMode::FAVORITES; break;
+            case PreviewWorkspace::ANIMATION: state.Mode = PreviewCommandPanelMode::ANIMATION; break;
+            case PreviewWorkspace::GENERATE:
+            default: state.Mode = PreviewCommandPanelMode::GENERATE; break;
+            }
+        }
         if (m_PreviewMode == PreviewMode::REROLL_STUDIO)
         {
             state.RerollStudioSelectedDomains = m_RerollStudio.SelectedDomains;
@@ -1706,7 +1720,7 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::SELECT_GALLERY_CANDIDATE: selectGalleryCandidate(m_GalleryState.Grid.SelectedIndex); break;
         case PreviewCommandType::ADD_CURRENT_TO_FAVORITES: addCurrentToFavorites(); break;
         case PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES: removeCurrentFromFavorites(); break;
-        case PreviewCommandType::OPEN_FAVORITES: enterFavoritesMode(); break;
+        case PreviewCommandType::OPEN_FAVORITES: switchWorkspace(PreviewWorkspace::FAVORITES); break;
         case PreviewCommandType::CLOSE_FAVORITES: exitFavoritesMode(); break;
         case PreviewCommandType::FAVORITES_LEFT: moveFavoritesSelection(-1, 0); break;
         case PreviewCommandType::FAVORITES_RIGHT: moveFavoritesSelection(1, 0); break;
@@ -1725,6 +1739,9 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::NEXT_FACTION: changeFaction(1); break;
         case PreviewCommandType::PREVIOUS_PALETTE: changePalette(-1); break;
         case PreviewCommandType::NEXT_PALETTE: changePalette(1); break;
+        case PreviewCommandType::OPEN_STRUCTURAL_EDITOR: enterConfigurationEditor(); break;
+        case PreviewCommandType::OPEN_FACTION_EDITOR: enterFactionConfigurationEditor(); break;
+        case PreviewCommandType::OPEN_PALETTE_EDITOR: enterPaletteConfigurationEditor(); break;
         case PreviewCommandType::SELECT_RESOLUTION:
             if (command.Value < DirectPreviewResolutions.size()) { setResolution(DirectPreviewResolutions[command.Value]); }
             break;
@@ -1760,12 +1777,21 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::APPLY_ANIMATION_STATE: applySelectedAnimationState(); break;
         case PreviewCommandType::RETURN_ANIMATION_TO_IDLE: returnAnimationToIdle(); break;
         case PreviewCommandType::TOGGLE_ANIMATION:
-            if (m_PreviewMode == PreviewMode::ANIMATION) { m_PreviewMode = PreviewMode::STATIC; setDisplayedStaticFrame(); updateWindowTitle(); }
+            if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE)
+            {
+                if (m_PreviewMode == PreviewMode::ANIMATION)
+                {
+                    m_PreviewMode = PreviewMode::STATIC;
+                    setDisplayedStaticFrame();
+                    updateWindowTitle();
+                }
+                else { enterGenerateIdlePlayback(); }
+            }
+            else if (m_PreviewMode == PreviewMode::ANIMATION) { enterFrameInspection(); }
             else { enterAnimationPlayback(); }
             break;
         case PreviewCommandType::TOGGLE_FRAME_INSPECTION:
-            if (m_PreviewMode == PreviewMode::FRAME_INSPECTION) { m_PreviewMode = PreviewMode::STATIC; setDisplayedStaticFrame(); updateWindowTitle(); }
-            else { enterFrameInspection(); }
+            enterFrameInspection();
             break;
         case PreviewCommandType::PREVIOUS_FRAME: moveAnimationFrame(-1); break;
         case PreviewCommandType::NEXT_FRAME: moveAnimationFrame(1); break;
@@ -1776,7 +1802,7 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::EXPORT_RECIPE: exportRecipe(); break;
         case PreviewCommandType::IMPORT_RECIPE: importRecipe(); break;
         case PreviewCommandType::SAVE_SPRITESHEET: saveSpritesheet(); break;
-        case PreviewCommandType::OPEN_REROLL_STUDIO: enterAttributeRerollStudio(); break;
+        case PreviewCommandType::OPEN_REROLL_STUDIO: switchWorkspace(PreviewWorkspace::REROLL); break;
         case PreviewCommandType::REROLL_STUDIO_TOGGLE_DOMAIN:
             if (command.Value < PixelShipGenerator::GenerationDomainCount)
             {
@@ -1837,59 +1863,16 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::CALIBRATION_EXPORT_REPORT: exportCalibrationReport(); break;
         case PreviewCommandType::CALIBRATION_EXPORT_TUNING_PROFILE: exportCalibrationTuningProfile(); break;
         case PreviewCommandType::CALIBRATION_EXIT: exitCalibrationLab(); break;
-        case PreviewCommandType::BACK_OR_EXIT:
-            if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible)
-            {
-                m_Diagnostics.HelpVisible = false;
-                m_Diagnostics.GenerationInspectorVisible = false;
-                m_Diagnostics.PaletteInspectorVisible = false;
-            }
-            else if (m_PreviewMode == PreviewMode::REROLL_STUDIO)
-            {
-                cancelAttributeRerollStudio();
-            }
-            else if (m_PreviewMode == PreviewMode::CALIBRATION)
-            {
-                exitCalibrationLab();
-            }
-            else if (m_PreviewMode == PreviewMode::GALLERY)
-            {
-                exitGalleryMode();
-            }
-            else if (m_PreviewMode == PreviewMode::FAVORITES)
-            {
-                exitFavoritesMode();
-            }
-            else if (m_PreviewMode == PreviewMode::FRAME_INSPECTION)
-            {
-                m_PreviewMode = PreviewMode::STATIC;
-                setDisplayedStaticFrame();
-                updateWindowTitle();
-            }
-            else
-            {
-                m_Window.close();
-            }
-            break;
+        case PreviewCommandType::BACK_OR_EXIT: handleBackOrCancel(); break;
         default: break;
         }
 
         updateCommandPanelState();
     }
 
-    std::optional<PreviewCommand> ShipGeneratorPreviewApp::getKeyboardCommand(sf::Keyboard::Key key, bool shift) const
+    std::optional<PreviewCommand> ShipGeneratorPreviewApp::getKeyboardCommand(sf::Keyboard::Key key, bool shift, bool control) const
     {
-        if (m_PreviewMode == PreviewMode::REROLL_STUDIO)
-        {
-            switch (key)
-            {
-            case sf::Keyboard::R:
-            case sf::Keyboard::Space: return PreviewCommand{ PreviewCommandType::REROLL_STUDIO_GENERATE_CANDIDATE, 0u };
-            case sf::Keyboard::Enter: return PreviewCommand{ PreviewCommandType::REROLL_STUDIO_ACCEPT, 0u };
-            case sf::Keyboard::Escape: return PreviewCommand{ PreviewCommandType::REROLL_STUDIO_CANCEL, 0u };
-            default: return std::nullopt;
-            }
-        }
+        const PreviewWorkspace workspace = m_WorkspaceSession.getActiveWorkspace();
 
         if (m_PreviewMode == PreviewMode::CALIBRATION)
         {
@@ -1903,36 +1886,53 @@ namespace PixelShipGeneratorPreview
             case sf::Keyboard::Down: return PreviewCommand{ PreviewCommandType::CALIBRATION_NO_PREFERENCE, 0u };
             case sf::Keyboard::Space: return PreviewCommand{ PreviewCommandType::CALIBRATION_SKIP, 0u };
             case sf::Keyboard::N: return PreviewCommand{ PreviewCommandType::CALIBRATION_GENERATE_PAIR, 0u };
-            case sf::Keyboard::Escape: return PreviewCommand{ PreviewCommandType::CALIBRATION_EXIT, 0u };
             default: return std::nullopt;
             }
         }
 
-        if (key == sf::Keyboard::F5) { return PreviewCommand{ PreviewCommandType::TOGGLE_HELP, 0u }; }
-        if (key == sf::Keyboard::F6) { return PreviewCommand{ PreviewCommandType::TOGGLE_GENERATION_INSPECTOR, 0u }; }
-        if (key == sf::Keyboard::F7) { return PreviewCommand{ PreviewCommandType::TOGGLE_PALETTE_INSPECTOR, 0u }; }
-
-        const bool overlayVisible = m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible;
-
-        if (overlayVisible)
+        if (workspace == PreviewWorkspace::GENERATE)
         {
-            return key == sf::Keyboard::Escape ? std::optional<PreviewCommand>(PreviewCommand{ PreviewCommandType::BACK_OR_EXIT, 0u }) : std::nullopt;
+            if (m_PreviewMode == PreviewMode::GALLERY)
+            {
+                switch (key)
+                {
+                case sf::Keyboard::Left: return PreviewCommand{ PreviewCommandType::GALLERY_LEFT, 0u };
+                case sf::Keyboard::Right: return PreviewCommand{ PreviewCommandType::GALLERY_RIGHT, 0u };
+                case sf::Keyboard::Up: return PreviewCommand{ PreviewCommandType::GALLERY_UP, 0u };
+                case sf::Keyboard::Down: return PreviewCommand{ PreviewCommandType::GALLERY_DOWN, 0u };
+                case sf::Keyboard::Enter: return PreviewCommand{ PreviewCommandType::SELECT_GALLERY_CANDIDATE, 0u };
+                case sf::Keyboard::Space: return PreviewCommand{ PreviewCommandType::GENERATE_NEW, 0u };
+                default: return std::nullopt;
+                }
+            }
+
+            if (control && key == sf::Keyboard::O) { return PreviewCommand{ PreviewCommandType::IMPORT_RECIPE, 0u }; }
+            if (control && key == sf::Keyboard::E) { return PreviewCommand{ PreviewCommandType::EXPORT_RECIPE, 0u }; }
+            if (key == sf::Keyboard::Space) { return PreviewCommand{ shift ? PreviewCommandType::OPEN_GALLERY : PreviewCommandType::GENERATE_NEW, 0u }; }
+            if (key == sf::Keyboard::Left) { return PreviewCommand{ PreviewCommandType::PREVIOUS_HISTORY, 0u }; }
+            if (key == sf::Keyboard::Right) { return PreviewCommand{ PreviewCommandType::NEXT_HISTORY, 0u }; }
+            return std::nullopt;
         }
 
-        if (key == sf::Keyboard::F10) { return PreviewCommand{ PreviewCommandType::CLEAR_PIN, 0u }; }
-
-        if (m_PreviewMode != PreviewMode::GALLERY && m_PreviewMode != PreviewMode::FAVORITES)
+        if (workspace == PreviewWorkspace::REROLL)
         {
-            if (key == sf::Keyboard::F9) { return PreviewCommand{ PreviewCommandType::PIN_CURRENT, 0u }; }
-            if (key == sf::Keyboard::F11) { return PreviewCommand{ PreviewCommandType::TOGGLE_COMPARISON, 0u }; }
+            if (key == sf::Keyboard::Space) { return PreviewCommand{ PreviewCommandType::REROLL_STUDIO_GENERATE_CANDIDATE, 0u }; }
+            if (key == sf::Keyboard::Enter) { return PreviewCommand{ PreviewCommandType::REROLL_STUDIO_ACCEPT, 0u }; }
+            return std::nullopt;
+        }
+
+        if (workspace == PreviewWorkspace::INSPECT)
+        {
             if (key == sf::Keyboard::M) { return PreviewCommand{ PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW, 0u }; }
             if (key == sf::Keyboard::F8) { return PreviewCommand{ PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW, 0u }; }
             if (key == sf::Keyboard::LBracket) { return PreviewCommand{ PreviewCommandType::PREVIOUS_GENERATION_STAGE, 0u }; }
             if (key == sf::Keyboard::RBracket) { return PreviewCommand{ PreviewCommandType::NEXT_GENERATION_STAGE, 0u }; }
+            return std::nullopt;
         }
 
-        if (m_PreviewMode == PreviewMode::FAVORITES)
+        if (workspace == PreviewWorkspace::FAVORITES)
         {
+            if (control && key == sf::Keyboard::E) { return PreviewCommand{ PreviewCommandType::EXPORT_RECIPE, 0u }; }
             switch (key)
             {
             case sf::Keyboard::Left: return PreviewCommand{ PreviewCommandType::FAVORITES_LEFT, 0u };
@@ -1940,129 +1940,138 @@ namespace PixelShipGeneratorPreview
             case sf::Keyboard::Up: return PreviewCommand{ PreviewCommandType::FAVORITES_UP, 0u };
             case sf::Keyboard::Down: return PreviewCommand{ PreviewCommandType::FAVORITES_DOWN, 0u };
             case sf::Keyboard::Enter: return PreviewCommand{ PreviewCommandType::SELECT_FAVORITE, 0u };
-            case sf::Keyboard::Escape: return PreviewCommand{ PreviewCommandType::BACK_OR_EXIT, 0u };
             default: return std::nullopt;
             }
         }
 
-        if (m_PreviewMode == PreviewMode::GALLERY)
+        if (workspace == PreviewWorkspace::ANIMATION)
         {
-            switch (key)
+            if (key == sf::Keyboard::Space) { return PreviewCommand{ PreviewCommandType::TOGGLE_ANIMATION, 0u }; }
+            if (m_PreviewMode == PreviewMode::FRAME_INSPECTION)
             {
-            case sf::Keyboard::Left: return PreviewCommand{ PreviewCommandType::GALLERY_LEFT, 0u };
-            case sf::Keyboard::Right: return PreviewCommand{ PreviewCommandType::GALLERY_RIGHT, 0u };
-            case sf::Keyboard::Up: return PreviewCommand{ PreviewCommandType::GALLERY_UP, 0u };
-            case sf::Keyboard::Down: return PreviewCommand{ PreviewCommandType::GALLERY_DOWN, 0u };
-            case sf::Keyboard::Enter: return PreviewCommand{ PreviewCommandType::SELECT_GALLERY_CANDIDATE, 0u };
-            case sf::Keyboard::N:
-            case sf::Keyboard::Space: return PreviewCommand{ PreviewCommandType::GENERATE_NEW, 0u };
-            case sf::Keyboard::H: return PreviewCommand{ PreviewCommandType::OPEN_GALLERY_FROM_SEED, 0u };
-            case sf::Keyboard::Escape: return PreviewCommand{ PreviewCommandType::BACK_OR_EXIT, 0u };
-            default: return std::nullopt;
+                if (key == sf::Keyboard::Left) { return PreviewCommand{ PreviewCommandType::PREVIOUS_FRAME, 0u }; }
+                if (key == sf::Keyboard::Right) { return PreviewCommand{ PreviewCommandType::NEXT_FRAME, 0u }; }
             }
         }
 
-        if (m_PreviewMode == PreviewMode::FRAME_INSPECTION)
-        {
-            if (key == sf::Keyboard::J) { return PreviewCommand{ shift ? PreviewCommandType::RETURN_ANIMATION_TO_IDLE : PreviewCommandType::APPLY_ANIMATION_STATE, 0u }; }
-            switch (key)
-            {
-            case sf::Keyboard::Left:
-            case sf::Keyboard::P:
-            case sf::Keyboard::BackSpace: return PreviewCommand{ PreviewCommandType::PREVIOUS_FRAME, 0u };
-            case sf::Keyboard::Right: return PreviewCommand{ PreviewCommandType::NEXT_FRAME, 0u };
-            case sf::Keyboard::I: return PreviewCommand{ PreviewCommandType::TOGGLE_ANIMATION, 0u };
-            case sf::Keyboard::K: return PreviewCommand{ PreviewCommandType::TOGGLE_FRAME_INSPECTION, 0u };
-            case sf::Keyboard::Escape: return PreviewCommand{ PreviewCommandType::BACK_OR_EXIT, 0u };
-            case sf::Keyboard::S: return PreviewCommand{ PreviewCommandType::SAVE_CURRENT, 0u };
-            case sf::Keyboard::Y: return PreviewCommand{ PreviewCommandType::SAVE_SPRITESHEET, 0u };
-            case sf::Keyboard::O: return PreviewCommand{ PreviewCommandType::CYCLE_ANIMATION_TYPE, 0u };
-            case sf::Keyboard::L: return PreviewCommand{ PreviewCommandType::CYCLE_MOVEMENT_PHASE, 0u };
-            case sf::Keyboard::U: return PreviewCommand{ PreviewCommandType::CYCLE_FIRING_TARGET, 0u };
-            default: return std::nullopt;
-            }
-        }
+        return std::nullopt;
+    }
 
-        if (shift)
-        {
-            switch (key)
-            {
-            case sf::Keyboard::Num1: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION_BOOKMARK, 0u };
-            case sf::Keyboard::Num2: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION_BOOKMARK, 1u };
-            case sf::Keyboard::Num3: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION_BOOKMARK, 2u };
-            case sf::Keyboard::Num4: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION_BOOKMARK, 3u };
-            case sf::Keyboard::Num5: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION_BOOKMARK, 4u };
-            case sf::Keyboard::Num6: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION_BOOKMARK, 5u };
-            default: break;
-            }
-        }
+    bool ShipGeneratorPreviewApp::hasKeyboardInputFocus() const
+    {
+        return m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR && m_ConfigurationEditor.hasKeyboardFocus();
+    }
 
-        switch (key)
+    void ShipGeneratorPreviewApp::handleBackOrCancel()
+    {
+        PreviewBackContext context;
+        context.Workspace = m_WorkspaceSession.getActiveWorkspace();
+        context.Mode = m_PreviewMode;
+        context.KeyboardInputFocused = hasKeyboardInputFocus();
+        context.HelpVisible = m_Diagnostics.HelpVisible;
+        context.GenerationInspectorVisible = m_Diagnostics.GenerationInspectorVisible;
+        context.PaletteInspectorVisible = m_Diagnostics.PaletteInspectorVisible;
+        context.RerollCandidateValid = m_RerollStudio.CandidateValid;
+
+        switch (resolvePreviewBackAction(context))
         {
-        case sf::Keyboard::J: return PreviewCommand{ shift ? PreviewCommandType::RETURN_ANIMATION_TO_IDLE : PreviewCommandType::APPLY_ANIMATION_STATE, 0u };
-        case sf::Keyboard::Escape: return PreviewCommand{ PreviewCommandType::BACK_OR_EXIT, 0u };
-        case sf::Keyboard::N:
-        case sf::Keyboard::Space: return PreviewCommand{ PreviewCommandType::GENERATE_NEW, 0u };
-        case sf::Keyboard::Left:
-        case sf::Keyboard::P:
-        case sf::Keyboard::BackSpace: return PreviewCommand{ PreviewCommandType::PREVIOUS_HISTORY, 0u };
-        case sf::Keyboard::Right: return PreviewCommand{ PreviewCommandType::NEXT_HISTORY, 0u };
-        case sf::Keyboard::S: return PreviewCommand{ PreviewCommandType::SAVE_CURRENT, 0u };
-        case sf::Keyboard::Y: return PreviewCommand{ PreviewCommandType::SAVE_SPRITESHEET, 0u };
-        case sf::Keyboard::O: return PreviewCommand{ PreviewCommandType::CYCLE_ANIMATION_TYPE, 0u };
-        case sf::Keyboard::L: return PreviewCommand{ PreviewCommandType::CYCLE_MOVEMENT_PHASE, 0u };
-        case sf::Keyboard::U: return PreviewCommand{ PreviewCommandType::CYCLE_FIRING_TARGET, 0u };
-        case sf::Keyboard::I: return PreviewCommand{ PreviewCommandType::TOGGLE_ANIMATION, 0u };
-        case sf::Keyboard::K: return PreviewCommand{ PreviewCommandType::TOGGLE_FRAME_INSPECTION, 0u };
-        case sf::Keyboard::G: return PreviewCommand{ PreviewCommandType::GENERATE_FROM_MASTER_SEED, 0u };
-        case sf::Keyboard::Num1: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION, 0u };
-        case sf::Keyboard::Num2: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION, 1u };
-        case sf::Keyboard::Num3: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION, 2u };
-        case sf::Keyboard::Num4: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION, 3u };
-        case sf::Keyboard::Num5: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION, 4u };
-        case sf::Keyboard::Num6: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION, 5u };
-        case sf::Keyboard::Num7: return PreviewCommand{ PreviewCommandType::SELECT_RESOLUTION, 6u };
-        case sf::Keyboard::F1: return PreviewCommand{ PreviewCommandType::SELECT_STYLE, 0u };
-        case sf::Keyboard::F2: return PreviewCommand{ PreviewCommandType::SELECT_STYLE, 1u };
-        case sf::Keyboard::F3: return PreviewCommand{ PreviewCommandType::SELECT_STYLE, 2u };
-        case sf::Keyboard::F4: return PreviewCommand{ PreviewCommandType::SELECT_STYLE, 3u };
-        case sf::Keyboard::Z: return PreviewCommand{ PreviewCommandType::SELECT_FACTION, 0u };
-        case sf::Keyboard::X: return PreviewCommand{ PreviewCommandType::SELECT_FACTION, 1u };
-        case sf::Keyboard::C: return PreviewCommand{ PreviewCommandType::SELECT_FACTION, 2u };
-        case sf::Keyboard::V: return PreviewCommand{ PreviewCommandType::SELECT_FACTION, 3u };
-        case sf::Keyboard::A: return PreviewCommand{ PreviewCommandType::TOGGLE_ATTACHMENTS_ENABLED, 0u };
-        case sf::Keyboard::Q: return PreviewCommand{ PreviewCommandType::TOGGLE_STRUCTURE_LOCK, 0u };
-        case sf::Keyboard::W: return PreviewCommand{ PreviewCommandType::TOGGLE_PALETTE_LOCK, 0u };
-        case sf::Keyboard::E: return PreviewCommand{ PreviewCommandType::TOGGLE_DETAILS_LOCK, 0u };
-        case sf::Keyboard::T: return PreviewCommand{ PreviewCommandType::TOGGLE_ATTACHMENTS_LOCK, 0u };
-        case sf::Keyboard::R: return PreviewCommand{ PreviewCommandType::REROLL, 0u };
-        case sf::Keyboard::B: return PreviewCommand{ PreviewCommandType::OPEN_GALLERY, 0u };
-        case sf::Keyboard::H: return PreviewCommand{ PreviewCommandType::OPEN_GALLERY_FROM_SEED, 0u };
-        default: return std::nullopt;
+        case PreviewBackAction::RELEASE_KEYBOARD_FOCUS:
+            m_ConfigurationEditor.releaseKeyboardFocus();
+            break;
+        case PreviewBackAction::CLOSE_HELP:
+            m_Diagnostics.HelpVisible = false;
+            break;
+        case PreviewBackAction::CLOSE_CONTEXT_OVERLAY:
+            m_Diagnostics.GenerationInspectorVisible = false;
+            m_Diagnostics.PaletteInspectorVisible = false;
+            break;
+        case PreviewBackAction::CANCEL_CONFIGURATION_EDITOR:
+            handleConfigurationEditorEvent(m_ConfigurationEditor.createCancelEvent());
+            break;
+        case PreviewBackAction::CLOSE_GALLERY:
+            exitGalleryMode();
+            break;
+        case PreviewBackAction::EXIT_CALIBRATION:
+            exitCalibrationLab();
+            break;
+        case PreviewBackAction::DISCARD_REROLL_CANDIDATE:
+            m_RerollStudio.CandidateValid = false;
+            m_RerollStudio.CandidateRecipe = m_RerollStudio.BaseRecipe;
+            setStatusMessage("Reroll candidate discarded. Base ship retained.");
+            updateWindowTitle();
+            break;
+        case PreviewBackAction::NONE:
+        default:
+            break;
         }
     }
 
     void ShipGeneratorPreviewApp::handleKeyPressed(const sf::Event::KeyEvent& event)
     {
+        if (event.code == sf::Keyboard::Escape)
+        {
+            executeCommand({ PreviewCommandType::BACK_OR_EXIT, 0u });
+            return;
+        }
+
+        if (hasKeyboardInputFocus()) { return; }
+
+        if (event.code == sf::Keyboard::F1)
+        {
+            executeCommand({ PreviewCommandType::TOGGLE_HELP, 0u });
+            return;
+        }
+
+        if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible) { return; }
+
+        uint32_t workspaceShortcut = 0u;
+        switch (event.code)
+        {
+        case sf::Keyboard::Num1:
+        case sf::Keyboard::Numpad1: workspaceShortcut = 1u; break;
+        case sf::Keyboard::Num2:
+        case sf::Keyboard::Numpad2: workspaceShortcut = 2u; break;
+        case sf::Keyboard::Num3:
+        case sf::Keyboard::Numpad3: workspaceShortcut = 3u; break;
+        case sf::Keyboard::Num4:
+        case sf::Keyboard::Numpad4: workspaceShortcut = 4u; break;
+        case sf::Keyboard::Num5:
+        case sf::Keyboard::Numpad5: workspaceShortcut = 5u; break;
+        case sf::Keyboard::Num6:
+        case sf::Keyboard::Numpad6: workspaceShortcut = 6u; break;
+        default: break;
+        }
+        if (workspaceShortcut != 0u)
+        {
+            const std::optional<PreviewWorkspace> workspace = getPreviewWorkspaceForShortcut(workspaceShortcut, false);
+            if (workspace.has_value()) { switchWorkspace(*workspace); }
+            return;
+        }
+
+        if (event.code == sf::Keyboard::B)
+        {
+            executeCommand({ PreviewCommandType::ADD_CURRENT_TO_FAVORITES, 0u });
+            return;
+        }
+
         if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
         {
-            if (event.code == sf::Keyboard::Escape) { handleConfigurationEditorEvent(m_ConfigurationEditor.createCancelEvent()); }
+            if (event.control && event.code == sf::Keyboard::D) { handleConfigurationEditorEvent({ ConfigurationEditorAction::DUPLICATE }); }
+            else if (event.control && event.code == sf::Keyboard::O) { handleConfigurationEditorEvent({ ConfigurationEditorAction::IMPORT_PRESET }); }
+            else if (event.control && event.code == sf::Keyboard::E) { handleConfigurationEditorEvent({ ConfigurationEditorAction::EXPORT_PRESET }); }
             return;
         }
-        if (event.code == sf::Keyboard::PageDown)
-        {
-            if (event.control) { enterPaletteConfigurationEditor(); }
-            else if (event.shift) { enterFactionConfigurationEditor(); }
-            else { enterConfigurationEditor(); }
-            return;
-        }
-        const std::optional<PreviewCommand> command = getKeyboardCommand(event.code, event.shift);
+
+        const std::optional<PreviewCommand> command = getKeyboardCommand(event.code, event.shift, event.control);
         if (command.has_value()) { executeCommand(*command); }
     }
 
     void ShipGeneratorPreviewApp::handleMouseMoved(const sf::Event::MouseMoveEvent& event)
     {
         const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible) { return; }
+
+        m_WorkspaceNavigation.onMouseMove(position);
         if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
         {
             m_ConfigurationEditor.onMouseMove(position.x, position.y);
@@ -2070,19 +2079,18 @@ namespace PixelShipGeneratorPreview
         }
         m_CommandPanel.onMouseMove(position);
 
-        if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible) { return; }
         if (m_PreviewMode == PreviewMode::GALLERY) { m_GalleryState.Grid.HoveredIndex = findPreviewThumbnailItemAtPosition(position, m_GalleryState.Grid); }
         if (m_PreviewMode == PreviewMode::FAVORITES) { m_FavoritesState.Grid.HoveredIndex = findPreviewThumbnailItemAtPosition(position, m_FavoritesState.Grid); }
     }
 
     void ShipGeneratorPreviewApp::handleMousePressed(const sf::Event::MouseButtonEvent& event)
     {
-        if (event.button != sf::Mouse::Left)
-        {
-            return;
-        }
+        if (event.button != sf::Mouse::Left) { return; }
 
         const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible) { return; }
+        if (m_WorkspaceNavigation.onMousePress(position)) { return; }
+
         if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
         {
             m_ConfigurationEditor.onMousePress(position.x, position.y);
@@ -2090,15 +2098,7 @@ namespace PixelShipGeneratorPreview
         }
         m_CommandPanel.onMousePress(position);
 
-        if (m_CommandPanel.getPressedButtonIndex() >= 0 || m_CommandPanel.isDimensionSliderDragging())
-        {
-            return;
-        }
-
-        if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible)
-        {
-            return;
-        }
+        if (m_CommandPanel.getPressedButtonIndex() >= 0 || m_CommandPanel.isDimensionSliderDragging()) { return; }
 
         if (m_PreviewMode == PreviewMode::GALLERY)
         {
@@ -2120,12 +2120,24 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::handleMouseReleased(const sf::Event::MouseButtonEvent& event)
     {
-        if (event.button != sf::Mouse::Left)
+        if (event.button != sf::Mouse::Left) { return; }
+
+        const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible)
         {
+            m_WorkspaceNavigation.cancelPress();
             return;
         }
 
-        const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        const bool navigationPressActive = m_WorkspaceNavigation.getPressedButtonIndex() >= 0;
+        const std::optional<PreviewWorkspace> workspace = m_WorkspaceNavigation.onMouseRelease(position);
+        if (workspace.has_value())
+        {
+            switchWorkspace(*workspace);
+            return;
+        }
+        if (navigationPressActive) { return; }
+
         if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR)
         {
             const std::optional<ConfigurationEditorEvent> editorEvent = m_ConfigurationEditor.onMouseRelease(position.x, position.y);
@@ -2177,7 +2189,7 @@ namespace PixelShipGeneratorPreview
         const bool browserMode = m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES;
 
         if (type == PreviewCommandType::TOGGLE_HELP) { return true; }
-        if (type == PreviewCommandType::TOGGLE_GENERATION_INSPECTOR || type == PreviewCommandType::TOGGLE_PALETTE_INSPECTOR) { return !browserMode; }
+        if (type == PreviewCommandType::TOGGLE_GENERATION_INSPECTOR || type == PreviewCommandType::TOGGLE_PALETTE_INSPECTOR) { return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT && !browserMode; }
         if (type == PreviewCommandType::BACK_OR_EXIT) { return true; }
         if (overlayVisible) { return false; }
 
@@ -2192,6 +2204,10 @@ namespace PixelShipGeneratorPreview
             case PreviewCommandType::REROLL_STUDIO_SELECT_STRUCTURE:
             case PreviewCommandType::REROLL_STUDIO_SELECT_APPEARANCE:
             case PreviewCommandType::REROLL_STUDIO_CANCEL:
+            case PreviewCommandType::TOGGLE_STRUCTURE_LOCK:
+            case PreviewCommandType::TOGGLE_PALETTE_LOCK:
+            case PreviewCommandType::TOGGLE_DETAILS_LOCK:
+            case PreviewCommandType::TOGGLE_ATTACHMENTS_LOCK:
                 return true;
             case PreviewCommandType::REROLL_STUDIO_GENERATE_CANDIDATE:
                 return hasSelectedAttributeRerollDomains(m_RerollStudio);
@@ -2247,9 +2263,16 @@ namespace PixelShipGeneratorPreview
             return false;
         }
 
+        if (type == PreviewCommandType::OPEN_STRUCTURAL_EDITOR || type == PreviewCommandType::OPEN_FACTION_EDITOR || type == PreviewCommandType::OPEN_PALETTE_EDITOR)
+        {
+            return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::PROFILES && m_PreviewMode == PreviewMode::STATIC;
+        }
+
         if (m_PreviewMode == PreviewMode::FAVORITES)
         {
             if (type == PreviewCommandType::CLOSE_FAVORITES) { return true; }
+            if (type == PreviewCommandType::ADD_CURRENT_TO_FAVORITES) { return !isCurrentFavorite(); }
+            if (type == PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES) { return isCurrentFavorite(); }
             if (type == PreviewCommandType::CLEAR_PIN) { return m_Comparison.Pinned.Valid; }
             if (type == PreviewCommandType::EXPORT_RECIPE) { return !m_FavoritesState.Grid.Items.empty() && m_FavoritesState.Grid.SelectedIndex < m_FavoritesState.Grid.Items.size() && m_FavoritesState.Grid.Items[m_FavoritesState.Grid.SelectedIndex].Valid; }
             if (type == PreviewCommandType::SELECT_FAVORITE) { return !m_FavoritesState.Grid.Items.empty() && m_FavoritesState.Grid.SelectedIndex < m_FavoritesState.Grid.Items.size() && m_FavoritesState.Grid.Items[m_FavoritesState.Grid.SelectedIndex].Valid; }
@@ -2287,7 +2310,11 @@ namespace PixelShipGeneratorPreview
         if (type == PreviewCommandType::SAVE_CURRENT) { return true; }
         if (type == PreviewCommandType::EXPORT_RECIPE || type == PreviewCommandType::IMPORT_RECIPE) { return true; }
         if (type == PreviewCommandType::SAVE_SPRITESHEET) { return !getActiveAnimationFrames().empty(); }
-        if (type == PreviewCommandType::TOGGLE_ANIMATION || type == PreviewCommandType::TOGGLE_FRAME_INSPECTION) { return !getActiveAnimationFrames().empty(); }
+        if (type == PreviewCommandType::TOGGLE_ANIMATION)
+        {
+            return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? !m_AnimationSession.getIdleAnimation().Frames.empty() : !getActiveAnimationFrames().empty();
+        }
+        if (type == PreviewCommandType::TOGGLE_FRAME_INSPECTION) { return !getActiveAnimationFrames().empty(); }
         if (type == PreviewCommandType::CYCLE_ANIMATION_TYPE) { return true; }
         if (type == PreviewCommandType::CYCLE_MOVEMENT_PHASE) { return m_AnimationSession.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::IDLE && m_AnimationSession.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::FIRE; }
         if (type == PreviewCommandType::CYCLE_FIRING_TARGET) { return m_AnimationSession.getSelectedAnimationType() == PixelShipGenerator::ShipAnimationType::FIRE && m_AnimationSession.getFiringTargets().size() > 1u; }
@@ -2359,12 +2386,11 @@ namespace PixelShipGeneratorPreview
         if (favorite == nullptr || index >= m_FavoritesState.Grid.Items.size() || !m_FavoritesState.Grid.Items[index].Valid) { return; }
 
         const PreviewGenerationRecipe recipe = *favorite;
-        m_PreviewMode = PreviewMode::STATIC;
         m_FavoritesState.Grid.HoveredIndex = -1;
 
         if (recipe == getCurrentRecipe())
         {
-            setDisplayedStaticFrame();
+            refreshDisplayedTexture();
             updateWindowTitle();
             return;
         }
@@ -2496,17 +2522,18 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::printControls() const
     {
-        std::cout << "Controls:\n";
-
-        for (const PreviewCommandData& commandData : getPreviewCommandDataTable())
+        const auto printSection = [](const char* name, const PreviewHelpSection& section)
         {
-            if (commandData.Shortcut[0] == '\0') { continue; }
-            std::cout << "  " << commandData.Shortcut << "    " << commandData.Description << '\n';
-        }
+            std::cout << name << ":\n";
+            for (std::size_t index = 0u; index < section.Count; ++index)
+            {
+                std::cout << "  " << section.Entries[index].Shortcut << "    " << section.Entries[index].Description << '\n';
+            }
+        };
 
-        std::cout << "  PAGEDOWN          Open the structural profile editor.\n";
-        std::cout << "  SHIFT+PAGEDOWN    Open the faction profile editor.\n";
-        std::cout << "  CTRL+PAGEDOWN     Open the palette editor.\n";
+        printSection("Global controls", getPreviewGlobalHelpSection());
+        std::cout << '\n';
+        printSection((std::string(getPreviewWorkspaceName(m_WorkspaceSession.getActiveWorkspace())) + " workspace").c_str(), getPreviewWorkspaceHelpSection(m_WorkspaceSession.getActiveWorkspace()));
         std::cout << "\n\n";
     }
 
@@ -2637,6 +2664,8 @@ namespace PixelShipGeneratorPreview
             return false;
         }
         if (!animationResult.StatusMessage.empty()) { setStatusMessage(animationResult.StatusMessage); }
+        m_GenerateIdleFrameIndex = 0u;
+        m_GenerateIdlePlaybackAccumulatorMicroseconds = 0.0;
         m_AnimationClock.restart();
         if (!refreshAnimationTextures()) { return false; }
 
@@ -2672,34 +2701,42 @@ namespace PixelShipGeneratorPreview
 
     bool ShipGeneratorPreviewApp::refreshAnimationTextures()
     {
+        const auto loadTextures = [](const std::vector<PixelShipGenerator::Image>& frames, std::vector<sf::Texture>& textures)
+        {
+            textures.clear();
+            textures.resize(frames.size());
+            for (std::size_t index = 0u; index < frames.size(); ++index)
+            {
+                const sf::Image image = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(frames[index]);
+                if (!textures[index].loadFromImage(image))
+                {
+                    textures.clear();
+                    return false;
+                }
+                textures[index].setSmooth(false);
+            }
+            return true;
+        };
+
+        if (!loadTextures(m_AnimationSession.getIdleAnimation().Frames, m_GenerateIdleAnimationTextures))
+        {
+            std::cerr << "Failed to create IDLE animation texture.\n";
+            return false;
+        }
+        if (m_GenerateIdleFrameIndex >= m_GenerateIdleAnimationTextures.size()) { m_GenerateIdleFrameIndex = 0u; }
+
         const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
-        m_AnimationTextures.clear();
+        if (!loadTextures(frames, m_AnimationTextures))
+        {
+            std::cerr << "Failed to create animation texture.\n";
+            return false;
+        }
         if (frames.empty())
         {
             m_AnimationSession.setFrameIndex(0u);
             return true;
         }
-        m_AnimationTextures.resize(frames.size());
-
-        for (std::size_t index = 0u; index < frames.size(); ++index)
-        {
-            const sf::Image image = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(frames[index]);
-
-            if (!m_AnimationTextures[index].loadFromImage(image))
-            {
-                std::cerr << "Failed to create animation texture.\n";
-                m_AnimationTextures.clear();
-                return false;
-            }
-
-            m_AnimationTextures[index].setSmooth(false);
-        }
-
-        if (m_AnimationSession.getFrameIndex() >= m_AnimationTextures.size())
-        {
-            m_AnimationSession.setFrameIndex(0u);
-        }
-
+        if (m_AnimationSession.getFrameIndex() >= m_AnimationTextures.size()) { m_AnimationSession.setFrameIndex(0u); }
         return true;
     }
 
@@ -2708,10 +2745,17 @@ namespace PixelShipGeneratorPreview
         updateCommandPanelState();
         PreviewRenderData data;
         data.Mode = m_PreviewMode;
+        data.Workspace = m_WorkspaceSession.getActiveWorkspace();
+        data.WorkspaceNavigation = &m_WorkspaceNavigation;
         data.PreviewSprite = &m_PreviewSprite;
         data.CurrentStaticTexture = &m_PreviewTexture;
         data.NativePreviewTexture = &m_PreviewTexture;
-        if ((m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) && m_AnimationSession.getFrameIndex() < m_AnimationTextures.size())
+        const bool generateIdlePlayback = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE && m_PreviewMode == PreviewMode::ANIMATION;
+        if (generateIdlePlayback && m_GenerateIdleFrameIndex < m_GenerateIdleAnimationTextures.size())
+        {
+            data.NativePreviewTexture = &m_GenerateIdleAnimationTextures[m_GenerateIdleFrameIndex];
+        }
+        else if ((m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) && m_AnimationSession.getFrameIndex() < m_AnimationTextures.size())
         {
             data.NativePreviewTexture = &m_AnimationTextures[m_AnimationSession.getFrameIndex()];
         }
@@ -2724,7 +2768,7 @@ namespace PixelShipGeneratorPreview
         data.Comparison = &m_Comparison;
         data.Ship = &m_GeneratedShip;
         data.GenerationDebugInfo = &m_GenerationDebugInfo;
-        data.SelectedAnimationType = m_AnimationSession.getSelectedAnimationType();
+        data.SelectedAnimationType = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? PixelShipGenerator::ShipAnimationType::IDLE : m_AnimationSession.getSelectedAnimationType();
         data.IdleAnimation = &m_AnimationSession.getIdleAnimation();
         data.IdleAnimationSettings = &m_AnimationSession.getIdleSettings();
         data.MovementAnimation = &m_AnimationSession.getMovementAnimation();
@@ -2738,7 +2782,7 @@ namespace PixelShipGeneratorPreview
         data.FiringAnimationSettings = &m_AnimationSession.getFiringSettings();
         data.HistoryIndex = m_Collections.getHistoryIndex();
         data.HistoryCount = m_Collections.getHistoryCount();
-        data.AnimationFrameIndex = m_AnimationSession.getFrameIndex();
+        data.AnimationFrameIndex = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? m_GenerateIdleFrameIndex : m_AnimationSession.getFrameIndex();
         data.CommandPanel = m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR ? nullptr : &m_CommandPanel;
         data.ConfigurationEditor = m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR ? &m_ConfigurationEditor : nullptr;
         data.CurrentIsFavorite = isCurrentFavorite();
@@ -2807,6 +2851,15 @@ namespace PixelShipGeneratorPreview
     {
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         const std::string baseName = getSaveBaseName(recipe);
+
+        if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE && m_PreviewMode == PreviewMode::ANIMATION)
+        {
+            const std::vector<PixelShipGenerator::Image>& frames = m_AnimationSession.getIdleAnimation().Frames;
+            if (m_GenerateIdleFrameIndex >= frames.size()) { return; }
+            const std::filesystem::path savePath = getAvailableSavePath(baseName + "_idle_frame_" + getFrameNumberString(m_GenerateIdleFrameIndex));
+            saveCoreImage(frames[m_GenerateIdleFrameIndex], savePath);
+            return;
+        }
 
         if (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION)
         {
@@ -3168,7 +3221,7 @@ namespace PixelShipGeneratorPreview
 
     bool ShipGeneratorPreviewApp::isDiagnosticImageViewActive() const
     {
-        return m_Diagnostics.GenerationStageView || m_Diagnostics.ViewMode != DiagnosticViewMode::FINAL;
+        return m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT && (m_Diagnostics.GenerationStageView || m_Diagnostics.ViewMode != DiagnosticViewMode::FINAL);
     }
 
     void ShipGeneratorPreviewApp::moveGenerationStage(int32_t delta)
@@ -3213,6 +3266,12 @@ namespace PixelShipGeneratorPreview
         if (isDiagnosticImageViewActive())
         {
             m_PreviewSprite.setTexture(m_DiagnosticTexture, true);
+            return;
+        }
+
+        if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE && m_PreviewMode == PreviewMode::ANIMATION && m_GenerateIdleFrameIndex < m_GenerateIdleAnimationTextures.size())
+        {
+            m_PreviewSprite.setTexture(m_GenerateIdleAnimationTextures[m_GenerateIdleFrameIndex], true);
             return;
         }
 
@@ -3262,7 +3321,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::toggleGenerationInspector()
     {
-        if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES) { return; }
+        if (m_WorkspaceSession.getActiveWorkspace() != PreviewWorkspace::INSPECT) { return; }
 
         const bool newValue = !m_Diagnostics.GenerationInspectorVisible;
         m_Diagnostics.HelpVisible = false;
@@ -3280,7 +3339,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::togglePaletteInspector()
     {
-        if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES) { return; }
+        if (m_WorkspaceSession.getActiveWorkspace() != PreviewWorkspace::INSPECT) { return; }
 
         const bool newValue = !m_Diagnostics.PaletteInspectorVisible;
         m_Diagnostics.HelpVisible = false;
@@ -3290,16 +3349,33 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::update()
     {
-        if (m_PreviewMode != PreviewMode::ANIMATION || getActiveAnimationFrames().empty()) { return; }
+        if (m_PreviewMode != PreviewMode::ANIMATION) { return; }
 
         const double elapsedMicroseconds = std::max(0.0, static_cast<double>(m_AnimationClock.restart().asMicroseconds()));
+        if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE)
+        {
+            const PixelShipGenerator::ShipIdleAnimation& idleAnimation = m_AnimationSession.getIdleAnimation();
+            if (idleAnimation.Frames.empty() || m_GenerateIdleAnimationTextures.empty()) { return; }
+            const double frameDurationMicroseconds = std::max(1.0, idleAnimation.FrameDurationMilliseconds * 1000.0);
+            m_GenerateIdlePlaybackAccumulatorMicroseconds += elapsedMicroseconds;
+            if (m_GenerateIdlePlaybackAccumulatorMicroseconds < frameDurationMicroseconds) { return; }
+            const uint32_t elapsedFrames = std::max(1u, static_cast<uint32_t>(m_GenerateIdlePlaybackAccumulatorMicroseconds / frameDurationMicroseconds));
+            m_GenerateIdlePlaybackAccumulatorMicroseconds -= static_cast<double>(elapsedFrames) * frameDurationMicroseconds;
+            m_GenerateIdleFrameIndex = (m_GenerateIdleFrameIndex + elapsedFrames) % static_cast<uint32_t>(idleAnimation.Frames.size());
+            refreshDisplayedTexture();
+            updateWindowTitle();
+            return;
+        }
+
+        if (getActiveAnimationFrames().empty()) { return; }
         const PreviewAnimationAdvanceResult result = m_AnimationSession.advancePlayback(m_GeneratedShip, elapsedMicroseconds);
         if (result.ActiveFramesChanged && !refreshAnimationTextures()) { return; }
 
         if (result.ReturnToStatic)
         {
-            m_PreviewMode = PreviewMode::STATIC;
-            setDisplayedStaticFrame();
+            m_PreviewMode = PreviewMode::FRAME_INSPECTION;
+            if (getActiveAnimationFrames().empty()) { setDisplayedStaticFrame(); }
+            else { setDisplayedAnimationFrame(m_AnimationSession.getFrameIndex()); }
         }
         else if (result.FrameChanged)
         {
@@ -3317,6 +3393,50 @@ namespace PixelShipGeneratorPreview
     void ShipGeneratorPreviewApp::setStatusMessage(const std::string& message)
     {
         m_StatusMessage = message;
+    }
+
+    void ShipGeneratorPreviewApp::switchWorkspace(PreviewWorkspace workspace)
+    {
+        if (workspace == m_WorkspaceSession.getActiveWorkspace()) { return; }
+
+        PreviewMode targetMode = m_WorkspaceSession.switchTo(workspace, m_PreviewMode);
+        m_WorkspaceNavigation.setActiveWorkspace(workspace);
+
+        if (workspace == PreviewWorkspace::PROFILES && targetMode == PreviewMode::CONFIGURATION_EDITOR && !m_ConfigurationEditor.isOpen())
+        {
+            targetMode = PreviewMode::STATIC;
+        }
+        if (workspace == PreviewWorkspace::REROLL)
+        {
+            if (!m_RerollStudio.Active || !(m_RerollStudio.BaseRecipe == getCurrentRecipe()))
+            {
+                beginAttributeRerollStudio(m_RerollStudio, getCurrentRecipe());
+            }
+            targetMode = PreviewMode::REROLL_STUDIO;
+        }
+        else if (workspace == PreviewWorkspace::FAVORITES)
+        {
+            targetMode = PreviewMode::FAVORITES;
+            if (!m_FavoritesState.Grid.Items.empty())
+            {
+                m_FavoritesState.Grid.SelectedIndex = std::min(m_FavoritesState.Grid.SelectedIndex, static_cast<uint32_t>(m_FavoritesState.Grid.Items.size() - 1u));
+            }
+            m_FavoritesState.Grid.HoveredIndex = -1;
+        }
+        else if (workspace == PreviewWorkspace::ANIMATION)
+        {
+            if (targetMode != PreviewMode::ANIMATION && targetMode != PreviewMode::FRAME_INSPECTION) { targetMode = PreviewMode::FRAME_INSPECTION; }
+        }
+        else if (!isPreviewModeOwnedByWorkspace(workspace, targetMode))
+        {
+            targetMode = getDefaultPreviewMode(workspace);
+        }
+
+        m_PreviewMode = targetMode;
+        if (m_PreviewMode == PreviewMode::ANIMATION) { m_AnimationClock.restart(); }
+        refreshDisplayedTexture();
+        updateCommandPanelState();
+        updateWindowTitle();
     }
 
     void ShipGeneratorPreviewApp::updateWindowTitle()
@@ -3354,15 +3474,22 @@ namespace PixelShipGeneratorPreview
 
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         const std::string attachmentState = recipe.AttachmentsEnabled ? "ON" : "OFF";
-        std::string title = "Pixel Ship Generator | Seed: " + std::to_string(recipe.Seeds.Master) + " | " + std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height) + " | Profile: " + getCurrentStructuralProfileDisplayName() + " | Faction: " + getCurrentFactionProfileDisplayName() + " | Palette: " + getCurrentPaletteDisplayName() + " | Attachments: " + attachmentState + " | Favorite: " + (isCurrentFavorite() ? "YES" : "NO") + " | Favorites: " + std::to_string(m_Collections.getFavorites().size()) + " | S:" + getLockDisplay(m_Locks.Structure) + " P:" + getLockDisplay(m_Locks.Palette) + " D:" + getLockDisplay(m_Locks.Details) + " A:" + getLockDisplay(m_Locks.Attachments) + " | History " + std::to_string(m_Collections.getHistoryIndex() + 1u) + "/" + std::to_string(m_Collections.getHistoryCount());
+        std::string title = "Pixel Ship Generator | " + std::string(getPreviewWorkspaceName(m_WorkspaceSession.getActiveWorkspace())) + " | Seed: " + std::to_string(recipe.Seeds.Master) + " | " + std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height) + " | Profile: " + getCurrentStructuralProfileDisplayName() + " | Faction: " + getCurrentFactionProfileDisplayName() + " | Palette: " + getCurrentPaletteDisplayName() + " | Attachments: " + attachmentState + " | Favorite: " + (isCurrentFavorite() ? "YES" : "NO") + " | Favorites: " + std::to_string(m_Collections.getFavorites().size()) + " | S:" + getLockDisplay(m_Locks.Structure) + " P:" + getLockDisplay(m_Locks.Palette) + " D:" + getLockDisplay(m_Locks.Details) + " A:" + getLockDisplay(m_Locks.Attachments) + " | History " + std::to_string(m_Collections.getHistoryIndex() + 1u) + "/" + std::to_string(m_Collections.getHistoryCount());
 
-        if (m_Comparison.ViewEnabled && m_Comparison.Pinned.Valid)
+        if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT && m_Comparison.ViewEnabled && m_Comparison.Pinned.Valid)
         {
             title += " | Compare: PIN " + std::to_string(m_Comparison.Pinned.Recipe.Seeds.Master);
         }
 
+        const bool generateIdlePlayback = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE && m_PreviewMode == PreviewMode::ANIMATION;
+        if (generateIdlePlayback && !m_AnimationSession.getIdleAnimation().Frames.empty())
+        {
+            title += " | Anim: PLAY IDLE | Frame " + std::to_string(m_GenerateIdleFrameIndex + 1u) + "/" + std::to_string(m_AnimationSession.getIdleAnimation().Frames.size());
+            title += " | AnimationSeed: " + std::to_string(m_AnimationSession.getIdleAnimation().Seed);
+        }
+
         const std::vector<PixelShipGenerator::Image>& animationFrames = getActiveAnimationFrames();
-        if ((m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) && !animationFrames.empty())
+        if (!generateIdlePlayback && (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) && !animationFrames.empty())
         {
             title += m_PreviewMode == PreviewMode::ANIMATION ? " | Anim: PLAY " : " | Anim: FRAME ";
             title += getAnimationTypeDisplayName(m_AnimationSession.getSelectedAnimationType());

@@ -52,6 +52,9 @@ namespace PixelShipGeneratorPreview
         NEXT_FACTION,
         PREVIOUS_PALETTE,
         NEXT_PALETTE,
+        OPEN_STRUCTURAL_EDITOR,
+        OPEN_FACTION_EDITOR,
+        OPEN_PALETTE_EDITOR,
         SELECT_RESOLUTION,
         PREVIOUS_RESOLUTION,
         NEXT_RESOLUTION,
@@ -140,6 +143,7 @@ namespace PixelShipGeneratorPreview
         PreviewCommandGroup Group = PreviewCommandGroup::VIEW;
     };
 
+    std::size_t getWrappedPreviewSelectorIndex(std::size_t currentIndex, int32_t delta, std::size_t valueCount);
     const PreviewCommandData& getPreviewCommandData(PreviewCommandType type);
     const std::array<PreviewCommandData, static_cast<std::size_t>(PreviewCommandType::PREVIEW_COMMAND_TYPE_END)>& getPreviewCommandDataTable();
 }

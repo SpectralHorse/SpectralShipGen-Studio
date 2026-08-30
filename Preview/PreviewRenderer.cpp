@@ -57,9 +57,11 @@ namespace
         {
         case PreviewCommandType::PREVIOUS_STYLE:
         case PreviewCommandType::PREVIOUS_FACTION:
+        case PreviewCommandType::PREVIOUS_PALETTE:
         case PreviewCommandType::PREVIOUS_RESOLUTION: return "<";
         case PreviewCommandType::NEXT_STYLE:
         case PreviewCommandType::NEXT_FACTION:
+        case PreviewCommandType::NEXT_PALETTE:
         case PreviewCommandType::NEXT_RESOLUTION: return ">";
         case PreviewCommandType::GALLERY_LEFT: return "LEFT";
         case PreviewCommandType::GALLERY_RIGHT: return "RIGHT";
@@ -540,7 +542,7 @@ namespace PixelShipGeneratorPreview
         {
             renderFavorites(window, *data.Favorites);
         }
-        else if (data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid && data.CurrentStaticTexture != nullptr && data.PinnedTexture != nullptr && data.Recipe != nullptr)
+        else if (data.Workspace == PreviewWorkspace::INSPECT && data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid && data.CurrentStaticTexture != nullptr && data.PinnedTexture != nullptr && data.Recipe != nullptr)
         {
             renderComparison(window, data);
         }
@@ -550,7 +552,7 @@ namespace PixelShipGeneratorPreview
         }
 
         const bool singlePreviewMode = data.Mode == PreviewMode::STATIC || data.Mode == PreviewMode::ANIMATION || data.Mode == PreviewMode::FRAME_INSPECTION || data.Mode == PreviewMode::CONFIGURATION_EDITOR;
-        const bool comparisonVisible = data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid;
+        const bool comparisonVisible = data.Workspace == PreviewWorkspace::INSPECT && data.Comparison != nullptr && data.Comparison->ViewEnabled && data.Comparison->Pinned.Valid;
         if (singlePreviewMode && !comparisonVisible && data.NativePreviewTexture != nullptr && data.Recipe != nullptr)
         {
             renderNativePreview(window, data);
@@ -566,11 +568,13 @@ namespace PixelShipGeneratorPreview
             if (data.CommandPanel != nullptr) { renderCommandPanel(window, *data.CommandPanel); }
         }
 
+        if (data.WorkspaceNavigation != nullptr) { renderWorkspaceNavigation(window, *data.WorkspaceNavigation); }
+
         if (data.Diagnostics != nullptr)
         {
-            if (data.Diagnostics->HelpVisible) { renderHelpOverlay(window); }
-            if (data.Diagnostics->GenerationInspectorVisible) { renderGenerationInspector(window, data); }
-            if (data.Diagnostics->PaletteInspectorVisible) { renderPaletteInspector(window, data); }
+            if (data.Diagnostics->HelpVisible) { renderHelpOverlay(window, data.Workspace); }
+            if (data.Workspace == PreviewWorkspace::INSPECT && data.Diagnostics->GenerationInspectorVisible) { renderGenerationInspector(window, data); }
+            if (data.Workspace == PreviewWorkspace::INSPECT && data.Diagnostics->PaletteInspectorVisible) { renderPaletteInspector(window, data); }
         }
 
         window.display();
@@ -579,7 +583,7 @@ namespace PixelShipGeneratorPreview
     void PreviewRenderer::renderCommandPanel(sf::RenderWindow& window, const PreviewCommandPanel& commandPanel) const
     {
         drawPanel(window, CommandPanelX, 0.0f, static_cast<float>(PreviewCommandPanelWidth), static_cast<float>(PreviewWindowHeight), sf::Color(18, 19, 24, 248), sf::Color(72, 76, 88));
-        drawDebugText(window, "COMMANDS", CommandPanelX + 10.0f, 4.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, "COMMANDS", CommandPanelX + 10.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 4.0f, sf::Color(240, 215, 105), TextScale);
 
         for (const PreviewCommandPanelGroupHeader& groupHeader : commandPanel.getGroupHeaders())
         {
@@ -627,7 +631,7 @@ namespace PixelShipGeneratorPreview
             drawDebugText(window, label, labelX, labelY, textColor, labelScale);
 
             const PreviewCommandData& commandData = getPreviewCommandData(button.Command.Type);
-            const std::string shortcut = commandData.Shortcut;
+            const std::string shortcut = commandPanel.getMode() == PreviewCommandPanelMode::GENERATE && button.Command.Type == PreviewCommandType::TOGGLE_ANIMATION ? std::string() : std::string(commandData.Shortcut);
             const float shortcutWidth = getDebugTextWidth(shortcut, SmallTextScale);
 
             if (isStatefulCommand(button.Command.Type) && button.Bounds.width >= 120.0f)
@@ -685,7 +689,7 @@ namespace PixelShipGeneratorPreview
         {
             for (const PreviewCommandPanelSlider& slider : commandPanel.getCalibrationSliders()) { drawDimensionSlider(slider); }
         }
-        else if (commandPanel.getMode() == PreviewCommandPanelMode::NORMAL)
+        else if (commandPanel.getMode() == PreviewCommandPanelMode::GENERATE)
         {
             drawDimensionSlider(commandPanel.getWidthSlider());
             drawDimensionSlider(commandPanel.getHeightSlider());
@@ -913,9 +917,9 @@ namespace PixelShipGeneratorPreview
     void PreviewRenderer::renderCalibration(sf::RenderWindow& window, const PreviewRenderData& data) const
     {
         const CalibrationCandidatePair& pair = *data.CalibrationPair;
-        drawPanel(window, 12.0f, 12.0f, static_cast<float>(PreviewContentWidth) - 24.0f, 42.0f, sf::Color(19, 21, 27), sf::Color(74, 80, 94));
-        drawDebugText(window, "CALIBRATION LAB", 24.0f, 22.0f, sf::Color(240, 215, 105), TextScale);
-        drawDebugText(window, getCalibrationGroupName(data.CalibrationGroup), 210.0f, 22.0f, sf::Color(130, 195, 230), TextScale);
+        drawPanel(window, 12.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 8.0f, static_cast<float>(PreviewContentWidth) - 24.0f, 42.0f, sf::Color(19, 21, 27), sf::Color(74, 80, 94));
+        drawDebugText(window, "CALIBRATION LAB", 24.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 18.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, getCalibrationGroupName(data.CalibrationGroup), 210.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 18.0f, sf::Color(130, 195, 230), TextScale);
 
         if (!pair.Valid || data.CalibrationTextureA == nullptr || data.CalibrationTextureB == nullptr)
         {
@@ -974,8 +978,8 @@ namespace PixelShipGeneratorPreview
         const uint32_t availableHeight = static_cast<uint32_t>(std::max(1.0f, spriteRegionHeight));
         const uint32_t scale = calculateComparisonScale(leftRecipe, rightRecipe, availableWidth, availableHeight);
 
-        drawDebugText(window, leftLabel, 20.0f, 22.0f, leftColor, TextScale);
-        drawDebugText(window, rightLabel, columnWidth + 20.0f, 22.0f, rightColor, TextScale);
+        drawDebugText(window, leftLabel, 20.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 12.0f, leftColor, TextScale);
+        drawDebugText(window, rightLabel, columnWidth + 20.0f, static_cast<float>(PreviewWorkspaceNavigationHeight) + 12.0f, rightColor, TextScale);
 
         sf::Sprite leftSprite(leftTexture);
         sf::Sprite rightSprite(rightTexture);
@@ -1229,7 +1233,7 @@ namespace PixelShipGeneratorPreview
     {
         drawPanel(window, StatePanelX, 0.0f, static_cast<float>(PreviewStatePanelWidth), static_cast<float>(PreviewWindowHeight), sf::Color(15, 16, 20, 245), sf::Color(65, 68, 78));
         float x = StatePanelX + PanelPadding;
-        float y = 14.0f;
+        float y = static_cast<float>(PreviewWorkspaceNavigationHeight) + 14.0f;
         drawSectionHeader(window, "CURRENT STATE", x, y);
 
         drawLabelValue(window, "MODE", getPreviewModeName(data.Mode), x, y);
@@ -1515,38 +1519,64 @@ namespace PixelShipGeneratorPreview
         }
     }
 
-    void PreviewRenderer::renderHelpOverlay(sf::RenderWindow& window) const
+    void PreviewRenderer::renderWorkspaceNavigation(sf::RenderWindow& window, const PreviewWorkspaceNavigation& navigation) const
+    {
+        drawPanel(window, 0.0f, 0.0f, static_cast<float>(PreviewWindowWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), sf::Color(13, 14, 18, 252), sf::Color(72, 76, 88));
+        const auto& buttons = navigation.getButtons();
+        const int32_t hovered = navigation.getHoveredButtonIndex();
+        const int32_t pressed = navigation.getPressedButtonIndex();
+        for (std::size_t index = 0u; index < buttons.size(); ++index)
+        {
+            const PreviewWorkspaceNavigationButton& button = buttons[index];
+            sf::Color fill(30, 32, 39);
+            sf::Color outline(72, 76, 88);
+            sf::Color text(205, 210, 220);
+            if (button.Active)
+            {
+                fill = sf::Color(45, 70, 58);
+                outline = sf::Color(105, 190, 135);
+                text = sf::Color(235, 240, 238);
+            }
+            else if (static_cast<int32_t>(index) == pressed)
+            {
+                fill = sf::Color(75, 82, 96);
+                outline = sf::Color(180, 190, 215);
+            }
+            else if (static_cast<int32_t>(index) == hovered)
+            {
+                fill = sf::Color(54, 59, 72);
+                outline = sf::Color(135, 175, 220);
+            }
+            drawPanel(window, button.Bounds.left, button.Bounds.top, button.Bounds.width, button.Bounds.height, fill, outline);
+            const float textWidth = getDebugTextWidth(button.Label, TextScale);
+            drawDebugText(window, button.Label, button.Bounds.left + std::max(5.0f, (button.Bounds.width - textWidth) * 0.5f), button.Bounds.top + 6.0f, text, TextScale);
+        }
+    }
+
+    void PreviewRenderer::renderHelpOverlay(sf::RenderWindow& window, PreviewWorkspace workspace) const
     {
         const float width = static_cast<float>(PreviewCommandPanelX) - OverlayMargin * 2.0f;
         const float height = static_cast<float>(PreviewWindowHeight) - OverlayMargin * 2.0f;
         drawPanel(window, OverlayMargin, OverlayMargin, width, height, sf::Color(8, 9, 12, 248), sf::Color(120, 125, 145));
-        drawDebugText(window, "HELP / CONTROLS - F5 OR ESCAPE TO CLOSE", OverlayMargin + 16.0f, OverlayMargin + 14.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, "HELP - " + std::string(getPreviewWorkspaceName(workspace)) + " - F1 OR ESC TO CLOSE", OverlayMargin + 16.0f, OverlayMargin + 14.0f, sf::Color(240, 215, 105), TextScale);
 
-        std::vector<const PreviewCommandData*> helpEntries;
-
-        for (const PreviewCommandData& commandData : getPreviewCommandDataTable())
+        float y = OverlayMargin + 50.0f;
+        const float shortcutX = OverlayMargin + 20.0f;
+        const float descriptionX = shortcutX + 190.0f;
+        const auto drawSection = [&](const char* title, const PreviewHelpSection& section, float& sectionY)
         {
-            if (commandData.Shortcut[0] != '\0') { helpEntries.push_back(&commandData); }
-        }
+            drawSectionHeader(window, title, shortcutX, sectionY);
+            for (std::size_t index = 0u; index < section.Count; ++index)
+            {
+                drawDebugText(window, section.Entries[index].Shortcut, shortcutX, sectionY, sf::Color(125, 205, 235), TextScale);
+                drawDebugText(window, section.Entries[index].Description, descriptionX, sectionY, sf::Color(225, 228, 235), TextScale);
+                sectionY += 27.0f;
+            }
+            sectionY += 12.0f;
+        };
 
-        const std::size_t splitIndex = (helpEntries.size() + 1u) / 2u;
-        const float leftX = OverlayMargin + 18.0f;
-        const float rightX = OverlayMargin + width * 0.51f;
-        float leftY = OverlayMargin + 48.0f;
-        float rightY = leftY;
-
-        for (std::size_t index = 0u; index < helpEntries.size(); ++index)
-        {
-            const bool rightColumn = index >= splitIndex;
-            const float x = rightColumn ? rightX : leftX;
-            float& y = rightColumn ? rightY : leftY;
-            const PreviewCommandData& commandData = *helpEntries[index];
-            const std::string description = wrapDebugText(commandData.Description, 45u);
-            const uint32_t descriptionLineCount = 1u + static_cast<uint32_t>(std::count(description.begin(), description.end(), '\n'));
-            drawDebugText(window, commandData.Shortcut, x, y, sf::Color(125, 205, 235), TextScale);
-            drawDebugText(window, description, x + 190.0f, y, sf::Color(225, 228, 235), TextScale);
-            y += 28.0f + static_cast<float>((descriptionLineCount - 1u) * 14u);
-        }
+        drawSection("GLOBAL", getPreviewGlobalHelpSection(), y);
+        drawSection((std::string(getPreviewWorkspaceName(workspace)) + " WORKSPACE").c_str(), getPreviewWorkspaceHelpSection(workspace), y);
     }
 
     void PreviewRenderer::renderGenerationInspector(sf::RenderWindow& window, const PreviewRenderData& data) const
@@ -1561,7 +1591,7 @@ namespace PixelShipGeneratorPreview
         const PixelShipGenerator::ShipGenerationDebugInfo& debug = *data.GenerationDebugInfo;
         float x = OverlayMargin + 16.0f;
         float y = OverlayMargin + 14.0f;
-        drawSectionHeader(window, "GENERATION INSPECTOR - F6 OR ESCAPE TO CLOSE", x, y);
+        drawSectionHeader(window, "GENERATION INSPECTOR - ESC TO CLOSE", x, y);
 
         const Bounds finalBounds = calculateImageBounds(ship.FinalImage, ship.HullMask.getWidth(), ship.HullMask.getHeight());
         const Bounds hullBounds = calculateMaskBounds(ship.HullMask);
@@ -1912,7 +1942,7 @@ namespace PixelShipGeneratorPreview
             { "TRANSPARENT", palette.Transparent }, { "OUTLINE", palette.Outline }, { "HULL DEEP SHADOW", palette.HullDeepShadow }, { "HULL SHADOW", palette.HullShadow }, { "HULL BASE", palette.HullBase }, { "HULL SECONDARY", palette.HullSecondary }, { "HULL HIGHLIGHT", palette.HullHighlight }, { "HULL EDGE", palette.HullEdgeHighlight }, { "ACCENT DARK", palette.HullAccentDark }, { "ACCENT BASE", palette.HullAccent }, { "ACCENT HIGHLIGHT", palette.HullAccentHighlight }, { "COCKPIT DARK", palette.CockpitDark }, { "COCKPIT BASE", palette.CockpitBase }, { "COCKPIT HIGHLIGHT", palette.CockpitHighlight }, { "COCKPIT GLINT", palette.CockpitGlint }, { "ENGINE DARK", palette.EngineDark }, { "ENGINE BASE", palette.EngineBase }, { "ENGINE HIGHLIGHT", palette.EngineHighlight }, { "ENGINE HOT CORE", palette.EngineHotCore }, { "EXHAUST BASE", palette.ExhaustBase }, { "EXHAUST HIGHLIGHT", palette.ExhaustHighlight }, { "EXHAUST HOT CORE", palette.ExhaustHotCore }, { "MECHANICAL DARK", palette.MechanicalDark }, { "MECHANICAL BASE", palette.MechanicalBase }, { "LIGHT BASE", palette.LightBase }
         } };
 
-        drawDebugText(window, "PALETTE INSPECTOR - F7 OR ESCAPE TO CLOSE", OverlayMargin + 16.0f, OverlayMargin + 14.0f, sf::Color(240, 215, 105), TextScale);
+        drawDebugText(window, "PALETTE INSPECTOR - ESC TO CLOSE", OverlayMargin + 16.0f, OverlayMargin + 14.0f, sf::Color(240, 215, 105), TextScale);
         float leftY = OverlayMargin + 54.0f;
         float rightY = leftY;
 

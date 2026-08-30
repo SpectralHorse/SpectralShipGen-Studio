@@ -9,6 +9,7 @@ namespace PixelShipGeneratorTests
             { "preview-favorites", "Preview Favorites Persistence", RegressionCategory::PERSISTENCE, runPreviewFavoritesPersistenceRegression, false },
             { "user-presets", "User Preset Library", RegressionCategory::PERSISTENCE, runPreviewUserPresetPersistenceRegression, false },
             { "preview-session", "Preview Session Controllers", RegressionCategory::TOOLING, runPreviewSessionRegression, false },
+            { "preview-workspaces", "Preview Workspaces & Input Routing", RegressionCategory::TOOLING, runPreviewWorkspaceRegression, false },
             { "diagnostics-app", "Diagnostics Application Controller", RegressionCategory::TOOLING, runDiagnosticsAppRegression, false },
             { "configuration-editor", "Preview Configuration Editor", RegressionCategory::TOOLING, runPreviewConfigurationEditorRegression, false },
             { "faction-profile-editor", "Preview Faction Profile Editor", RegressionCategory::TOOLING, runPreviewFactionProfileEditorRegression, false },

@@ -17,12 +17,15 @@
 #include "PreviewCommandPanel.h"
 #include "PreviewConfigurationEditor.h"
 #include "PreviewState.h"
+#include "PreviewWorkspaceNavigation.h"
 
 namespace PixelShipGeneratorPreview
 {
     struct PreviewRenderData
     {
         PreviewMode Mode = PreviewMode::STATIC;
+        PreviewWorkspace Workspace = PreviewWorkspace::GENERATE;
+        const PreviewWorkspaceNavigation* WorkspaceNavigation = nullptr;
         const sf::Sprite* PreviewSprite = nullptr;
         const sf::Texture* CurrentStaticTexture = nullptr;
         const sf::Texture* NativePreviewTexture = nullptr;
@@ -84,7 +87,8 @@ namespace PixelShipGeneratorPreview
         void renderSingle(sf::RenderWindow& window, const sf::Sprite& previewSprite) const;
         void renderNativePreview(sf::RenderWindow& window, const PreviewRenderData& data) const;
         void renderPersistentStatePanel(sf::RenderWindow& window, const PreviewRenderData& data) const;
-        void renderHelpOverlay(sf::RenderWindow& window) const;
+        void renderWorkspaceNavigation(sf::RenderWindow& window, const PreviewWorkspaceNavigation& navigation) const;
+        void renderHelpOverlay(sf::RenderWindow& window, PreviewWorkspace workspace) const;
         void renderGenerationInspector(sf::RenderWindow& window, const PreviewRenderData& data) const;
         void renderPaletteInspector(sf::RenderWindow& window, const PreviewRenderData& data) const;
     };

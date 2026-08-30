@@ -239,6 +239,16 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
+    bool PreviewConfigurationEditor::hasKeyboardFocus() const
+    {
+        return m_Open && m_NameField.Focused;
+    }
+
+    void PreviewConfigurationEditor::releaseKeyboardFocus()
+    {
+        m_NameField.Focused = false;
+    }
+
     ConfigurationEditorEvent PreviewConfigurationEditor::createCancelEvent() const { return { ConfigurationEditorAction::CANCEL }; }
 
     void PreviewConfigurationEditor::setValidationResult(const PixelShipGenerator::ValidationResult& result) { m_ValidationResult = result; }

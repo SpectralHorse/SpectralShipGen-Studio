@@ -30,6 +30,8 @@
 #include "PreviewCollectionSession.h"
 #include "PreviewRenderer.h"
 #include "PreviewState.h"
+#include "PreviewWorkspace.h"
+#include "PreviewWorkspaceNavigation.h"
 
 namespace PixelShipGeneratorPreview
 {
@@ -60,6 +62,7 @@ namespace PixelShipGeneratorPreview
         void returnAnimationToIdle();
         bool beginComposedFiringEvent();
         void enterAnimationPlayback();
+        void enterGenerateIdlePlayback();
         void enterAttributeRerollStudio();
         void cancelAttributeRerollStudio();
         void acceptAttributeRerollStudioCandidate();
@@ -101,7 +104,9 @@ namespace PixelShipGeneratorPreview
         std::string getAnimationEffectDisplay() const;
         const std::vector<PixelShipGenerator::Image>& getActiveAnimationFrames() const;
         uint64_t getActiveAnimationSeed() const;
-        std::optional<PreviewCommand> getKeyboardCommand(sf::Keyboard::Key key, bool shift) const;
+        std::optional<PreviewCommand> getKeyboardCommand(sf::Keyboard::Key key, bool shift, bool control) const;
+        bool hasKeyboardInputFocus() const;
+        void handleBackOrCancel();
         void handleKeyPressed(const sf::Event::KeyEvent& event);
         void handleMouseMoved(const sf::Event::MouseMoveEvent& event);
         void handleMousePressed(const sf::Event::MouseButtonEvent& event);
@@ -173,6 +178,7 @@ namespace PixelShipGeneratorPreview
         void updateCommandPanelState();
         void updateWindowTitle();
         void setStatusMessage(const std::string& message);
+        void switchWorkspace(PreviewWorkspace workspace);
 
         PreviewGenerationRecipe& getCurrentRecipe();
         const PreviewGenerationRecipe& getCurrentRecipe() const;
@@ -187,6 +193,8 @@ namespace PixelShipGeneratorPreview
         RuntimeCustomPresetWorkspace m_CustomPresetWorkspace;
         PreviewAnimationSession m_AnimationSession;
         PreviewCollectionSession m_Collections{ PreviewGenerationRecipe{} };
+        PreviewWorkspaceSession m_WorkspaceSession;
+        PreviewWorkspaceNavigation m_WorkspaceNavigation;
 
         PreviewMode m_PreviewMode = PreviewMode::STATIC;
         PreviewMode m_ConfigurationEditorReturnMode = PreviewMode::STATIC;
@@ -226,6 +234,9 @@ namespace PixelShipGeneratorPreview
         sf::Texture m_CalibrationTextureA;
         sf::Texture m_CalibrationTextureB;
         std::vector<sf::Texture> m_AnimationTextures;
+        std::vector<sf::Texture> m_GenerateIdleAnimationTextures;
+        uint32_t m_GenerateIdleFrameIndex = 0u;
+        double m_GenerateIdlePlaybackAccumulatorMicroseconds = 0.0;
         sf::Sprite m_PreviewSprite;
         std::string m_StartupRecipePath;
         std::string m_StatusMessage;

@@ -10,6 +10,7 @@ namespace
     constexpr float ButtonHeight = 22.0f;
     constexpr float BookmarkButtonHeight = 18.0f;
     constexpr float RowSpacing = 3.0f;
+    constexpr float SelectorSpacing = 4.0f;
     constexpr float GroupSpacing = 5.0f;
     constexpr float GroupHeaderHeight = 15.0f;
     constexpr float SelectorLabelWidth = 78.0f;
@@ -41,7 +42,7 @@ namespace PixelShipGeneratorPreview
 {
     PreviewCommandPanel::PreviewCommandPanel()
     {
-        buildLayout(PreviewCommandPanelMode::NORMAL);
+        buildLayout(PreviewCommandPanelMode::GENERATE);
     }
 
     void PreviewCommandPanel::updateState(const PreviewCommandPanelState& state)
@@ -99,7 +100,7 @@ namespace PixelShipGeneratorPreview
                 slider.DetailText = row.Valid ? ("D " + std::to_string(row.DefaultWeight) + "  S " + std::to_string(row.SuggestedWeight) + "  " + std::to_string(row.ProbabilityPercent) + "%") : std::string();
             }
         }
-        else if (state.Mode == PreviewCommandPanelMode::NORMAL)
+        else if (state.Mode == PreviewCommandPanelMode::GENERATE || state.Mode == PreviewCommandPanelMode::PROFILES)
         {
             if (m_Selectors.size() >= 3u)
             {
@@ -108,26 +109,29 @@ namespace PixelShipGeneratorPreview
                 m_Selectors[2u].Value = state.PaletteValue;
             }
 
-            m_WidthSlider.Enabled = state.Enabled[static_cast<std::size_t>(PreviewCommandType::SET_WIDTH)];
-            m_HeightSlider.Enabled = state.Enabled[static_cast<std::size_t>(PreviewCommandType::SET_HEIGHT)];
-
-            if (state.AspectRatioLocked)
+            if (state.Mode == PreviewCommandPanelMode::GENERATE)
             {
-                m_WidthSlider.Minimum = MinimumPreviewResolution;
-                m_WidthSlider.Maximum = MaximumPreviewResolution;
-                m_HeightSlider.Minimum = MinimumPreviewResolution;
-                m_HeightSlider.Maximum = MaximumPreviewResolution;
-            }
-            else
-            {
-                m_WidthSlider.Minimum = getMinimumPreviewWidthForHeight(state.CurrentDimensions.Height);
-                m_WidthSlider.Maximum = getMaximumPreviewWidthForHeight(state.CurrentDimensions.Height);
-                m_HeightSlider.Minimum = getMinimumPreviewHeightForWidth(state.CurrentDimensions.Width);
-                m_HeightSlider.Maximum = getMaximumPreviewHeightForWidth(state.CurrentDimensions.Width);
-            }
+                m_WidthSlider.Enabled = state.Enabled[static_cast<std::size_t>(PreviewCommandType::SET_WIDTH)];
+                m_HeightSlider.Enabled = state.Enabled[static_cast<std::size_t>(PreviewCommandType::SET_HEIGHT)];
 
-            if (!m_WidthSlider.Dragging) { m_WidthSlider.Value = state.CurrentDimensions.Width; }
-            if (!m_HeightSlider.Dragging) { m_HeightSlider.Value = state.CurrentDimensions.Height; }
+                if (state.AspectRatioLocked)
+                {
+                    m_WidthSlider.Minimum = MinimumPreviewResolution;
+                    m_WidthSlider.Maximum = MaximumPreviewResolution;
+                    m_HeightSlider.Minimum = MinimumPreviewResolution;
+                    m_HeightSlider.Maximum = MaximumPreviewResolution;
+                }
+                else
+                {
+                    m_WidthSlider.Minimum = getMinimumPreviewWidthForHeight(state.CurrentDimensions.Height);
+                    m_WidthSlider.Maximum = getMaximumPreviewWidthForHeight(state.CurrentDimensions.Height);
+                    m_HeightSlider.Minimum = getMinimumPreviewHeightForWidth(state.CurrentDimensions.Width);
+                    m_HeightSlider.Maximum = getMaximumPreviewHeightForWidth(state.CurrentDimensions.Width);
+                }
+
+                if (!m_WidthSlider.Dragging) { m_WidthSlider.Value = state.CurrentDimensions.Width; }
+                if (!m_HeightSlider.Dragging) { m_HeightSlider.Value = state.CurrentDimensions.Height; }
+            }
         }
 
         if (m_HoveredButtonIndex >= 0 && !m_Buttons[static_cast<std::size_t>(m_HoveredButtonIndex)].Enabled) { m_HoveredButtonIndex = -1; }
@@ -297,7 +301,6 @@ namespace PixelShipGeneratorPreview
         const float valueX = x + SelectorLabelWidth + SelectorButtonWidth + PairSpacing;
         const float valueWidth = totalWidth - SelectorLabelWidth - SelectorButtonWidth * 2.0f - PairSpacing * 2.0f;
         const float selectorHeight = compact ? 18.0f : ButtonHeight;
-        const float selectorSpacing = compact ? 1.0f : RowSpacing;
         PreviewCommandPanelSelector selector;
         selector.Label = label;
         selector.ValueBounds = sf::FloatRect(valueX, y, valueWidth, selectorHeight);
@@ -306,7 +309,7 @@ namespace PixelShipGeneratorPreview
         m_Selectors.push_back(selector);
         addButton(previousCommand, x + SelectorLabelWidth, y, SelectorButtonWidth, selectorHeight);
         addButton(nextCommand, valueX + valueWidth + PairSpacing, y, SelectorButtonWidth, selectorHeight);
-        y += selectorHeight + selectorSpacing;
+        y += selectorHeight + SelectorSpacing;
     }
 
     void PreviewCommandPanel::addDimensionSliders(float& y)
@@ -373,7 +376,7 @@ namespace PixelShipGeneratorPreview
         m_Buttons.clear();
         m_Selectors.clear();
         m_GroupHeaders.clear();
-        float y = 30.0f;
+        float y = static_cast<float>(PreviewWorkspaceNavigationHeight) + 30.0f;
 
         if (mode == PreviewCommandPanelMode::CALIBRATION)
         {
@@ -426,6 +429,10 @@ namespace PixelShipGeneratorPreview
             addPairButtons({ PreviewCommandType::REROLL_STUDIO_SELECT_ALL, 0u }, { PreviewCommandType::REROLL_STUDIO_CLEAR, 0u }, y);
             addPairButtons({ PreviewCommandType::REROLL_STUDIO_SELECT_STRUCTURE, 0u }, { PreviewCommandType::REROLL_STUDIO_SELECT_APPEARANCE, 0u }, y);
 
+            addGroupHeader("CHANNEL LOCKS", y);
+            addPairButtons({ PreviewCommandType::TOGGLE_STRUCTURE_LOCK, 0u }, { PreviewCommandType::TOGGLE_PALETTE_LOCK, 0u }, y);
+            addPairButtons({ PreviewCommandType::TOGGLE_DETAILS_LOCK, 0u }, { PreviewCommandType::TOGGLE_ATTACHMENTS_LOCK, 0u }, y);
+
             addGroupHeader("ACTIONS", y);
             addFullButton({ PreviewCommandType::REROLL_STUDIO_GENERATE_CANDIDATE, 0u }, y);
             addPairButtons({ PreviewCommandType::REROLL_STUDIO_ACCEPT, 0u }, { PreviewCommandType::REROLL_STUDIO_CANCEL, 0u }, y);
@@ -433,18 +440,72 @@ namespace PixelShipGeneratorPreview
         }
 
         m_CalibrationSliders.clear();
-        addGroupHeader("GENERATION", y);
-        addPairButtons({ PreviewCommandType::GENERATE_NEW, 0u }, { PreviewCommandType::REROLL, 0u }, y);
-        addPairButtons({ PreviewCommandType::GENERATE_FROM_MASTER_SEED, 0u }, { PreviewCommandType::TOGGLE_ATTACHMENTS_ENABLED, 0u }, y);
-        addPairButtons({ PreviewCommandType::OPEN_REROLL_STUDIO, 0u }, { PreviewCommandType::OPEN_CALIBRATION_LAB, 0u }, y);
 
-        addGroupHeader("NAVIGATION", y);
+        if (mode == PreviewCommandPanelMode::PROFILES)
+        {
+            addGroupHeader("PROFILE SELECTION", y);
+            addSelector("PROFILE", { PreviewCommandType::PREVIOUS_STYLE, 0u }, { PreviewCommandType::NEXT_STYLE, 0u }, y);
+            addSelector("FACTION", { PreviewCommandType::PREVIOUS_FACTION, 0u }, { PreviewCommandType::NEXT_FACTION, 0u }, y);
+            addSelector("PALETTE", { PreviewCommandType::PREVIOUS_PALETTE, 0u }, { PreviewCommandType::NEXT_PALETTE, 0u }, y);
+            addGroupHeader("EDIT", y);
+            addFullButton({ PreviewCommandType::OPEN_STRUCTURAL_EDITOR, 0u }, y);
+            addPairButtons({ PreviewCommandType::OPEN_FACTION_EDITOR, 0u }, { PreviewCommandType::OPEN_PALETTE_EDITOR, 0u }, y);
+            return;
+        }
+
+        if (mode == PreviewCommandPanelMode::INSPECT)
+        {
+            addGroupHeader("SEMANTIC / DEBUG", y);
+            addPairButtons({ PreviewCommandType::TOGGLE_GENERATION_INSPECTOR, 0u }, { PreviewCommandType::TOGGLE_PALETTE_INSPECTOR, 0u }, y);
+            addFullButton({ PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW, 0u }, y);
+            addFullButton({ PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW, 0u }, y);
+            addPairButtons({ PreviewCommandType::PREVIOUS_GENERATION_STAGE, 0u }, { PreviewCommandType::NEXT_GENERATION_STAGE, 0u }, y);
+            addGroupHeader("COMPARISON", y);
+            addPairButtons({ PreviewCommandType::PIN_CURRENT, 0u }, { PreviewCommandType::CLEAR_PIN, 0u }, y);
+            addFullButton({ PreviewCommandType::TOGGLE_COMPARISON, 0u }, y);
+            addGroupHeader("FILES", y);
+            addFullButton({ PreviewCommandType::SAVE_CURRENT, 0u }, y);
+            return;
+        }
+
+        if (mode == PreviewCommandPanelMode::FAVORITES)
+        {
+            addGroupHeader("FAVORITES", y);
+            addQuadButtons({ PreviewCommandType::FAVORITES_LEFT, 0u }, { PreviewCommandType::FAVORITES_UP, 0u }, { PreviewCommandType::FAVORITES_DOWN, 0u }, { PreviewCommandType::FAVORITES_RIGHT, 0u }, y);
+            addFullButton({ PreviewCommandType::SELECT_FAVORITE, 0u }, y);
+            addPairButtons({ PreviewCommandType::ADD_CURRENT_TO_FAVORITES, 0u }, { PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES, 0u }, y);
+            addGroupHeader("FILES", y);
+            addFullButton({ PreviewCommandType::EXPORT_RECIPE, 0u }, y);
+            return;
+        }
+
+        if (mode == PreviewCommandPanelMode::ANIMATION)
+        {
+            addGroupHeader("ANIMATION", y);
+            addPairButtons({ PreviewCommandType::CYCLE_ANIMATION_TYPE, 0u }, { PreviewCommandType::CYCLE_MOVEMENT_PHASE, 0u }, y);
+            addFullButton({ PreviewCommandType::CYCLE_FIRING_TARGET, 0u }, y);
+            addPairButtons({ PreviewCommandType::APPLY_ANIMATION_STATE, 0u }, { PreviewCommandType::RETURN_ANIMATION_TO_IDLE, 0u }, y);
+            addFullButton({ PreviewCommandType::TOGGLE_ANIMATION, 0u }, y);
+            addPairButtons({ PreviewCommandType::PREVIOUS_FRAME, 0u }, { PreviewCommandType::NEXT_FRAME, 0u }, y);
+            addGroupHeader("FILES", y);
+            addPairButtons({ PreviewCommandType::SAVE_CURRENT, 0u }, { PreviewCommandType::SAVE_SPRITESHEET, 0u }, y);
+            return;
+        }
+
+        addGroupHeader("GENERATION", y);
+        addPairButtons({ PreviewCommandType::GENERATE_NEW, 0u }, { PreviewCommandType::GENERATE_FROM_MASTER_SEED, 0u }, y);
+        addPairButtons({ PreviewCommandType::TOGGLE_ATTACHMENTS_ENABLED, 0u }, { PreviewCommandType::OPEN_CALIBRATION_LAB, 0u }, y);
+
+        addGroupHeader("IDLE PREVIEW", y);
+        addFullButton({ PreviewCommandType::TOGGLE_ANIMATION, 0u }, y);
+
+        addGroupHeader("HISTORY / GALLERY", y);
         addPairButtons({ PreviewCommandType::PREVIOUS_HISTORY, 0u }, { PreviewCommandType::NEXT_HISTORY, 0u }, y);
         addPairButtons({ PreviewCommandType::OPEN_GALLERY, 0u }, { PreviewCommandType::OPEN_GALLERY_FROM_SEED, 0u }, y);
         addQuadButtons({ PreviewCommandType::GALLERY_LEFT, 0u }, { PreviewCommandType::GALLERY_UP, 0u }, { PreviewCommandType::GALLERY_DOWN, 0u }, { PreviewCommandType::GALLERY_RIGHT, 0u }, y);
         addFullButton({ PreviewCommandType::SELECT_GALLERY_CANDIDATE, 0u }, y);
 
-        addGroupHeader("APPEARANCE", y);
+        addGroupHeader("CONFIGURATION", y);
         addSelector("PROFILE", { PreviewCommandType::PREVIOUS_STYLE, 0u }, { PreviewCommandType::NEXT_STYLE, 0u }, y, true);
         addSelector("FACTION", { PreviewCommandType::PREVIOUS_FACTION, 0u }, { PreviewCommandType::NEXT_FACTION, 0u }, y, true);
         addSelector("PALETTE", { PreviewCommandType::PREVIOUS_PALETTE, 0u }, { PreviewCommandType::NEXT_PALETTE, 0u }, y, true);
@@ -452,34 +513,12 @@ namespace PixelShipGeneratorPreview
         addDimensionControlButtons(y);
         addBookmarkButtons(y);
 
-        addGroupHeader("LOCKS", y);
-        addPairButtons({ PreviewCommandType::TOGGLE_STRUCTURE_LOCK, 0u }, { PreviewCommandType::TOGGLE_PALETTE_LOCK, 0u }, y);
-        addPairButtons({ PreviewCommandType::TOGGLE_DETAILS_LOCK, 0u }, { PreviewCommandType::TOGGLE_ATTACHMENTS_LOCK, 0u }, y);
-
-        addGroupHeader("VIEW", y);
-        addPairButtons({ PreviewCommandType::TOGGLE_HELP, 0u }, { PreviewCommandType::TOGGLE_GENERATION_INSPECTOR, 0u }, y);
-        addPairButtons({ PreviewCommandType::TOGGLE_PALETTE_INSPECTOR, 0u }, { PreviewCommandType::CYCLE_DIAGNOSTIC_VIEW, 0u }, y);
-        addFullButton({ PreviewCommandType::TOGGLE_GENERATION_STAGE_VIEW, 0u }, y);
-        addPairButtons({ PreviewCommandType::PREVIOUS_GENERATION_STAGE, 0u }, { PreviewCommandType::NEXT_GENERATION_STAGE, 0u }, y);
-
-        addGroupHeader("ANIMATION", y);
-        addPairButtons({ PreviewCommandType::CYCLE_ANIMATION_TYPE, 0u }, { PreviewCommandType::CYCLE_MOVEMENT_PHASE, 0u }, y);
-        addFullButton({ PreviewCommandType::CYCLE_FIRING_TARGET, 0u }, y);
-        addPairButtons({ PreviewCommandType::APPLY_ANIMATION_STATE, 0u }, { PreviewCommandType::RETURN_ANIMATION_TO_IDLE, 0u }, y);
-        addPairButtons({ PreviewCommandType::TOGGLE_ANIMATION, 0u }, { PreviewCommandType::TOGGLE_FRAME_INSPECTION, 0u }, y);
-        addPairButtons({ PreviewCommandType::PREVIOUS_FRAME, 0u }, { PreviewCommandType::NEXT_FRAME, 0u }, y);
-
-        addGroupHeader("FAVORITES", y);
+        addGroupHeader("FAVORITE", y);
         addPairButtons({ PreviewCommandType::ADD_CURRENT_TO_FAVORITES, 0u }, { PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES, 0u }, y);
-        addPairButtons({ PreviewCommandType::OPEN_FAVORITES, 0u }, { PreviewCommandType::CLOSE_FAVORITES, 0u }, y);
-
-        addGroupHeader("COMPARISON", y);
-        addPairButtons({ PreviewCommandType::PIN_CURRENT, 0u }, { PreviewCommandType::CLEAR_PIN, 0u }, y);
-        addFullButton({ PreviewCommandType::TOGGLE_COMPARISON, 0u }, y);
 
         addGroupHeader("FILES", y);
-        addPairButtons({ PreviewCommandType::SAVE_CURRENT, 0u }, { PreviewCommandType::SAVE_SPRITESHEET, 0u }, y);
-        addPairButtons({ PreviewCommandType::EXPORT_RECIPE, 0u }, { PreviewCommandType::IMPORT_RECIPE, 0u }, y);
+        addPairButtons({ PreviewCommandType::SAVE_CURRENT, 0u }, { PreviewCommandType::EXPORT_RECIPE, 0u }, y);
+        addFullButton({ PreviewCommandType::IMPORT_RECIPE, 0u }, y);
     }
 
     int32_t PreviewCommandPanel::findButtonIndex(sf::Vector2f position) const
@@ -498,7 +537,7 @@ namespace PixelShipGeneratorPreview
             for (PreviewCommandPanelSlider& slider : m_CalibrationSliders) { if (slider.ValueBounds.contains(position)) { return &slider; } }
             return nullptr;
         }
-        if (m_Mode != PreviewCommandPanelMode::NORMAL) { return nullptr; }
+        if (m_Mode != PreviewCommandPanelMode::GENERATE) { return nullptr; }
         if (m_WidthSlider.ValueBounds.contains(position)) { return &m_WidthSlider; }
         if (m_HeightSlider.ValueBounds.contains(position)) { return &m_HeightSlider; }
         return nullptr;
@@ -511,7 +550,7 @@ namespace PixelShipGeneratorPreview
             for (const PreviewCommandPanelSlider& slider : m_CalibrationSliders) { if (slider.ValueBounds.contains(position)) { return &slider; } }
             return nullptr;
         }
-        if (m_Mode != PreviewCommandPanelMode::NORMAL) { return nullptr; }
+        if (m_Mode != PreviewCommandPanelMode::GENERATE) { return nullptr; }
         if (m_WidthSlider.ValueBounds.contains(position)) { return &m_WidthSlider; }
         if (m_HeightSlider.ValueBounds.contains(position)) { return &m_HeightSlider; }
         return nullptr;

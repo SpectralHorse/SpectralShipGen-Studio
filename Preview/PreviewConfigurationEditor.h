@@ -77,6 +77,8 @@ namespace PixelShipGeneratorPreview
         std::optional<ConfigurationEditorEvent> onMouseRelease(float x, float y);
         void onMouseWheelScrolled(float delta);
         bool onTextEntered(uint32_t unicode);
+        bool hasKeyboardFocus() const;
+        void releaseKeyboardFocus();
         ConfigurationEditorEvent createCancelEvent() const;
 
         void setValidationResult(const PixelShipGenerator::ValidationResult& result);

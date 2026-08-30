@@ -39,8 +39,9 @@ namespace PixelShipGeneratorPreview
         const uint32_t column = grid.Columns == 0u ? 0u : visibleIndex % grid.Columns;
         const uint32_t row = grid.Columns == 0u ? 0u : visibleIndex / grid.Columns;
         const float cellWidth = grid.Columns == 0u ? static_cast<float>(PreviewContentWidth) : static_cast<float>(PreviewContentWidth) / static_cast<float>(grid.Columns);
-        const float cellHeight = grid.Rows == 0u ? static_cast<float>(PreviewWindowHeight) : static_cast<float>(PreviewWindowHeight) / static_cast<float>(grid.Rows);
-        return sf::FloatRect(static_cast<float>(column) * cellWidth, static_cast<float>(row) * cellHeight, cellWidth, cellHeight);
+        const float availableHeight = static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight);
+        const float cellHeight = grid.Rows == 0u ? availableHeight : availableHeight / static_cast<float>(grid.Rows);
+        return sf::FloatRect(static_cast<float>(column) * cellWidth, static_cast<float>(PreviewWorkspaceNavigationHeight) + static_cast<float>(row) * cellHeight, cellWidth, cellHeight);
     }
 
     inline float calculatePreviewThumbnailScale(uint32_t imageWidth, uint32_t imageHeight, const sf::FloatRect& cellBounds)

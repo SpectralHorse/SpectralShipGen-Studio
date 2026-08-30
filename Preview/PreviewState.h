@@ -14,12 +14,14 @@
 #include "ShipGenerationSeeds.h"
 
 #include "PreviewGenerationRecipe.h"
+#include "PreviewWorkspace.h"
 #include "PreviewResolution.h"
 
 namespace PixelShipGeneratorPreview
 {
     inline constexpr uint32_t PreviewWindowWidth = 1640u;
     inline constexpr uint32_t PreviewWindowHeight = 1000u;
+    inline constexpr uint32_t PreviewWorkspaceNavigationHeight = 38u;
     inline constexpr uint32_t PreviewContentWidth = 880u;
     inline constexpr uint32_t NativePreviewSpriteAreaSize = 256u;
     inline constexpr uint32_t NativePreviewPanelWidth = 280u;
@@ -77,18 +79,6 @@ namespace PixelShipGeneratorPreview
         inline constexpr PixelShipGenerator::Color MacroAsymmetryBase(45u, 50u, 65u, 255u);
         inline constexpr PixelShipGenerator::Color MacroAsymmetryFeature(245u, 105u, 210u, 255u);
     }
-
-    enum class PreviewMode : uint32_t
-    {
-        STATIC = 0u,
-        ANIMATION,
-        FRAME_INSPECTION,
-        GALLERY,
-        FAVORITES,
-        REROLL_STUDIO,
-        CALIBRATION,
-        CONFIGURATION_EDITOR
-    };
 
     enum class DiagnosticViewMode : uint32_t
     {
