@@ -197,9 +197,19 @@ namespace
                 for (const PreviewCommandPanelButton& button : panel.getButtons()) { if (button.Command.Type == type) { ++count; } }
                 return count;
             };
+        if (countCommand(PreviewCommandType::OPEN_REROLL_STUDIO) != 0u || countCommand(PreviewCommandType::REROLL_STUDIO_TOGGLE_DOMAIN) != 0u)
+        {
+            std::cerr << "Generate command panel unexpectedly exposes Reroll Studio controls.\n";
+            return false;
+        }
+
+        PreviewCommandPanelState inspectState;
+        inspectState.Mode = PreviewCommandPanelMode::INSPECT;
+        inspectState.Enabled.fill(true);
+        panel.updateState(inspectState);
         if (countCommand(PreviewCommandType::OPEN_REROLL_STUDIO) != 1u || countCommand(PreviewCommandType::REROLL_STUDIO_TOGGLE_DOMAIN) != 0u)
         {
-            std::cerr << "Normal command panel does not expose exactly one Reroll Studio entry point.\n";
+            std::cerr << "Inspect command panel does not expose exactly one Reroll Studio workflow action.\n";
             return false;
         }
 
