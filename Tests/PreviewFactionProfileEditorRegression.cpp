@@ -86,7 +86,7 @@ namespace SpectralShipGenStudioTests
         editor.openFactionProfile("RELIC Copy", relicBefore);
         if (!editor.isOpen() || editor.getProfileKind() != ConfigurationEditorProfileKind::FACTION) { return fail("faction editor did not open in faction mode"); }
         if (!editor.getValidationResult().isValid()) { return fail("valid built-in faction draft reported validation errors"); }
-        if (editor.getFactionProfileSections().size() != 16u || editor.getBoundValueCount() != 241u) { return fail("unified faction profile was not mapped into the expected semantic editor surface"); }
+        if (editor.getFactionProfileSections().size() != 16u || editor.getBoundValueCount() != 234u) { return fail("unified faction profile was not mapped into the expected semantic editor surface"); }
         if (editor.findFactionRangeField("Palette.HullHue") == nullptr ||
             editor.findFactionIntegerField("SurfaceDetails.DetailDensityPercent") == nullptr ||
             editor.findFactionWeightGroup("Weapons.WeightMultipliersPercent") == nullptr ||
@@ -166,8 +166,7 @@ namespace SpectralShipGenStudioTests
             return fail("built-in/custom/+ADD faction selector ordering is incorrect");
         }
         ShipGenerationRecipe selectedRecipe;
-        selectedRecipe.FactionSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        selectedRecipe.Faction = ShipFactionType::SHIP_FACTION_TYPE_END;
+        selectedRecipe.FactionPreset.reset();
         selectedRecipe.FactionProfile = workspace.findFaction(xenoId)->Profile;
         const std::size_t selectedIndex = findFactionProfileSelectionIndex(entries, selectedRecipe, xenoId);
         if (entries[selectedIndex].CustomPresetId != xenoId) { return fail("runtime custom faction selection identity was not retained"); }
@@ -199,12 +198,10 @@ namespace SpectralShipGenStudioTests
         sourceSettings.AsymmetricDetailChance = 19u;
         sourceSettings.AttachmentsEnabled = true;
         ShipGenerationRecipe customRecipe = makeShipGenerationRecipe(sourceSettings);
-        customRecipe.StructuralSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        customRecipe.Style = ShipStyle::SHIP_STYLE_END;
+        customRecipe.StructuralPreset.reset();
         customRecipe.StructuralProfile = structural;
         const ShipGenerationRecipe builtInFactionRecipe = customRecipe;
-        customRecipe.FactionSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        customRecipe.Faction = ShipFactionType::SHIP_FACTION_TYPE_END;
+        customRecipe.FactionPreset.reset();
         customRecipe.FactionProfile = customFaction;
 
         ShipGenerator generator;
@@ -213,7 +210,7 @@ namespace SpectralShipGenStudioTests
         const GeneratedShip second = generator.generate(customRecipe);
         if (!imagesEqual(first.FinalImage, second.FinalImage)) { return fail("custom structural + custom faction generation is not deterministic"); }
         if (imagesEqual(first.FinalImage, builtInFactionShip.FinalImage)) { return fail("edited custom faction did not affect generated static output for the deterministic review fixture"); }
-        if (first.Style != ShipStyle::SHIP_STYLE_END || first.Faction != ShipFactionType::SHIP_FACTION_TYPE_END) { return fail("custom composition pretended to have built-in style/faction identity"); }
+        if (first.Provenance.StructuralPreset.has_value() || first.Provenance.FactionPreset.has_value()) { return fail("custom composition pretended to have built-in style/faction identity"); }
         if (first.FactionAnimationProfile.Idle.TechPulseStrength != customFaction.Animation.Idle.TechPulseStrength ||
             first.FactionAnimationProfile.LateralMovement.ResponseStrengthScale.Numerator != customFaction.Animation.LateralMovement.ResponseStrengthScale.Numerator ||
             first.FactionAnimationProfile.Firing.DurationScale.Numerator != customFaction.Animation.Firing.DurationScale.Numerator ||

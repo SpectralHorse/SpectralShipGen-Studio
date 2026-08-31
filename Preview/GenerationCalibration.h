@@ -78,7 +78,7 @@ namespace SpectralShipGenStudioPreview
 
     struct GenerationCalibrationSession
     {
-        uint32_t FormatVersion = 1u;
+        uint32_t FormatVersion = 2u;
         uint64_t RootSeed = 0xD6E8FEB86659FD93ull;
         SpectralShipGen::GenerationTuningProfile DefaultProfile;
         SpectralShipGen::GenerationTuningProfile TunedProfile;

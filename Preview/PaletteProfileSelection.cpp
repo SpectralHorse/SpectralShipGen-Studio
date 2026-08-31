@@ -10,16 +10,16 @@ namespace SpectralShipGenStudioPreview
     {
         std::vector<PaletteProfileSelectionEntry> entries;
         entries.reserve(1u + SpectralShipGen::getBuiltInPalettePresetCatalog().size() + workspace.getPalettePresets().size() + 1u);
-        entries.push_back({ PaletteProfileSelectionKind::FACTION_DEFAULT, "FACTION DEFAULT", SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END, 0u });
+        entries.push_back({ PaletteProfileSelectionKind::FACTION_DEFAULT, "FACTION DEFAULT", std::nullopt, 0u });
         for (const SpectralShipGen::BuiltInPalettePreset& preset : SpectralShipGen::getBuiltInPalettePresetCatalog())
         {
             entries.push_back({ PaletteProfileSelectionKind::BUILT_IN_GENERATED, preset.StableId, preset.FactionPreset, 0u });
         }
         for (const RuntimePalettePreset& preset : workspace.getPalettePresets())
         {
-            entries.push_back({ PaletteProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END, preset.Id });
+            entries.push_back({ PaletteProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, std::nullopt, preset.Id });
         }
-        entries.push_back({ PaletteProfileSelectionKind::ADD_PALETTE, "+ ADD PALETTE", SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END, 0u });
+        entries.push_back({ PaletteProfileSelectionKind::ADD_PALETTE, "+ ADD PALETTE", std::nullopt, 0u });
         return entries;
     }
 
@@ -40,7 +40,7 @@ namespace SpectralShipGenStudioPreview
         {
             const auto iterator = std::find_if(entries.begin(), entries.end(), [&](const PaletteProfileSelectionEntry& entry)
                 {
-                    return entry.Kind == PaletteProfileSelectionKind::BUILT_IN_GENERATED && entry.PalettePreset == *activeBuiltInPalette;
+                    return entry.Kind == PaletteProfileSelectionKind::BUILT_IN_GENERATED && entry.PalettePreset == activeBuiltInPalette;
                 });
             if (iterator != entries.end()) { return static_cast<std::size_t>(std::distance(entries.begin(), iterator)); }
         }

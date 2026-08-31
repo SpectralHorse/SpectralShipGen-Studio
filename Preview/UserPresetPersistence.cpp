@@ -92,18 +92,14 @@ namespace
     {
         if (value.ValueType != Type::Object) { error = path + " must be a JSON object."; return false; }
         const Value* metadata = value.find("component_metadata");
-        if (metadata != nullptr && metadata->ValueType == Type::Object)
+        if (metadata == nullptr || metadata->ValueType != Type::Object)
         {
-            if (!RecipeJson::getString(*metadata, "structural_display_name", bundle.StructuralDisplayName, error, path + ".component_metadata") ||
-                !RecipeJson::getString(*metadata, "faction_display_name", bundle.FactionDisplayName, error, path + ".component_metadata") ||
-                !RecipeJson::getString(*metadata, "palette_display_name", bundle.PaletteDisplayName, error, path + ".component_metadata")) { return false; }
+            error = "Missing or invalid required field: " + path + ".component_metadata.";
+            return false;
         }
-        else
-        {
-            bundle.StructuralDisplayName = "Embedded Structural";
-            bundle.FactionDisplayName = "Embedded Faction";
-            bundle.PaletteDisplayName = "Embedded Palette";
-        }
+        if (!RecipeJson::getString(*metadata, "structural_display_name", bundle.StructuralDisplayName, error, path + ".component_metadata") ||
+            !RecipeJson::getString(*metadata, "faction_display_name", bundle.FactionDisplayName, error, path + ".component_metadata") ||
+            !RecipeJson::getString(*metadata, "palette_display_name", bundle.PaletteDisplayName, error, path + ".component_metadata")) { return false; }
 
         const Value* structural = value.find("structural");
         const Value* faction = value.find("faction");
@@ -335,7 +331,7 @@ namespace
 
         uint32_t version = 0u;
         if (!RecipeJson::getUInt32(root, "format_version", version, result.Error, "preset")) { return result; }
-        if (version != 1u && version != UserPresetFileFormatVersion)
+        if (version != UserPresetFileFormatVersion)
         {
             result.Error = "Unsupported user preset file format version: " + std::to_string(version) + ".";
             return result;
@@ -401,7 +397,6 @@ namespace
         }
         else if (result.Category == UserPresetCategory::FULL_CONFIGURATION)
         {
-            if (version < 2u) { result.Error = "Full configuration bundles require user preset file format version 2."; return result; }
             ConfigurationBundle bundle;
             if (!deserializeConfigurationBundle(*configuration, bundle, result.Error, "preset.configuration") || !validateBundle(bundle, result.Error)) { return result; }
             result.ImportedId = workspace.addConfigurationBundle(displayName, bundle);
@@ -455,7 +450,7 @@ namespace SpectralShipGenStudioPreview
 
         uint32_t version = 0u;
         if (!RecipeJson::getUInt32(parsed.Root, "format_version", version, result.Error, "library")) { return result; }
-        if (version != 1u && version != UserPresetLibraryFormatVersion)
+        if (version != UserPresetLibraryFormatVersion)
         {
             result.Error = "Unsupported user preset library format version: " + std::to_string(version) + ".";
             return result;
@@ -475,7 +470,7 @@ namespace SpectralShipGenStudioPreview
         if (!requireArray(parsed.Root, "structural_presets", structural, result.Error) ||
             !requireArray(parsed.Root, "faction_presets", factions, result.Error) ||
             !requireArray(parsed.Root, "palette_presets", palettes, result.Error)) { return result; }
-        if (version >= 2u && !requireArray(parsed.Root, "configuration_bundles", bundles, result.Error)) { return result; }
+        if (!requireArray(parsed.Root, "configuration_bundles", bundles, result.Error)) { return result; }
 
         for (std::size_t index = 0u; index < structural->Array.size(); ++index)
         {

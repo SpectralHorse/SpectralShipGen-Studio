@@ -22,8 +22,8 @@ namespace
         PreviewGenerationRecipe recipe;
         recipe.Seeds = deriveShipGenerationSeeds(0x51A77B1E5EED1234ull);
         recipe.Dimensions = dimensions;
-        recipe.Style = ShipStyle::HEAVY;
-        recipe.Faction = ShipFactionType::FRONTIER;
+        recipe.StructuralPreset = ShipStyle::HEAVY;
+        recipe.FactionPreset = ShipFactionType::FRONTIER;
         recipe.DetailDensity = 64u;
         recipe.AsymmetricDetailChance = 17u;
         recipe.AttachmentsEnabled = true;
@@ -35,8 +35,8 @@ namespace
         ShipGenerationSettings settings;
         settings.Seed = recipe.Seeds.Master;
         settings.Dimensions = recipe.Dimensions;
-        settings.Style = recipe.Style;
-        settings.Faction = recipe.Faction;
+        settings.Style = *recipe.StructuralPreset;
+        settings.Faction = *recipe.FactionPreset;
         settings.DetailDensity = recipe.DetailDensity;
         settings.AsymmetricDetailChance = recipe.AsymmetricDetailChance;
         settings.AttachmentsEnabled = recipe.AttachmentsEnabled;
@@ -45,7 +45,6 @@ namespace
         settings.SeedOverrides.Details = recipe.Seeds.Details;
         settings.SeedOverrides.Attachments = recipe.Seeds.Attachments;
         settings.DomainSeedOverrides = recipe.DomainSeedOverrides;
-        settings.RandomStreamMode = recipe.RandomStreamMode;
         return settings;
     }
 
@@ -83,8 +82,8 @@ namespace
             return false;
         }
 
-        const GenerationDomainSeeds baseSeeds = resolveGenerationDomainSeeds(base.Seeds, base.DomainSeedOverrides, base.RandomStreamMode);
-        const GenerationDomainSeeds firstSeeds = resolveGenerationDomainSeeds(firstCandidate.Seeds, firstCandidate.DomainSeedOverrides, firstCandidate.RandomStreamMode);
+        const GenerationDomainSeeds baseSeeds = resolveGenerationDomainSeeds(base.Seeds, base.DomainSeedOverrides);
+        const GenerationDomainSeeds firstSeeds = resolveGenerationDomainSeeds(firstCandidate.Seeds, firstCandidate.DomainSeedOverrides);
         for (std::size_t index = 0u; index < GenerationDomainCount; ++index)
         {
             const GenerationDomain domain = static_cast<GenerationDomain>(index);

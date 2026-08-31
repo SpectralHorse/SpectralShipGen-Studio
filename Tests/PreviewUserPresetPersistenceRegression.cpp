@@ -58,11 +58,9 @@ namespace
         PreviewGenerationRecipe recipe;
         recipe.Seeds = deriveShipGenerationSeeds(0x9300000000000020ull);
         recipe.Dimensions = { 96u, 64u };
-        recipe.StructuralSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Style = ShipStyle::SHIP_STYLE_END;
+        recipe.StructuralPreset.reset();
         recipe.StructuralProfile = structural.Profile;
-        recipe.FactionSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Faction = ShipFactionType::SHIP_FACTION_TYPE_END;
+        recipe.FactionPreset.reset();
         recipe.FactionProfile = faction.Profile;
         recipe.PaletteConfiguration = palette.Configuration;
         recipe.DetailDensity = 57u;
@@ -263,14 +261,14 @@ int SpectralShipGenStudioTests::runPreviewUserPresetPersistenceRegression()
     }
 
     std::string unsupportedLibrary = serializeUserPresetLibrary(workspace);
-    replaceOnce(unsupportedLibrary, "\"format_version\": 2", "\"format_version\": 99");
+    replaceOnce(unsupportedLibrary, "\"format_version\": 3", "\"format_version\": 99");
     if (deserializeUserPresetLibrary(unsupportedLibrary).Success || deserializeUserPresetLibrary("{ this is not JSON").Success)
     {
         success = false;
         std::cerr << "Malformed/schema-version user preset library handling failed.\n";
     }
     std::string unsupportedImport = structuralExportText;
-    replaceOnce(unsupportedImport, "\"format_version\": 2", "\"format_version\": 99");
+    replaceOnce(unsupportedImport, "\"format_version\": 3", "\"format_version\": 99");
     if (importUserPreset(conflictWorkspace, UserPresetCategory::STRUCTURAL, unsupportedImport).Success)
     {
         success = false;

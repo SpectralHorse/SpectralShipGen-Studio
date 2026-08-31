@@ -46,12 +46,11 @@ int SpectralShipGenStudioTests::runPreviewPreferencesRegression()
         std::cerr << "Preview preference sanitization/sorting failed.\n";
     }
 
-    const auto legacy = deserializePreviewPreferences("{\"format_version\":1,\"resolution_bookmarks\":[40,72,40,22,256]}");
-    const std::vector<ShipDimensions> expectedLegacy = { { 40u, 40u }, { 72u, 72u }, { 256u, 256u } };
-    if (!legacy.Success || legacy.Preferences.ResolutionBookmarks != expectedLegacy)
+    const auto pre1 = deserializePreviewPreferences("{\"format_version\":1,\"resolution_bookmarks\":[40,72,40,22,256]}");
+    if (pre1.Success || pre1.Error.find("Unsupported") == std::string::npos)
     {
         success = false;
-        std::cerr << "Legacy square bookmark migration failed.\n";
+        std::cerr << "Pre-1.0 preferences were not rejected cleanly.\n";
     }
 
     const auto invalidVersion = deserializePreviewPreferences("{\"format_version\":99,\"dimension_bookmarks\":[]}");

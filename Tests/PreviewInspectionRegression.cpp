@@ -256,12 +256,12 @@ namespace SpectralShipGenStudioTests
         }
 
         SpectralShipGen::ShipGenerationRecipe customRecipe = recipe;
-        customRecipe.StructuralSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+        customRecipe.StructuralPreset.reset();
         customRecipe.StructuralProfile = SpectralShipGen::getShipGenerationProfile(SpectralShipGen::ShipStyle::INDUSTRIAL);
-        customRecipe.Style = SpectralShipGen::ShipStyle::SHIP_STYLE_END;
-        customRecipe.FactionSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+        customRecipe.StructuralPreset.reset();
+        customRecipe.FactionPreset.reset();
         customRecipe.FactionProfile = SpectralShipGen::getShipFactionProfile(SpectralShipGen::ShipFactionType::CORPORATE);
-        customRecipe.Faction = SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END;
+        customRecipe.FactionPreset.reset();
         SpectralShipGen::ShipGenerationDebugInfo customDebug;
         const SpectralShipGen::GeneratedShip customShip = generator.generate(customRecipe, &customDebug);
         if (customShip.Provenance.StructuralPreset.has_value() || customShip.Provenance.FactionPreset.has_value() ||

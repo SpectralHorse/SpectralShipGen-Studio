@@ -45,27 +45,7 @@ namespace
         PreviewGenerationRecipe result = contextRecipe;
         result.Seeds = deriveShipGenerationSeeds(masterSeed);
         result.DomainSeedOverrides.clearAll();
-        result.RandomStreamMode = GenerationRandomStreamMode::DOMAIN_SUBSTREAMS;
         return result;
-    }
-
-    ShipGenerationSettings createSettings(const PreviewGenerationRecipe& recipe)
-    {
-        ShipGenerationSettings settings;
-        settings.Seed = recipe.Seeds.Master;
-        settings.Dimensions = recipe.Dimensions;
-        settings.Style = recipe.Style;
-        settings.Faction = recipe.Faction;
-        settings.DetailDensity = recipe.DetailDensity;
-        settings.AsymmetricDetailChance = recipe.AsymmetricDetailChance;
-        settings.AttachmentsEnabled = recipe.AttachmentsEnabled;
-        settings.SeedOverrides.Structure = recipe.Seeds.Structure;
-        settings.SeedOverrides.Palette = recipe.Seeds.Palette;
-        settings.SeedOverrides.Details = recipe.Seeds.Details;
-        settings.SeedOverrides.Attachments = recipe.Seeds.Attachments;
-        settings.DomainSeedOverrides = recipe.DomainSeedOverrides;
-        settings.RandomStreamMode = recipe.RandomStreamMode;
-        return settings;
     }
 
     GenerationCalibrationOverrides createForcedOverride(GenerationWeightGroup group, uint32_t optionIndex)
@@ -262,11 +242,13 @@ namespace SpectralShipGenStudioPreview
         result.SampleCount = sampleCount;
         if (sampleCount == 0u) { return result; }
 
+        if (!contextRecipe.StructuralPreset.has_value() || !contextRecipe.FactionPreset.has_value()) { return result; }
+
         SpectralShipGenDiagnostics::DiagnosticGenerationConfiguration configuration;
         configuration.Width = contextRecipe.Dimensions.Width;
         configuration.Height = contextRecipe.Dimensions.Height;
-        configuration.Style = contextRecipe.Style;
-        configuration.Faction = contextRecipe.Faction;
+        configuration.Style = *contextRecipe.StructuralPreset;
+        configuration.Faction = *contextRecipe.FactionPreset;
         configuration.DetailDensity = contextRecipe.DetailDensity;
         configuration.AsymmetricDetailChance = contextRecipe.AsymmetricDetailChance;
         configuration.AttachmentsEnabled = contextRecipe.AttachmentsEnabled;
@@ -278,12 +260,12 @@ namespace SpectralShipGenStudioPreview
             const uint64_t masterSeed = SpectralShipGenDiagnostics::deriveDiagnosticSampleSeed(configuration.DiagnosticSeed, index);
             PreviewGenerationRecipe recipe = contextRecipe;
             recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(masterSeed);
-            const SpectralShipGen::ShipGenerationSettings settings = createSettings(recipe);
+            const SpectralShipGen::ShipResolvedGenerationConfiguration resolved = SpectralShipGen::resolveShipGenerationConfiguration(recipe);
 
             SpectralShipGen::ShipGenerationDebugInfo productionDebug;
             try
             {
-                const SpectralShipGen::GeneratedShip productionShip = generator.generate(settings, &productionDebug);
+                const SpectralShipGen::GeneratedShip productionShip = generator.generate(resolved, &productionDebug);
                 result.Production.recordSuccess(productionShip, productionDebug, configuration);
             }
             catch (const std::exception&)
@@ -296,7 +278,7 @@ namespace SpectralShipGenStudioPreview
             calibration.TuningProfile = &session.TunedProfile;
             try
             {
-                const SpectralShipGen::GeneratedShip tunedShip = generator.generateCalibrated(settings, calibration, &tunedDebug);
+                const SpectralShipGen::GeneratedShip tunedShip = generator.generateCalibrated(resolved, calibration, &tunedDebug);
                 result.Tuned.recordSuccess(tunedShip, tunedDebug, configuration);
             }
             catch (const std::exception&)
@@ -335,7 +317,7 @@ namespace SpectralShipGenStudioPreview
                 const uint32_t deterministicAttempt = pairAdvance * MaximumPairGenerationAttempts + attempt;
                 const uint64_t masterSeed = derivePairMasterSeed(session.RootSeed, group, sequenceIndex, deterministicAttempt);
                 result.Recipe = createPairRecipe(contextRecipe, masterSeed);
-                const SpectralShipGen::ShipGenerationSettings settings = createSettings(result.Recipe);
+                const SpectralShipGen::ShipResolvedGenerationConfiguration resolved = SpectralShipGen::resolveShipGenerationConfiguration(result.Recipe);
 
                 SpectralShipGen::GenerationCalibrationSettings referenceCalibration;
                 referenceCalibration.TuningProfile = &session.TunedProfile;
@@ -350,10 +332,10 @@ namespace SpectralShipGenStudioPreview
 
                 try
                 {
-                    generator.generateCalibrated(settings, referenceCalibration, &referenceDebug);
+                    generator.generateCalibrated(resolved, referenceCalibration, &referenceDebug);
                     applySharedPairControls(group, referenceDebug, calibrationA.Overrides, calibrationB.Overrides);
-                    result.ShipA = generator.generateCalibrated(settings, calibrationA, &result.DebugA);
-                    result.ShipB = generator.generateCalibrated(settings, calibrationB, &result.DebugB);
+                    result.ShipA = generator.generateCalibrated(resolved, calibrationA, &result.DebugA);
+                    result.ShipB = generator.generateCalibrated(resolved, calibrationB, &result.DebugB);
                 }
                 catch (const std::exception&)
                 {
@@ -576,8 +558,8 @@ namespace SpectralShipGenStudioPreview
 
     bool calibrationRecordMatchesFilter(const CalibrationComparisonRecord& record, const CalibrationContextFilter& filter)
     {
-        if (filter.Style.has_value() && record.Recipe.Style != *filter.Style) { return false; }
-        if (filter.Faction.has_value() && record.Recipe.Faction != *filter.Faction) { return false; }
+        if (filter.Style.has_value() && record.Recipe.StructuralPreset != filter.Style) { return false; }
+        if (filter.Faction.has_value() && record.Recipe.FactionPreset != filter.Faction) { return false; }
         if (filter.DimensionBucket != CalibrationDimensionBucket::ANY && getCalibrationDimensionBucket(record.Recipe.Dimensions) != filter.DimensionBucket) { return false; }
         return true;
     }

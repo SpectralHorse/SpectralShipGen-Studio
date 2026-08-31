@@ -29,8 +29,8 @@ namespace
         PreviewGenerationRecipe recipe;
         recipe.Seeds = deriveShipGenerationSeeds(0x4F1BBCDCBFA54001ull);
         recipe.Dimensions = { 64u, 64u };
-        recipe.Style = ShipStyle::HEAVY;
-        recipe.Faction = ShipFactionType::MILITARY;
+        recipe.StructuralPreset = ShipStyle::HEAVY;
+        recipe.FactionPreset = ShipFactionType::MILITARY;
         recipe.DetailDensity = 50u;
         recipe.AsymmetricDetailChance = 10u;
         recipe.AttachmentsEnabled = true;
@@ -42,8 +42,8 @@ namespace
         ShipGenerationSettings settings;
         settings.Seed = recipe.Seeds.Master;
         settings.Dimensions = recipe.Dimensions;
-        settings.Style = recipe.Style;
-        settings.Faction = recipe.Faction;
+        settings.Style = *recipe.StructuralPreset;
+        settings.Faction = *recipe.FactionPreset;
         settings.DetailDensity = recipe.DetailDensity;
         settings.AsymmetricDetailChance = recipe.AsymmetricDetailChance;
         settings.AttachmentsEnabled = recipe.AttachmentsEnabled;
@@ -52,7 +52,6 @@ namespace
         settings.SeedOverrides.Details = recipe.Seeds.Details;
         settings.SeedOverrides.Attachments = recipe.Seeds.Attachments;
         settings.DomainSeedOverrides = recipe.DomainSeedOverrides;
-        settings.RandomStreamMode = recipe.RandomStreamMode;
         return settings;
     }
 }
@@ -304,10 +303,10 @@ int SpectralShipGenStudioTests::runGenerationCalibrationRegression()
 
     GenerationCalibrationSession factionFilterSession = createGenerationCalibrationSession(0x55CA11B4A7100001ull);
     CalibrationCandidatePair corporateComparison = fake;
-    corporateComparison.Recipe.Faction = ShipFactionType::CORPORATE;
+    corporateComparison.Recipe.FactionPreset = ShipFactionType::CORPORATE;
     recordCalibrationPreference(factionFilterSession, corporateComparison, CalibrationPreferenceResult::PREFER_A);
     CalibrationCandidatePair relicComparison = fake;
-    relicComparison.Recipe.Faction = ShipFactionType::RELIC;
+    relicComparison.Recipe.FactionPreset = ShipFactionType::RELIC;
     recordCalibrationPreference(factionFilterSession, relicComparison, CalibrationPreferenceResult::PREFER_B);
 
     CalibrationContextFilter corporateOnly;
@@ -323,7 +322,7 @@ int SpectralShipGenStudioTests::runGenerationCalibrationRegression()
 
     const GenerationCalibrationSessionLoadResult factionFilterLoaded = deserializeGenerationCalibrationSession(serializeGenerationCalibrationSession(factionFilterSession));
     if (!factionFilterLoaded.Success || factionFilterLoaded.Session.Records.size() != 2u ||
-        factionFilterLoaded.Session.Records[0].Recipe.Faction != ShipFactionType::CORPORATE || factionFilterLoaded.Session.Records[1].Recipe.Faction != ShipFactionType::RELIC)
+        factionFilterLoaded.Session.Records[0].Recipe.FactionPreset != ShipFactionType::CORPORATE || factionFilterLoaded.Session.Records[1].Recipe.FactionPreset != ShipFactionType::RELIC)
     {
         std::cerr << "Task 55 calibration faction context did not round-trip.\n";
         success = false;

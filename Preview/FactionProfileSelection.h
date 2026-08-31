@@ -24,7 +24,7 @@ namespace SpectralShipGenStudioPreview
     {
         FactionProfileSelectionKind Kind = FactionProfileSelectionKind::BUILT_IN;
         std::string Label;
-        SpectralShipGen::ShipFactionType Faction = SpectralShipGen::ShipFactionType::FRONTIER;
+        std::optional<SpectralShipGen::ShipFactionType> Faction = std::nullopt;
         RuntimeCustomPresetId CustomPresetId = 0u;
     };
 

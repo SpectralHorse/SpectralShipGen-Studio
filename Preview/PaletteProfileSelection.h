@@ -25,7 +25,7 @@ namespace SpectralShipGenStudioPreview
     {
         PaletteProfileSelectionKind Kind = PaletteProfileSelectionKind::FACTION_DEFAULT;
         std::string Label;
-        SpectralShipGen::ShipFactionType PalettePreset = SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END;
+        std::optional<SpectralShipGen::ShipFactionType> PalettePreset = std::nullopt;
         RuntimeCustomPresetId CustomPresetId = 0u;
     };
 

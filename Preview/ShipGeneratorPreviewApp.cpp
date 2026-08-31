@@ -62,7 +62,6 @@ namespace
         SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe = templateRecipe;
         recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(masterSeed);
         recipe.DomainSeedOverrides.clearAll();
-        recipe.RandomStreamMode = SpectralShipGen::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS;
         return recipe;
     }
 
@@ -71,7 +70,6 @@ namespace
         SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe = currentRecipe;
         recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(masterSeed);
         recipe.DomainSeedOverrides.clearAll();
-        recipe.RandomStreamMode = SpectralShipGen::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS;
         return recipe;
     }
 
@@ -100,7 +98,6 @@ namespace
         case SpectralShipGen::ShipFactionType::XENO: return "xeno";
         case SpectralShipGen::ShipFactionType::CORPORATE: return "corporate";
         case SpectralShipGen::ShipFactionType::RELIC: return "relic";
-        case SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END: return "custom";
         default: return "unknown";
         }
     }
@@ -115,7 +112,6 @@ namespace
         case SpectralShipGen::ShipFactionType::XENO: return "XENO";
         case SpectralShipGen::ShipFactionType::CORPORATE: return "CORPORATE";
         case SpectralShipGen::ShipFactionType::RELIC: return "RELIC";
-        case SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
@@ -145,9 +141,30 @@ namespace
         case SpectralShipGen::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
         case SpectralShipGen::ShipStyle::SPEARHEAD: return "SPEARHEAD";
         case SpectralShipGen::ShipStyle::DELTA: return "DELTA";
-        case SpectralShipGen::ShipStyle::SHIP_STYLE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
+    }
+
+    std::string getRecipeStructuralDisplayName(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
+    {
+        return recipe.StructuralPreset.has_value() ? getStyleName(*recipe.StructuralPreset) : "CUSTOM";
+    }
+
+    std::string getRecipeFactionDisplayName(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
+    {
+        return recipe.FactionPreset.has_value() ? getFactionDisplayName(*recipe.FactionPreset) : "CUSTOM";
+    }
+
+    std::string getRecipeFactionFileToken(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
+    {
+        return recipe.FactionPreset.has_value() ? getFactionName(*recipe.FactionPreset) : "custom";
+    }
+
+    SpectralShipGen::ShipPaletteGenerationProfile getRecipeFactionPaletteGenerationProfile(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
+    {
+        return recipe.FactionPreset.has_value()
+            ? SpectralShipGen::getShipPaletteGenerationProfile(*recipe.FactionPreset)
+            : SpectralShipGen::getShipPaletteGenerationProfile(recipe.FactionProfile);
     }
 
     std::string getAnimationTypeDisplayName(SpectralShipGen::ShipAnimationType type)
@@ -224,7 +241,7 @@ namespace
 
     std::string getSaveBaseName(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
     {
-        return "ship_" + getResolutionString(recipe) + "_" + getStyleName(recipe.Style) + "_" + getFactionName(recipe.Faction) + "_seed_" + std::to_string(recipe.Seeds.Master);
+        return "ship_" + getResolutionString(recipe) + "_" + getRecipeStructuralDisplayName(recipe) + "_" + getRecipeFactionFileToken(recipe) + "_seed_" + std::to_string(recipe.Seeds.Master);
     }
 
     std::filesystem::path getAvailableOutputPath(const std::string& baseName, const std::string& extension)
@@ -814,8 +831,8 @@ namespace SpectralShipGenStudioPreview
         CalibrationContextFilter filter;
         if (!m_CalibrationContextFilterEnabled) { return filter; }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        filter.Style = recipe.Style;
-        filter.Faction = recipe.Faction;
+        filter.Style = recipe.StructuralPreset;
+        filter.Faction = recipe.FactionPreset;
         filter.DimensionBucket = getCalibrationDimensionBucket(recipe.Dimensions);
         return filter;
     }
@@ -887,6 +904,11 @@ namespace SpectralShipGenStudioPreview
 
     void ShipGeneratorPreviewApp::enterCalibrationLab()
     {
+        if (!getCurrentRecipe().StructuralPreset.has_value())
+        {
+            setStatusMessage("Calibration Lab requires a built-in Structural preset.");
+            return;
+        }
         m_PreviewMode = PreviewMode::CALIBRATION;
         m_Diagnostics.HelpVisible = false;
         m_Diagnostics.GenerationInspectorVisible = false;
@@ -963,7 +985,9 @@ namespace SpectralShipGenStudioPreview
         const uint32_t optionIndex = encodedValue >> 16u;
         const uint32_t value = encodedValue & 0xFFFFu;
         if (optionIndex >= SpectralShipGen::getGenerationWeightOptionCount(m_CalibrationGroup)) { return; }
-        SpectralShipGen::setGenerationTuningWeight(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, optionIndex, value);
+        const std::optional<SpectralShipGen::ShipStyle>& structuralPreset = getCurrentRecipe().StructuralPreset;
+        if (!structuralPreset.has_value()) { return; }
+        SpectralShipGen::setGenerationTuningWeight(m_CalibrationSession.TunedProfile, *structuralPreset, m_CalibrationGroup, optionIndex, value);
         setStatusMessage("Temporary tuning updated. Generate a new pair to evaluate it.");
     }
 
@@ -1023,7 +1047,7 @@ namespace SpectralShipGenStudioPreview
         SpectralShipGen::ShipGenerationProfile profile;
         std::string name;
         m_ConfigurationEditorTargetPresetId.reset();
-        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
+        if (!recipe.StructuralPreset.has_value())
         {
             if (m_SelectedStructuralPresetId.has_value())
             {
@@ -1043,8 +1067,8 @@ namespace SpectralShipGenStudioPreview
         }
         else
         {
-            profile = SpectralShipGen::getShipGenerationProfile(recipe.Style);
-            name = getStyleName(recipe.Style) + " Copy";
+            profile = SpectralShipGen::getShipGenerationProfile(*recipe.StructuralPreset);
+            name = getStyleName(*recipe.StructuralPreset) + " Copy";
         }
 
         m_ConfigurationEditorReturnMode = m_PreviewMode;
@@ -1076,7 +1100,7 @@ namespace SpectralShipGenStudioPreview
         SpectralShipGen::ShipFactionProfile profile;
         std::string name;
         m_ConfigurationEditorTargetFactionPresetId.reset();
-        if (recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
+        if (!recipe.FactionPreset.has_value())
         {
             if (m_SelectedFactionPresetId.has_value())
             {
@@ -1096,8 +1120,8 @@ namespace SpectralShipGenStudioPreview
         }
         else
         {
-            profile = SpectralShipGen::getShipFactionProfile(recipe.Faction);
-            name = getFactionDisplayName(recipe.Faction) + " Copy";
+            profile = SpectralShipGen::getShipFactionProfile(*recipe.FactionPreset);
+            name = getFactionDisplayName(*recipe.FactionPreset) + " Copy";
         }
 
         m_ConfigurationEditorReturnMode = m_PreviewMode;
@@ -1149,18 +1173,14 @@ namespace SpectralShipGenStudioPreview
         else if (configuration.Mode == SpectralShipGen::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED)
         {
             configuration.Mode = SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
-            configuration.Generated = recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
-                ? SpectralShipGen::getShipPaletteGenerationProfile(recipe.Faction)
-                : SpectralShipGen::getShipPaletteGenerationProfile(recipe.FactionProfile);
+            configuration.Generated = getRecipeFactionPaletteGenerationProfile(recipe);
             name = "Faction Palette Copy";
         }
 
         if (configuration.Mode != SpectralShipGen::ShipPaletteSourceMode::FIXED) { configuration.Fixed = m_GeneratedShip.Palette; }
         if (configuration.Mode == SpectralShipGen::ShipPaletteSourceMode::FIXED)
         {
-            configuration.Generated = recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
-                ? SpectralShipGen::getShipPaletteGenerationProfile(recipe.Faction)
-                : SpectralShipGen::getShipPaletteGenerationProfile(recipe.FactionProfile);
+            configuration.Generated = getRecipeFactionPaletteGenerationProfile(recipe);
         }
 
         m_ConfigurationEditorReturnMode = m_PreviewMode;
@@ -1178,9 +1198,7 @@ namespace SpectralShipGenStudioPreview
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         SpectralShipGen::ShipPaletteConfiguration configuration;
         configuration.Mode = SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
-        configuration.Generated = recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
-            ? SpectralShipGen::getShipPaletteGenerationProfile(recipe.Faction)
-            : SpectralShipGen::getShipPaletteGenerationProfile(recipe.FactionProfile);
+        configuration.Generated = getRecipeFactionPaletteGenerationProfile(recipe);
         configuration.Fixed = m_GeneratedShip.Palette;
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditorTargetPalettePresetId.reset();
@@ -1256,8 +1274,7 @@ namespace SpectralShipGenStudioPreview
                 else { id = m_CustomPresetWorkspace.addFaction(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile()); }
                 const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
                 const bool persisted = saveUserPresetLibraryState();
-                recipe.FactionSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-                recipe.Faction = SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END;
+                recipe.FactionPreset.reset();
                 recipe.FactionProfile = m_ConfigurationEditor.getDraftFactionProfile();
                 m_SelectedFactionPresetId = id;
                 m_ConfigurationEditorTargetFactionPresetId.reset();
@@ -1289,8 +1306,7 @@ namespace SpectralShipGenStudioPreview
                 else { id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile()); }
                 const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
                 const bool persisted = saveUserPresetLibraryState();
-                recipe.StructuralSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-                recipe.Style = SpectralShipGen::ShipStyle::SHIP_STYLE_END;
+                recipe.StructuralPreset.reset();
                 recipe.StructuralProfile = m_ConfigurationEditor.getDraftProfile();
                 m_SelectedStructuralPresetId = id;
                 m_ConfigurationEditorTargetPresetId.reset();
@@ -1820,20 +1836,24 @@ namespace SpectralShipGenStudioPreview
             const CalibrationContextFilter filter = getCalibrationContextFilter();
             const CalibrationGroupStatistics statistics = calculateCalibrationGroupStatistics(m_CalibrationSession, m_CalibrationGroup, filter);
             state.CalibrationEvidenceValue = std::string(getCalibrationEvidenceName(statistics.Evidence)) + " / " + std::to_string(statistics.UsefulComparisonCount);
-            const std::vector<uint32_t> suggested = calculateSuggestedGroupWeights(m_CalibrationSession, getCurrentRecipe().Style, m_CalibrationGroup, filter);
-            const uint32_t optionCount = SpectralShipGen::getGenerationWeightOptionCount(m_CalibrationGroup);
-            const bool binary = SpectralShipGen::getGenerationWeightGroupKind(m_CalibrationGroup) == SpectralShipGen::GenerationWeightGroupKind::BINARY_PROBABILITY;
-            for (uint32_t index = 0u; index < state.CalibrationWeightRows.size(); ++index)
+            const std::optional<SpectralShipGen::ShipStyle>& structuralPreset = getCurrentRecipe().StructuralPreset;
+            if (structuralPreset.has_value())
             {
-                PreviewCalibrationWeightRowState& row = state.CalibrationWeightRows[index];
-                row.Valid = index < optionCount;
-                if (!row.Valid) { continue; }
-                row.Label = getCalibrationOptionName(m_CalibrationGroup, index);
-                row.CurrentWeight = SpectralShipGen::getGenerationTuningWeight(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, index);
-                row.DefaultWeight = SpectralShipGen::getGenerationTuningWeight(m_CalibrationSession.DefaultProfile, getCurrentRecipe().Style, m_CalibrationGroup, index);
-                row.SuggestedWeight = index < suggested.size() ? suggested[index] : row.CurrentWeight;
-                row.ProbabilityPercent = static_cast<uint32_t>(std::lround(SpectralShipGen::getGenerationTuningNormalizedProbability(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, index) * 100.0));
-                row.Maximum = binary ? 100u : std::max<uint32_t>(300u, std::max(row.CurrentWeight, std::max(row.DefaultWeight, row.SuggestedWeight)));
+                const std::vector<uint32_t> suggested = calculateSuggestedGroupWeights(m_CalibrationSession, *structuralPreset, m_CalibrationGroup, filter);
+                const uint32_t optionCount = SpectralShipGen::getGenerationWeightOptionCount(m_CalibrationGroup);
+                const bool binary = SpectralShipGen::getGenerationWeightGroupKind(m_CalibrationGroup) == SpectralShipGen::GenerationWeightGroupKind::BINARY_PROBABILITY;
+                for (uint32_t index = 0u; index < state.CalibrationWeightRows.size(); ++index)
+                {
+                    PreviewCalibrationWeightRowState& row = state.CalibrationWeightRows[index];
+                    row.Valid = index < optionCount;
+                    if (!row.Valid) { continue; }
+                    row.Label = getCalibrationOptionName(m_CalibrationGroup, index);
+                    row.CurrentWeight = SpectralShipGen::getGenerationTuningWeight(m_CalibrationSession.TunedProfile, *structuralPreset, m_CalibrationGroup, index);
+                    row.DefaultWeight = SpectralShipGen::getGenerationTuningWeight(m_CalibrationSession.DefaultProfile, *structuralPreset, m_CalibrationGroup, index);
+                    row.SuggestedWeight = index < suggested.size() ? suggested[index] : row.CurrentWeight;
+                    row.ProbabilityPercent = static_cast<uint32_t>(std::lround(SpectralShipGen::getGenerationTuningNormalizedProbability(m_CalibrationSession.TunedProfile, *structuralPreset, m_CalibrationGroup, index) * 100.0));
+                    row.Maximum = binary ? 100u : std::max<uint32_t>(300u, std::max(row.CurrentWeight, std::max(row.DefaultWeight, row.SuggestedWeight)));
+                }
             }
         }
         return state;
@@ -2020,7 +2040,7 @@ namespace SpectralShipGenStudioPreview
         case PreviewCommandType::CALIBRATION_PREFER_RIGHT: recordCalibrationDisplayPreference(false); break;
         case PreviewCommandType::CALIBRATION_SKIP: recordCalibrationPreferenceResult(CalibrationPreferenceResult::SKIP); break;
         case PreviewCommandType::CALIBRATION_RESET_GROUP:
-            resetCalibrationGroup(m_CalibrationSession, getCurrentRecipe().Style, m_CalibrationGroup);
+            if (getCurrentRecipe().StructuralPreset.has_value()) { resetCalibrationGroup(m_CalibrationSession, *getCurrentRecipe().StructuralPreset, m_CalibrationGroup); }
             setStatusMessage("Selected tuning group reset to production defaults.");
             break;
         case PreviewCommandType::CALIBRATION_RESET_ALL:
@@ -2028,7 +2048,7 @@ namespace SpectralShipGenStudioPreview
             setStatusMessage("All temporary tuning reset to production defaults.");
             break;
         case PreviewCommandType::CALIBRATION_APPLY_SUGGESTED:
-            applySuggestedGroupWeights(m_CalibrationSession, getCurrentRecipe().Style, m_CalibrationGroup, getCalibrationContextFilter());
+            if (getCurrentRecipe().StructuralPreset.has_value()) { applySuggestedGroupWeights(m_CalibrationSession, *getCurrentRecipe().StructuralPreset, m_CalibrationGroup, getCalibrationContextFilter()); }
             setStatusMessage("Suggested weights applied to temporary tuning only.");
             break;
         case PreviewCommandType::CALIBRATION_TOGGLE_SHOW_VALUES: m_CalibrationShowValues = !m_CalibrationShowValues; break;
@@ -2390,6 +2410,7 @@ namespace SpectralShipGenStudioPreview
         const bool browserMode = m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES;
 
         if (type == PreviewCommandType::TOGGLE_HELP) { return true; }
+        if (type == PreviewCommandType::OPEN_CALIBRATION_LAB) { return getCurrentRecipe().StructuralPreset.has_value(); }
         const bool inspectWorkspace = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT;
         if ((inspectWorkspace || m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::ANIMATION) && type == PreviewCommandType::OPEN_GENERATE_WORKSPACE) { return true; }
         if (inspectWorkspace && type == PreviewCommandType::OPEN_REROLL_STUDIO) { return hasCurrentShip(); }
@@ -3408,15 +3429,14 @@ namespace SpectralShipGenStudioPreview
     {
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
 
-        if (recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET && recipe.Faction == faction)
+        if (recipe.FactionPreset == faction)
         {
             return;
         }
 
         m_SelectedFactionPresetId.reset();
         m_SelectedConfigurationBundleId.reset();
-        recipe.FactionSource = SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
-        recipe.Faction = faction;
+        recipe.FactionPreset = faction;
         regenerate();
     }
 
@@ -3458,15 +3478,14 @@ namespace SpectralShipGenStudioPreview
     {
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
 
-        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET && recipe.Style == style)
+        if (recipe.StructuralPreset == style)
         {
             return;
         }
 
         m_SelectedStructuralPresetId.reset();
         m_SelectedConfigurationBundleId.reset();
-        recipe.StructuralSource = SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
-        recipe.Style = style;
+        recipe.StructuralPreset = style;
         regenerate();
     }
 
@@ -3475,8 +3494,7 @@ namespace SpectralShipGenStudioPreview
         const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
         if (preset == nullptr) { return; }
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        recipe.StructuralSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Style = SpectralShipGen::ShipStyle::SHIP_STYLE_END;
+        recipe.StructuralPreset.reset();
         recipe.StructuralProfile = preset->Profile;
         m_SelectedStructuralPresetId = id;
         m_SelectedConfigurationBundleId.reset();
@@ -3488,7 +3506,7 @@ namespace SpectralShipGenStudioPreview
     {
         switch (entry.Kind)
         {
-        case StructuralProfileSelectionKind::BUILT_IN: setStyle(entry.Style); break;
+        case StructuralProfileSelectionKind::BUILT_IN: if (entry.Style.has_value()) { setStyle(*entry.Style); } break;
         case StructuralProfileSelectionKind::RUNTIME_CUSTOM: selectRuntimeStructuralPreset(entry.CustomPresetId); break;
         case StructuralProfileSelectionKind::ADD_PROFILE: enterConfigurationEditorDefault(); break;
         default: break;
@@ -3503,7 +3521,7 @@ namespace SpectralShipGenStudioPreview
             if (bundle != nullptr && !bundle->Bundle.StructuralDisplayName.empty()) { return bundle->Bundle.StructuralDisplayName; }
         }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getStyleName(recipe.Style); }
+        if (recipe.StructuralPreset.has_value()) { return getStyleName(*recipe.StructuralPreset); }
         if (m_SelectedStructuralPresetId.has_value())
         {
             const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(*m_SelectedStructuralPresetId);
@@ -3517,8 +3535,7 @@ namespace SpectralShipGenStudioPreview
         const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
         if (preset == nullptr) { return; }
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        recipe.FactionSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Faction = SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END;
+        recipe.FactionPreset.reset();
         recipe.FactionProfile = preset->Profile;
         m_SelectedFactionPresetId = id;
         m_SelectedConfigurationBundleId.reset();
@@ -3530,7 +3547,7 @@ namespace SpectralShipGenStudioPreview
     {
         switch (entry.Kind)
         {
-        case FactionProfileSelectionKind::BUILT_IN: setFaction(entry.Faction); break;
+        case FactionProfileSelectionKind::BUILT_IN: if (entry.Faction.has_value()) { setFaction(*entry.Faction); } break;
         case FactionProfileSelectionKind::RUNTIME_CUSTOM: selectRuntimeFactionPreset(entry.CustomPresetId); break;
         case FactionProfileSelectionKind::ADD_FACTION: enterFactionConfigurationEditorDefault(); break;
         default: break;
@@ -3545,7 +3562,7 @@ namespace SpectralShipGenStudioPreview
             if (bundle != nullptr && !bundle->Bundle.FactionDisplayName.empty()) { return bundle->Bundle.FactionDisplayName; }
         }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        if (recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getFactionDisplayName(recipe.Faction); }
+        if (recipe.FactionPreset.has_value()) { return getFactionDisplayName(*recipe.FactionPreset); }
         if (m_SelectedFactionPresetId.has_value())
         {
             const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(*m_SelectedFactionPresetId);
@@ -3582,8 +3599,8 @@ namespace SpectralShipGenStudioPreview
             break;
         case PaletteProfileSelectionKind::BUILT_IN_GENERATED:
             recipe.PaletteConfiguration.Mode = SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
-            recipe.PaletteConfiguration.Generated = SpectralShipGen::getBuiltInPalettePresetProfile(entry.PalettePreset);
-            m_SelectedBuiltInPalettePreset = entry.PalettePreset;
+            recipe.PaletteConfiguration.Generated = SpectralShipGen::getBuiltInPalettePresetProfile(*entry.PalettePreset);
+            m_SelectedBuiltInPalettePreset = *entry.PalettePreset;
             m_SelectedPalettePresetId.reset();
             m_SelectedConfigurationBundleId.reset();
             regenerate();
@@ -3937,7 +3954,7 @@ namespace SpectralShipGenStudioPreview
 
         if (m_PreviewMode == PreviewMode::GALLERY)
         {
-            const std::string title = "SpectralShipGen Studio | Gallery | BatchSeed: " + std::to_string(m_GalleryState.BatchSeed) + " | " + std::to_string(m_GalleryState.CandidateCount) + " candidates | Style: " + getStyleName(m_GalleryState.TemplateRecipe.Style) + " | Faction: " + getFactionName(m_GalleryState.TemplateRecipe.Faction) + " | " + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Width) + "x" + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Height) + " | Selected " + std::to_string(m_GalleryState.Grid.SelectedIndex + 1u) + "/" + std::to_string(m_GalleryState.Grid.Items.size());
+            const std::string title = "SpectralShipGen Studio | Gallery | BatchSeed: " + std::to_string(m_GalleryState.BatchSeed) + " | " + std::to_string(m_GalleryState.CandidateCount) + " candidates | Structure: " + getRecipeStructuralDisplayName(m_GalleryState.TemplateRecipe) + " | Faction: " + getRecipeFactionDisplayName(m_GalleryState.TemplateRecipe) + " | " + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Width) + "x" + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Height) + " | Selected " + std::to_string(m_GalleryState.Grid.SelectedIndex + 1u) + "/" + std::to_string(m_GalleryState.Grid.Items.size());
             m_Window.setTitle(title);
             return;
         }

@@ -23,7 +23,7 @@ namespace SpectralShipGenStudioPreview
     {
         StructuralProfileSelectionKind Kind = StructuralProfileSelectionKind::BUILT_IN;
         std::string Label;
-        SpectralShipGen::ShipStyle Style = SpectralShipGen::ShipStyle::SHIP_STYLE_END;
+        std::optional<SpectralShipGen::ShipStyle> Style = std::nullopt;
         RuntimeCustomPresetId CustomPresetId = 0u;
     };
 

@@ -177,13 +177,7 @@ namespace SpectralShipGenStudioPreview
         uint32_t version = 0u;
         if (!extractUInt32(jsonText, "format_version", version)) { result.Error = "Missing or invalid field: format_version."; return result; }
 
-        if (version == 1u)
-        {
-            std::vector<uint32_t> legacyBookmarks;
-            if (!extractUInt32Array(jsonText, "resolution_bookmarks", legacyBookmarks)) { result.Error = "Missing or invalid field: resolution_bookmarks."; return result; }
-            for (uint32_t resolution : legacyBookmarks) { result.Preferences.ResolutionBookmarks.push_back({ resolution, resolution }); }
-        }
-        else if (version == PreviewPreferencesFormatVersion)
+        if (version == PreviewPreferencesFormatVersion)
         {
             std::vector<std::string> objects;
             if (!extractObjectArray(jsonText, "dimension_bookmarks", objects)) { result.Error = "Missing or invalid field: dimension_bookmarks."; return result; }

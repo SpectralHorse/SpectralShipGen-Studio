@@ -17,11 +17,11 @@ namespace SpectralShipGenStudioPreview
         bundle.StructuralDisplayName = std::move(structuralDisplayName);
         bundle.FactionDisplayName = std::move(factionDisplayName);
         bundle.PaletteDisplayName = std::move(paletteDisplayName);
-        bundle.StructuralProfile = recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
-            ? SpectralShipGen::getShipGenerationProfile(recipe.Style)
+        bundle.StructuralProfile = recipe.StructuralPreset.has_value()
+            ? SpectralShipGen::getShipGenerationProfile(*recipe.StructuralPreset)
             : recipe.StructuralProfile;
-        bundle.FactionProfile = recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
-            ? SpectralShipGen::getShipFactionProfile(recipe.Faction)
+        bundle.FactionProfile = recipe.FactionPreset.has_value()
+            ? SpectralShipGen::getShipFactionProfile(*recipe.FactionPreset)
             : recipe.FactionProfile;
         bundle.PaletteConfiguration = recipe.PaletteConfiguration;
         return bundle;
@@ -29,11 +29,9 @@ namespace SpectralShipGenStudioPreview
 
     void applyConfigurationBundle(const ConfigurationBundle& bundle, SpectralShipGen::ShipGenerationRecipe& recipe)
     {
-        recipe.StructuralSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Style = SpectralShipGen::ShipStyle::SHIP_STYLE_END;
+        recipe.StructuralPreset.reset();
         recipe.StructuralProfile = bundle.StructuralProfile;
-        recipe.FactionSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Faction = SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END;
+        recipe.FactionPreset.reset();
         recipe.FactionProfile = bundle.FactionProfile;
         recipe.PaletteConfiguration = bundle.PaletteConfiguration;
     }

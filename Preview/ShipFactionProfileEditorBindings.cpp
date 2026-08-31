@@ -286,7 +286,6 @@ namespace SpectralShipGenStudioPreview
         ADD_INT(hierarchy, Complexity.prefix.LargeWeapon, label " LARGE WEAPON", ConfigurationNumericSemantic::SIGNED_OFFSET, -SafeOffsetMaximum, SafeOffsetMaximum, 1); \
         ADD_INT(hierarchy, Complexity.prefix.Attachment, label " ATTACHMENT", ConfigurationNumericSemantic::SIGNED_OFFSET, -SafeOffsetMaximum, SafeOffsetMaximum, 1); \
         ADD_INT(hierarchy, Complexity.prefix.Detail, label " DETAIL", ConfigurationNumericSemantic::SIGNED_OFFSET, -SafeOffsetMaximum, SafeOffsetMaximum, 1)
-        ADD_COMPLEXITY_OFFSETS(LegacyCategoryOffsets, "LEGACY OFFSET");
         ADD_COMPLEXITY_OFFSETS(CategoryOffsets, "CATEGORY OFFSET");
 #undef ADD_COMPLEXITY_OFFSETS
 

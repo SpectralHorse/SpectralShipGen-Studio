@@ -32,8 +32,8 @@ namespace
         PreviewGenerationRecipe recipe;
         recipe.Seeds = deriveShipGenerationSeeds(seed);
         recipe.Dimensions = { 64u, 64u };
-        recipe.Style = ShipStyle::INDUSTRIAL;
-        recipe.Faction = ShipFactionType::MILITARY;
+        recipe.StructuralPreset = ShipStyle::INDUSTRIAL;
+        recipe.FactionPreset = ShipFactionType::MILITARY;
         return recipe;
     }
 }
@@ -127,8 +127,8 @@ int SpectralShipGenStudioTests::runPreviewUiQolRegression()
     const PreviewGenerationRecipe templateBefore = collection.getGalleryTemplateRecipe();
     const PreviewGenerationRecipe candidateBefore = *collection.getGalleryRecipe(0u);
     collection.getCurrentRecipe().Dimensions = { 128u, 96u };
-    collection.getCurrentRecipe().Style = ShipStyle::SPEARHEAD;
-    collection.getCurrentRecipe().Faction = ShipFactionType::ASCENDANT;
+    collection.getCurrentRecipe().StructuralPreset = ShipStyle::SPEARHEAD;
+    collection.getCurrentRecipe().FactionPreset = ShipFactionType::ASCENDANT;
     collection.getCurrentRecipe().AttachmentsEnabled = !collection.getCurrentRecipe().AttachmentsEnabled;
     if (collection.getGalleryTemplateRecipe() != templateBefore || collection.getGalleryRecipe(0u) == nullptr || *collection.getGalleryRecipe(0u) != candidateBefore)
     {

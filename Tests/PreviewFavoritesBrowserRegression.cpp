@@ -21,8 +21,8 @@ namespace
         PreviewGenerationRecipe recipe;
         recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(seed);
         recipe.Dimensions = { 64u, 64u };
-        recipe.Style = style;
-        recipe.Faction = faction;
+        recipe.StructuralPreset = style;
+        recipe.FactionPreset = faction;
         return recipe;
     }
 

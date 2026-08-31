@@ -182,8 +182,7 @@ namespace SpectralShipGenStudioTests
             return fail("built-in/custom/+ADD structural selector ordering is incorrect");
         }
         ShipGenerationRecipe customRecipe;
-        customRecipe.StructuralSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        customRecipe.Style = ShipStyle::SHIP_STYLE_END;
+        customRecipe.StructuralPreset.reset();
         customRecipe.StructuralProfile = workspace.findStructural(spearheadCopy)->Profile;
         const std::size_t selectedCustomIndex = findStructuralProfileSelectionIndex(entries, customRecipe, spearheadCopy);
         if (entries[selectedCustomIndex].CustomPresetId != spearheadCopy) { return fail("runtime custom structural selection identity was not retained"); }
@@ -206,7 +205,7 @@ namespace SpectralShipGenStudioTests
         const GeneratedShip builtIn = generator.generate(configuration, getShipGenerationProfile(ShipStyle::INDUSTRIAL));
         if (!imagesEqual(customA.FinalImage, customB.FinalImage)) { return fail("edited custom structural profile was not deterministic for the same seed"); }
         if (imagesEqual(customA.FinalImage, builtIn.FinalImage)) { return fail("notably different custom structural profile did not affect generated output"); }
-        if (customA.Style != ShipStyle::SHIP_STYLE_END) { return fail("custom structural generation pretended to be a built-in style"); }
+        if (customA.Provenance.StructuralPreset.has_value()) { return fail("custom structural generation pretended to be a built-in style"); }
 
         const RuntimeCustomPresetId factionId = workspace.addFaction("My Faction", getShipFactionProfile(ShipFactionType::RELIC));
         ShipPaletteConfiguration palette;

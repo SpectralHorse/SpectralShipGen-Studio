@@ -239,11 +239,9 @@ namespace
         ShipGenerationRecipe recipe;
         recipe.Seeds = deriveShipGenerationSeeds(0x9200ABCDEF123456ull);
         recipe.Dimensions = { 96u, 64u };
-        recipe.StructuralSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Style = ShipStyle::SHIP_STYLE_END;
+        recipe.StructuralPreset.reset();
         recipe.StructuralProfile = structural;
-        recipe.FactionSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Faction = ShipFactionType::SHIP_FACTION_TYPE_END;
+        recipe.FactionPreset.reset();
         recipe.FactionProfile = faction;
         recipe.PaletteConfiguration.Mode = ShipPaletteSourceMode::EXPLICIT_GENERATED;
         recipe.PaletteConfiguration.Generated = generatedProfile;
@@ -252,7 +250,7 @@ namespace
 
         const GeneratedShip first = generator.generate(recipe);
         const GeneratedShip repeated = generator.generate(recipe);
-        if (!imagesEqual(first.FinalImage, repeated.FinalImage) || first.Style != ShipStyle::SHIP_STYLE_END || first.Faction != ShipFactionType::SHIP_FACTION_TYPE_END) { return false; }
+        if (!imagesEqual(first.FinalImage, repeated.FinalImage) || first.Provenance.StructuralPreset.has_value() || first.Provenance.FactionPreset.has_value()) { return false; }
 
         ShipGenerationRecipe changedConfiguration = recipe;
         changedConfiguration.PaletteConfiguration.Generated.Ranges.HullHue = { 18u, 42u };
@@ -282,7 +280,7 @@ namespace
         fixedRerolled.DomainSeedOverrides.set(GenerationDomain::PALETTE, 0x9200777788889999ull);
         const GeneratedShip fixedSecond = generator.generate(fixedRerolled);
         if (!palettesEqual(fixedFirst.Palette, fixed.PaletteConfiguration.Fixed) || !imagesEqual(fixedFirst.FinalImage, fixedSecond.FinalImage) || !geometryEqual(fixedFirst, fixedSecond) ||
-            fixedFirst.Style != ShipStyle::SHIP_STYLE_END || fixedFirst.Faction != ShipFactionType::SHIP_FACTION_TYPE_END) {
+            fixedFirst.Provenance.StructuralPreset.has_value() || fixedFirst.Provenance.FactionPreset.has_value()) {
             return false;
         }
 

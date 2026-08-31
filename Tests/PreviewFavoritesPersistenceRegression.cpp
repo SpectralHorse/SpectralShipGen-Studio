@@ -25,8 +25,8 @@ namespace
         PreviewGenerationRecipe recipe;
         recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(seed);
         recipe.Dimensions = { width, height };
-        recipe.Style = style;
-        recipe.Faction = faction;
+        recipe.StructuralPreset = style;
+        recipe.FactionPreset = faction;
         recipe.DetailDensity = 57u;
         recipe.AsymmetricDetailChance = 13u;
         recipe.AttachmentsEnabled = true;
@@ -38,12 +38,10 @@ namespace
     {
         using namespace SpectralShipGen;
         PreviewGenerationRecipe recipe = makeRecipe(0x7800000000000004ull, 96u, 64u, ShipStyle::FIGHTER, ShipFactionType::FRONTIER);
-        recipe.StructuralSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Style = ShipStyle::SHIP_STYLE_END;
+        recipe.StructuralPreset.reset();
         recipe.StructuralProfile = getShipGenerationProfile(ShipStyle::INDUSTRIAL);
         recipe.StructuralProfile.LargeWeaponChance = 81u;
-        recipe.FactionSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Faction = ShipFactionType::SHIP_FACTION_TYPE_END;
+        recipe.FactionPreset.reset();
         recipe.FactionProfile = getShipFactionProfile(ShipFactionType::CORPORATE);
         recipe.FactionProfile.SurfaceDetails.DetailDensityPercent = 87u;
         recipe.PaletteConfiguration.Mode = ShipPaletteSourceMode::FIXED;

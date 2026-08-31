@@ -8,8 +8,8 @@
 
 namespace SpectralShipGenStudioPreview
 {
-    inline constexpr uint32_t UserPresetLibraryFormatVersion = 2u;
-    inline constexpr uint32_t UserPresetFileFormatVersion = 2u;
+    inline constexpr uint32_t UserPresetLibraryFormatVersion = 3u;
+    inline constexpr uint32_t UserPresetFileFormatVersion = 3u;
 
     enum class UserPresetCategory : uint32_t
     {

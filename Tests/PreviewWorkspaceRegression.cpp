@@ -33,8 +33,8 @@ namespace SpectralShipGenStudioTests
             SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe;
             recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(seed);
             recipe.Dimensions = { 96u, 64u };
-            recipe.Style = SpectralShipGen::ShipStyle::INDUSTRIAL;
-            recipe.Faction = SpectralShipGen::ShipFactionType::CORPORATE;
+            recipe.StructuralPreset = SpectralShipGen::ShipStyle::INDUSTRIAL;
+            recipe.FactionPreset = SpectralShipGen::ShipFactionType::CORPORATE;
             return recipe;
         }
 

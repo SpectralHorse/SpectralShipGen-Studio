@@ -16,19 +16,19 @@ namespace SpectralShipGenStudioPreview
         }
         for (const RuntimeStructuralPreset& preset : workspace.getStructuralPresets())
         {
-            entries.push_back({ StructuralProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, SpectralShipGen::ShipStyle::SHIP_STYLE_END, preset.Id });
+            entries.push_back({ StructuralProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, std::nullopt, preset.Id });
         }
-        entries.push_back({ StructuralProfileSelectionKind::ADD_PROFILE, "+ ADD PROFILE", SpectralShipGen::ShipStyle::SHIP_STYLE_END, 0u });
+        entries.push_back({ StructuralProfileSelectionKind::ADD_PROFILE, "+ ADD PROFILE", std::nullopt, 0u });
         return entries;
     }
 
     std::size_t findStructuralProfileSelectionIndex(const std::vector<StructuralProfileSelectionEntry>& entries, const SpectralShipGen::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId)
     {
-        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET)
+        if (recipe.StructuralPreset.has_value())
         {
             const auto iterator = std::find_if(entries.begin(), entries.end(), [&](const StructuralProfileSelectionEntry& entry)
             {
-                return entry.Kind == StructuralProfileSelectionKind::BUILT_IN && entry.Style == recipe.Style;
+                return entry.Kind == StructuralProfileSelectionKind::BUILT_IN && entry.Style == recipe.StructuralPreset;
             });
             if (iterator != entries.end()) { return static_cast<std::size_t>(std::distance(entries.begin(), iterator)); }
         }
@@ -45,7 +45,7 @@ namespace SpectralShipGenStudioPreview
         {
             return entry.Kind == StructuralProfileSelectionKind::RUNTIME_CUSTOM;
         });
-        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM && customIterator != entries.end())
+        if (!recipe.StructuralPreset.has_value() && customIterator != entries.end())
         {
             return static_cast<std::size_t>(std::distance(entries.begin(), customIterator));
         }

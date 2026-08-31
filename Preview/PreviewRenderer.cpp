@@ -134,7 +134,6 @@ namespace
         case SpectralShipGen::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
         case SpectralShipGen::ShipStyle::SPEARHEAD: return "SPEARHEAD";
         case SpectralShipGen::ShipStyle::DELTA: return "DELTA";
-        case SpectralShipGen::ShipStyle::SHIP_STYLE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
@@ -149,9 +148,23 @@ namespace
         case SpectralShipGen::ShipFactionType::XENO: return "XENO";
         case SpectralShipGen::ShipFactionType::CORPORATE: return "CORPORATE";
         case SpectralShipGen::ShipFactionType::RELIC: return "RELIC";
-        case SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
+    }
+
+    std::string getStructuralRecipeDisplayName(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
+    {
+        return recipe.StructuralPreset.has_value() ? getStyleName(*recipe.StructuralPreset) : "CUSTOM";
+    }
+
+    std::string getFactionRecipeDisplayName(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
+    {
+        return recipe.FactionPreset.has_value() ? getFactionName(*recipe.FactionPreset) : "CUSTOM";
+    }
+
+    std::string getPresetSourceName(bool builtIn)
+    {
+        return builtIn ? "BUILT-IN" : "CUSTOM";
     }
 
     std::string getPreviewModeName(SpectralShipGenStudioPreview::PreviewMode mode)
@@ -377,8 +390,8 @@ namespace
         if (pinned.Seeds.Palette != current.Seeds.Palette) { changed.push_back("PALETTE"); }
         if (pinned.Seeds.Details != current.Seeds.Details || pinned.DetailDensity != current.DetailDensity || pinned.AsymmetricDetailChance != current.AsymmetricDetailChance) { changed.push_back("DETAILS"); }
         if (pinned.Seeds.Attachments != current.Seeds.Attachments || pinned.AttachmentsEnabled != current.AttachmentsEnabled) { changed.push_back("ATTACHMENTS"); }
-        if (pinned.Style != current.Style) { changed.push_back("STYLE"); }
-        if (pinned.Faction != current.Faction) { changed.push_back("FACTION"); }
+        if (pinned.StructuralPreset != current.StructuralPreset) { changed.push_back("STRUCTURE"); }
+        if (pinned.FactionPreset != current.FactionPreset) { changed.push_back("FACTION"); }
         if (pinned.Dimensions.Width != current.Dimensions.Width || pinned.Dimensions.Height != current.Dimensions.Height) { changed.push_back("DIMENSIONS"); }
 
         if (changed.empty())
@@ -914,7 +927,7 @@ namespace SpectralShipGenStudioPreview
 
         float infoY = 620.0f;
         drawDebugText(window, "CONTROLLED CONTEXT", 22.0f, infoY, sf::Color(235, 210, 105), TextScale); infoY += 20.0f;
-        drawDebugText(window, std::to_string(pair.Recipe.Dimensions.Width) + "X" + std::to_string(pair.Recipe.Dimensions.Height) + "  " + getStyleName(pair.Recipe.Style) + "  " + getFactionName(pair.Recipe.Faction), 22.0f, infoY, sf::Color(215, 220, 230), TextScale); infoY += 22.0f;
+        drawDebugText(window, std::to_string(pair.Recipe.Dimensions.Width) + "X" + std::to_string(pair.Recipe.Dimensions.Height) + "  " + getStructuralRecipeDisplayName(pair.Recipe) + "  " + getFactionRecipeDisplayName(pair.Recipe), 22.0f, infoY, sf::Color(215, 220, 230), TextScale); infoY += 22.0f;
         drawDebugText(window, "PAIR " + std::to_string(pair.PairIndex) + "  A/B POSITION RANDOMIZED", 22.0f, infoY, sf::Color(145, 170, 195), SmallTextScale); infoY += 16.0f;
         drawDebugText(window, wrapDebugText(pair.IsolationNote, 104u), 22.0f, infoY, sf::Color(165, 170, 182), SmallTextScale);
     }
@@ -961,13 +974,13 @@ namespace SpectralShipGenStudioPreview
         float currentY = 610.0f;
         drawLabelValue(window, "SEED", std::to_string(pinnedRecipe.Seeds.Master), 20.0f, pinnedY);
         drawLabelValue(window, "RES", std::to_string(pinnedRecipe.Dimensions.Width) + "X" + std::to_string(pinnedRecipe.Dimensions.Height), 20.0f, pinnedY);
-        drawLabelValue(window, "STYLE", getStyleName(pinnedRecipe.Style), 20.0f, pinnedY);
-        drawLabelValue(window, "FACTION", getFactionName(pinnedRecipe.Faction), 20.0f, pinnedY);
+        drawLabelValue(window, "STRUCT", getStructuralRecipeDisplayName(pinnedRecipe), 20.0f, pinnedY);
+        drawLabelValue(window, "FACTION", getFactionRecipeDisplayName(pinnedRecipe), 20.0f, pinnedY);
         drawLabelValue(window, "ATT GEN", getOnOff(pinnedRecipe.AttachmentsEnabled), 20.0f, pinnedY);
         drawLabelValue(window, "SEED", std::to_string(currentRecipe.Seeds.Master), columnWidth + 20.0f, currentY);
         drawLabelValue(window, "RES", std::to_string(currentRecipe.Dimensions.Width) + "X" + std::to_string(currentRecipe.Dimensions.Height), columnWidth + 20.0f, currentY);
-        drawLabelValue(window, "STYLE", getStyleName(currentRecipe.Style), columnWidth + 20.0f, currentY);
-        drawLabelValue(window, "FACTION", getFactionName(currentRecipe.Faction), columnWidth + 20.0f, currentY);
+        drawLabelValue(window, "STRUCT", getStructuralRecipeDisplayName(currentRecipe), columnWidth + 20.0f, currentY);
+        drawLabelValue(window, "FACTION", getFactionRecipeDisplayName(currentRecipe), columnWidth + 20.0f, currentY);
         drawLabelValue(window, "ATT GEN", getOnOff(currentRecipe.AttachmentsEnabled), columnWidth + 20.0f, currentY);
 
         float differenceY = 730.0f;
@@ -978,7 +991,7 @@ namespace SpectralShipGenStudioPreview
         differenceY += TextLineHeight;
         drawDebugText(window, "DETAIL SEED: " + getSameDifferent(pinnedRecipe.Seeds.Details == currentRecipe.Seeds.Details) + "    ATTACH SEED: " + getSameDifferent(pinnedRecipe.Seeds.Attachments == currentRecipe.Seeds.Attachments), 20.0f, differenceY, sf::Color(185, 190, 205), SmallTextScale);
         differenceY += TextLineHeight;
-        drawDebugText(window, "STYLE: " + getSameDifferent(pinnedRecipe.Style == currentRecipe.Style) + "    FACTION: " + getSameDifferent(pinnedRecipe.Faction == currentRecipe.Faction) + "    RES: " + getSameDifferent(pinnedRecipe.Dimensions.Width == currentRecipe.Dimensions.Width && pinnedRecipe.Dimensions.Height == currentRecipe.Dimensions.Height), 20.0f, differenceY, sf::Color(185, 190, 205), SmallTextScale);
+        drawDebugText(window, "STRUCT: " + getSameDifferent(pinnedRecipe.StructuralPreset == currentRecipe.StructuralPreset) + "    FACTION: " + getSameDifferent(pinnedRecipe.FactionPreset == currentRecipe.FactionPreset) + "    RES: " + getSameDifferent(pinnedRecipe.Dimensions.Width == currentRecipe.Dimensions.Width && pinnedRecipe.Dimensions.Height == currentRecipe.Dimensions.Height), 20.0f, differenceY, sf::Color(185, 190, 205), SmallTextScale);
         differenceY += TextLineHeight;
         drawDebugText(window, "COMMON DISPLAY SCALE: " + std::to_string(scale) + "X - STATIC BASE FRAMES", 20.0f, differenceY, sf::Color(145, 150, 165), SmallTextScale);
     }
@@ -1042,8 +1055,8 @@ namespace SpectralShipGenStudioPreview
 
         if (studio.CandidateValid)
         {
-            const SpectralShipGen::GenerationDomainSeeds baseSeeds = SpectralShipGen::resolveGenerationDomainSeeds(baseRecipe.Seeds, baseRecipe.DomainSeedOverrides, baseRecipe.RandomStreamMode);
-            const SpectralShipGen::GenerationDomainSeeds candidateSeeds = SpectralShipGen::resolveGenerationDomainSeeds(candidateRecipe.Seeds, candidateRecipe.DomainSeedOverrides, candidateRecipe.RandomStreamMode);
+            const SpectralShipGen::GenerationDomainSeeds baseSeeds = SpectralShipGen::resolveGenerationDomainSeeds(baseRecipe.Seeds, baseRecipe.DomainSeedOverrides);
+            const SpectralShipGen::GenerationDomainSeeds candidateSeeds = SpectralShipGen::resolveGenerationDomainSeeds(candidateRecipe.Seeds, candidateRecipe.DomainSeedOverrides);
             std::string seedText = "DOMAIN SEEDS:";
             uint32_t shown = 0u;
             for (std::size_t index = 0u; index < studio.SelectedDomains.size() && shown < 3u; ++index)
@@ -1230,7 +1243,8 @@ namespace SpectralShipGenStudioPreview
         if (data.Mode == PreviewMode::CALIBRATION && data.CalibrationSession != nullptr)
         {
             const CalibrationGroupStatistics statistics = calculateCalibrationGroupStatistics(*data.CalibrationSession, data.CalibrationGroup, data.CalibrationFilter);
-            const std::vector<uint32_t> suggested = calculateSuggestedGroupWeights(*data.CalibrationSession, data.Recipe != nullptr ? data.Recipe->Style : SpectralShipGen::ShipStyle::FIGHTER, data.CalibrationGroup, data.CalibrationFilter);
+            const std::optional<SpectralShipGen::ShipStyle> structuralPreset = data.Recipe != nullptr ? data.Recipe->StructuralPreset : std::nullopt;
+            const std::vector<uint32_t> suggested = structuralPreset.has_value() ? calculateSuggestedGroupWeights(*data.CalibrationSession, *structuralPreset, data.CalibrationGroup, data.CalibrationFilter) : std::vector<uint32_t>{};
             drawLabelValue(window, "GROUP", getCalibrationGroupName(data.CalibrationGroup), x, y);
             drawLabelValue(window, "EVIDENCE", getCalibrationEvidenceName(statistics.Evidence), x, y);
             drawLabelValue(window, "USEFUL", std::to_string(statistics.UsefulComparisonCount), x, y);
@@ -1240,12 +1254,11 @@ namespace SpectralShipGenStudioPreview
 
             y += 4.0f;
             drawSectionHeader(window, "PREFERENCE", x, y);
-            const uint32_t optionCount = SpectralShipGen::getGenerationWeightOptionCount(data.CalibrationGroup);
-            const SpectralShipGen::ShipStyle style = data.Recipe != nullptr ? data.Recipe->Style : SpectralShipGen::ShipStyle::FIGHTER;
+            const uint32_t optionCount = structuralPreset.has_value() ? SpectralShipGen::getGenerationWeightOptionCount(data.CalibrationGroup) : 0u;
             for (uint32_t index = 0u; index < optionCount && index < statistics.Options.size(); ++index)
             {
                 const CalibrationOptionStatistics& option = statistics.Options[index];
-                const uint32_t current = SpectralShipGen::getGenerationTuningWeight(data.CalibrationSession->TunedProfile, style, data.CalibrationGroup, index);
+                const uint32_t current = SpectralShipGen::getGenerationTuningWeight(data.CalibrationSession->TunedProfile, *structuralPreset, data.CalibrationGroup, index);
                 const uint32_t proposed = index < suggested.size() ? suggested[index] : current;
                 drawDebugText(window, getCalibrationOptionName(data.CalibrationGroup, index), x, y, sf::Color(215, 220, 230), SmallTextScale);
                 y += 12.0f;
@@ -1317,8 +1330,8 @@ namespace SpectralShipGenStudioPreview
             {
                 const PreviewThumbnailItem& item = grid.Items[grid.SelectedIndex];
                 const PreviewGenerationRecipe& favoriteRecipe = item.Recipe;
-                const std::string structuralSource = favoriteRecipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
-                const std::string factionSource = favoriteRecipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
+                const std::string structuralSource = getPresetSourceName(favoriteRecipe.StructuralPreset.has_value());
+                const std::string factionSource = getPresetSourceName(favoriteRecipe.FactionPreset.has_value());
                 std::string paletteSource = "UNKNOWN";
                 switch (favoriteRecipe.PaletteConfiguration.Mode)
                 {
@@ -1330,9 +1343,9 @@ namespace SpectralShipGenStudioPreview
                 drawLabelValue(window, "STATUS", item.Valid ? "AVAILABLE" : "UNAVAILABLE", x, y);
                 drawLabelValue(window, "SEED", std::to_string(favoriteRecipe.Seeds.Master), x, y);
                 drawLabelValue(window, "RES", std::to_string(favoriteRecipe.Dimensions.Width) + "X" + std::to_string(favoriteRecipe.Dimensions.Height), x, y);
-                drawLabelValue(window, "STRUCT", getStyleName(favoriteRecipe.Style), x, y);
+                drawLabelValue(window, "STRUCT", getStructuralRecipeDisplayName(favoriteRecipe), x, y);
                 drawLabelValue(window, "STRUCT SRC", structuralSource, x, y);
-                drawLabelValue(window, "FACTION", getFactionName(favoriteRecipe.Faction), x, y);
+                drawLabelValue(window, "FACTION", getFactionRecipeDisplayName(favoriteRecipe), x, y);
                 drawLabelValue(window, "FACTION SRC", factionSource, x, y);
                 drawLabelValue(window, "PALETTE", paletteSource, x, y);
             }
@@ -1344,10 +1357,10 @@ namespace SpectralShipGenStudioPreview
         if (data.Recipe != nullptr)
         {
             drawLabelValue(window, "RES", std::to_string(data.Recipe->Dimensions.Width) + "X" + std::to_string(data.Recipe->Dimensions.Height), x, y);
-            drawLabelValue(window, "STYLE", getStyleName(data.Recipe->Style), x, y);
-            drawLabelValue(window, "FACTION", getFactionName(data.Recipe->Faction), x, y);
+            drawLabelValue(window, "STRUCTURE", fitDebugTextToWidth(data.StructuralDisplayName, 190.0f, SmallTextScale), x, y);
+            drawLabelValue(window, "FACTION", fitDebugTextToWidth(data.FactionDisplayName, 190.0f, SmallTextScale), x, y);
             drawLabelValue(window, "MASTER", std::to_string(data.Recipe->Seeds.Master), x, y);
-            drawLabelValue(window, "STRUCT", std::to_string(data.Recipe->Seeds.Structure), x, y);
+            drawLabelValue(window, "STRUCT SEED", std::to_string(data.Recipe->Seeds.Structure), x, y);
             drawLabelValue(window, "PALETTE", std::to_string(data.Recipe->Seeds.Palette), x, y);
             drawLabelValue(window, "DETAILS", std::to_string(data.Recipe->Seeds.Details), x, y);
             drawLabelValue(window, "ATTACH", std::to_string(data.Recipe->Seeds.Attachments), x, y);
@@ -1486,10 +1499,6 @@ namespace SpectralShipGenStudioPreview
         const SpectralShipGen::GeneratedShip& ship = *data.Ship;
         const SpectralShipGen::ShipGenerationDebugInfo& debug = *data.GenerationDebugInfo;
         const PreviewGenerationRecipe& recipe = *data.Recipe;
-        const auto sourceName = [](SpectralShipGen::ShipGenerationRecipeProfileSource source)
-        {
-            return source == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
-        };
         const auto paletteSourceName = [](SpectralShipGen::ShipPaletteSourceMode mode)
         {
             switch (mode)
@@ -1500,26 +1509,20 @@ namespace SpectralShipGenStudioPreview
             default: return "UNKNOWN";
             }
         };
-        const auto randomModeName = [](SpectralShipGen::GenerationRandomStreamMode mode)
-        {
-            return mode == SpectralShipGen::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS ? "DOMAIN SUBSTREAMS" : "LEGACY TOP-LEVEL";
-        };
 
         drawSectionHeader(window, "CONFIGURATION", x, y);
         drawLabelValue(window, "RES", std::to_string(recipe.Dimensions.Width) + "X" + std::to_string(recipe.Dimensions.Height), x, y);
         drawLabelValue(window, "MASTER", std::to_string(recipe.Seeds.Master), x, y);
         drawLabelValue(window, "STRUCT", fitDebugTextToWidth(data.StructuralDisplayName, 190.0f, SmallTextScale), x, y);
-        drawLabelValue(window, "STRUCT SRC", sourceName(recipe.StructuralSource), x, y);
+        drawLabelValue(window, "STRUCT SRC", getPresetSourceName(recipe.StructuralPreset.has_value()), x, y);
         drawLabelValue(window, "FACTION", fitDebugTextToWidth(data.FactionDisplayName, 190.0f, SmallTextScale), x, y);
-        drawLabelValue(window, "FACTION SRC", sourceName(recipe.FactionSource), x, y);
+        drawLabelValue(window, "FACTION SRC", getPresetSourceName(recipe.FactionPreset.has_value()), x, y);
         drawLabelValue(window, "PALETTE", fitDebugTextToWidth(data.PaletteDisplayName, 190.0f, SmallTextScale), x, y);
         drawLabelValue(window, "PALETTE SRC", paletteSourceName(recipe.PaletteConfiguration.Mode), x, y);
         if (!data.ConfigurationBundleDisplayName.empty() && data.ConfigurationBundleDisplayName != "INDIVIDUAL COMPONENTS")
         {
             drawLabelValue(window, "FULL CFG", fitDebugTextToWidth(data.ConfigurationBundleDisplayName, 190.0f, SmallTextScale), x, y);
         }
-        drawLabelValue(window, "RNG", randomModeName(recipe.RandomStreamMode), x, y);
-
         y += 4.0f;
         drawSectionHeader(window, "INSPECTION", x, y);
         if (data.Diagnostics != nullptr)

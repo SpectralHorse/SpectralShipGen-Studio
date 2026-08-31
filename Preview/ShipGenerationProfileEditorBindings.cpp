@@ -171,10 +171,6 @@ namespace SpectralShipGenStudioPreview
         addWeightGroup(complexity, "ComplexityCategoryWeights", "COMPLEXITY CATEGORY WEIGHTS", { "SILHOUETTE", "COCKPIT", "HULL LAYER", "MAJOR FEATURE", "LARGE WEAPON", "ATTACHMENT", "DETAIL" },
             [](const Profile& p) { return std::array<uint32_t, 10u>{ static_cast<uint32_t>(std::max(0, p.ComplexityCategoryWeights.Silhouette)), static_cast<uint32_t>(std::max(0, p.ComplexityCategoryWeights.CockpitStructure)), static_cast<uint32_t>(std::max(0, p.ComplexityCategoryWeights.HullLayer)), static_cast<uint32_t>(std::max(0, p.ComplexityCategoryWeights.MajorFeature)), static_cast<uint32_t>(std::max(0, p.ComplexityCategoryWeights.LargeWeapon)), static_cast<uint32_t>(std::max(0, p.ComplexityCategoryWeights.Attachment)), static_cast<uint32_t>(std::max(0, p.ComplexityCategoryWeights.Detail)), 0u, 0u, 0u }; },
             [](Profile& p, const std::array<uint32_t, 10u>& v) { p.ComplexityCategoryWeights = { static_cast<int32_t>(v[0]), static_cast<int32_t>(v[1]), static_cast<int32_t>(v[2]), static_cast<int32_t>(v[3]), static_cast<int32_t>(v[4]), static_cast<int32_t>(v[5]), static_cast<int32_t>(v[6]) }; });
-        addWeightGroup(complexity, "LegacyComplexityCategoryWeights", "LEGACY COMPLEXITY WEIGHTS", { "SILHOUETTE", "COCKPIT", "HULL LAYER", "MAJOR FEATURE", "LARGE WEAPON", "ATTACHMENT", "DETAIL" },
-            [](const Profile& p) { return std::array<uint32_t, 10u>{ static_cast<uint32_t>(std::max(0, p.LegacyComplexityCategoryWeights.Silhouette)), static_cast<uint32_t>(std::max(0, p.LegacyComplexityCategoryWeights.CockpitStructure)), static_cast<uint32_t>(std::max(0, p.LegacyComplexityCategoryWeights.HullLayer)), static_cast<uint32_t>(std::max(0, p.LegacyComplexityCategoryWeights.MajorFeature)), static_cast<uint32_t>(std::max(0, p.LegacyComplexityCategoryWeights.LargeWeapon)), static_cast<uint32_t>(std::max(0, p.LegacyComplexityCategoryWeights.Attachment)), static_cast<uint32_t>(std::max(0, p.LegacyComplexityCategoryWeights.Detail)), 0u, 0u, 0u }; },
-            [](Profile& p, const std::array<uint32_t, 10u>& v) { p.LegacyComplexityCategoryWeights = { static_cast<int32_t>(v[0]), static_cast<int32_t>(v[1]), static_cast<int32_t>(v[2]), static_cast<int32_t>(v[3]), static_cast<int32_t>(v[4]), static_cast<int32_t>(v[5]), static_cast<int32_t>(v[6]) }; });
-
         ADD_RANGE(hull, HullVerticalPaddingPercent, "VERTICAL PADDING", 0, 49, 1);
         ADD_RANGE(hull, HullHorizontalPaddingPercent, "HORIZONTAL PADDING", 0, 49, 1);
         ADD_RANGE(hull, NoseEndPercent, "NOSE END", 0, 100, 1);
@@ -211,7 +207,6 @@ namespace SpectralShipGenStudioPreview
         ADD_TOGGLE(silhouette, SilhouetteGuidanceEnabled, "GUIDANCE ENABLED");
         ADD_TOGGLE(silhouette, SilhouetteWeakArticulationGuidanceEnabled, "WEAK ARTICULATION GUIDANCE");
         ADD_TOGGLE(silhouette, SilhouetteProfileValidationEnabled, "PROFILE VALIDATION ENABLED");
-        ADD_TOGGLE(silhouette, AllowTinyBroadSilhouetteLegacyValidationException, "ALLOW TINY BROAD EXCEPTION");
         ADD_TOGGLE(silhouette, CleanAxialTaperArticulationExemption, "CLEAN AXIAL TAPER EXEMPTION");
         ADD_TOGGLE(silhouette, WingWedgeArticulationExemption, "WING WEDGE EXEMPTION");
         addWeightGroup(silhouette, "HullModifierWeights", "HULL MODIFIER WEIGHTS", { "BROAD SHOULDERS", "SIDE LOBES", "STEPPED WING", "NARROW WAIST", "WING CUTOUT", "SPLIT NOSE" },

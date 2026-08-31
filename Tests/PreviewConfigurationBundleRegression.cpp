@@ -42,10 +42,8 @@ namespace
         PreviewGenerationRecipe recipe;
         recipe.Seeds = deriveShipGenerationSeeds(0x9600000000000096ull);
         recipe.Dimensions = { 96u, 64u };
-        recipe.StructuralSource = ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
-        recipe.Style = ShipStyle::INDUSTRIAL;
-        recipe.FactionSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Faction = ShipFactionType::SHIP_FACTION_TYPE_END;
+        recipe.StructuralPreset = ShipStyle::INDUSTRIAL;
+        recipe.FactionPreset.reset();
         recipe.FactionProfile = getShipFactionProfile(ShipFactionType::MILITARY);
         recipe.FactionProfile.Weapons.EmissiveChance = 61u;
         recipe.PaletteConfiguration = makeBundlePalette();
@@ -138,32 +136,23 @@ int SpectralShipGenStudioTests::runPreviewConfigurationBundleRegression()
         std::cerr << "Configuration bundle persistence/restart failed.\n";
     }
 
-    // Task-93 v1 libraries remain valid and simply have no Full Configuration entries.
+    // Pre-1.0 user preset libraries are intentionally unsupported at the 1.0 boundary.
     std::string versionOneLibrary = serializeUserPresetLibrary(RuntimeCustomPresetWorkspace{});
-    const std::string versionTwoToken = "\"format_version\": 2";
-    const std::size_t versionPosition = versionOneLibrary.find(versionTwoToken);
-    const std::size_t bundlesPosition = versionOneLibrary.find("\"configuration_bundles\": []");
-    if (versionPosition == std::string::npos || bundlesPosition == std::string::npos)
+    const std::string versionThreeToken = "\"format_version\": 3";
+    const std::size_t versionPosition = versionOneLibrary.find(versionThreeToken);
+    if (versionPosition == std::string::npos)
     {
         success = false;
-        std::cerr << "Could not construct Task-93 compatibility fixture.\n";
+        std::cerr << "Could not construct pre-1.0 rejection fixture.\n";
     }
     else
     {
-        versionOneLibrary.replace(versionPosition, versionTwoToken.size(), "\"format_version\": 1");
-        std::size_t eraseStart = bundlesPosition;
-        if (eraseStart >= 2u && versionOneLibrary.substr(eraseStart - 2u, 2u) == ",\n") { eraseStart -= 2u; }
-        else
-        {
-            const std::size_t trailing = bundlesPosition + std::string("\"configuration_bundles\": []").size();
-            if (trailing + 2u <= versionOneLibrary.size() && versionOneLibrary.substr(trailing, 2u) == ",\n") { versionOneLibrary.erase(trailing, 2u); }
-        }
-        versionOneLibrary.erase(eraseStart, bundlesPosition + std::string("\"configuration_bundles\": []").size() - eraseStart);
+        versionOneLibrary.replace(versionPosition, versionThreeToken.size(), "\"format_version\": 1");
         const UserPresetLibraryLoadResult oldLibrary = deserializeUserPresetLibrary(versionOneLibrary);
-        if (!oldLibrary.Success || !oldLibrary.Workspace.getConfigurationBundles().empty())
+        if (oldLibrary.Success || oldLibrary.Error.find("Unsupported") == std::string::npos)
         {
             success = false;
-            std::cerr << "Task-93 v1 user preset library compatibility failed.\n";
+            std::cerr << "Pre-1.0 user preset library was not rejected cleanly.\n";
         }
     }
 
@@ -191,10 +180,8 @@ int SpectralShipGenStudioTests::runPreviewConfigurationBundleRegression()
     if (importedBundle != nullptr)
     {
         PreviewGenerationRecipe appliedRecipe = sourceRecipe;
-        appliedRecipe.StructuralSource = ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
-        appliedRecipe.Style = ShipStyle::SLEEK;
-        appliedRecipe.FactionSource = ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
-        appliedRecipe.Faction = ShipFactionType::XENO;
+        appliedRecipe.StructuralPreset = ShipStyle::SLEEK;
+        appliedRecipe.FactionPreset = ShipFactionType::XENO;
         appliedRecipe.PaletteConfiguration = {};
         const ShipGenerationSeeds seedsBefore = appliedRecipe.Seeds;
         const ShipDimensions dimensionsBefore = appliedRecipe.Dimensions;
@@ -204,7 +191,7 @@ int SpectralShipGenStudioTests::runPreviewConfigurationBundleRegression()
         applyConfigurationBundle(importedBundle->Bundle, appliedRecipe);
         if (!(appliedRecipe.Seeds == seedsBefore) || !(appliedRecipe.Dimensions == dimensionsBefore) || appliedRecipe.DetailDensity != detailDensityBefore ||
             appliedRecipe.AsymmetricDetailChance != asymmetricBefore || appliedRecipe.AttachmentsEnabled != attachmentsBefore ||
-            appliedRecipe.StructuralSource != ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM || appliedRecipe.FactionSource != ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
+            appliedRecipe.StructuralPreset.has_value() || appliedRecipe.FactionPreset.has_value())
         {
             success = false;
             std::cerr << "Applying a bundle modified generation-specific recipe state or fabricated built-in identity.\n";

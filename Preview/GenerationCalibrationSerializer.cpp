@@ -7,6 +7,8 @@
 #include <sstream>
 #include <vector>
 
+#include <SpectralShipGen/ShipGenerationRecipeSerializer.h>
+
 namespace
 {
     using namespace SpectralShipGen;
@@ -265,10 +267,9 @@ namespace SpectralShipGenStudioPreview
         for (std::size_t index = 0u; index < session.Records.size(); ++index)
         {
             const CalibrationComparisonRecord& record = session.Records[index];
-            stream << "    { \"pair_index\": " << record.PairIndex << ", \"group\": " << static_cast<uint32_t>(record.Group) << ", \"option_a\": " << record.OptionA << ", \"option_b\": " << record.OptionB << ", \"display_a_on_left\": " << (record.DisplayAOnLeft ? "true" : "false") << ", \"result\": " << static_cast<uint32_t>(record.Result)
-                << ", \"width\": " << record.Recipe.Dimensions.Width << ", \"height\": " << record.Recipe.Dimensions.Height << ", \"style\": " << static_cast<uint32_t>(record.Recipe.Style) << ", \"faction\": " << static_cast<uint32_t>(record.Recipe.Faction)
-                << ", \"detail_density\": " << record.Recipe.DetailDensity << ", \"asymmetric_detail_chance\": " << record.Recipe.AsymmetricDetailChance << ", \"attachments_enabled\": " << (record.Recipe.AttachmentsEnabled ? "true" : "false")
-                << ", \"master_seed\": " << record.Recipe.Seeds.Master << ", \"structure_seed\": " << record.Recipe.Seeds.Structure << ", \"palette_seed\": " << record.Recipe.Seeds.Palette << ", \"details_seed\": " << record.Recipe.Seeds.Details << ", \"attachments_seed\": " << record.Recipe.Seeds.Attachments << " }";
+            ShipGenerationRecipeDocument recipeDocument;
+            recipeDocument.Recipe = record.Recipe;
+            stream << "    { \"pair_index\": " << record.PairIndex << ", \"group\": " << static_cast<uint32_t>(record.Group) << ", \"option_a\": " << record.OptionA << ", \"option_b\": " << record.OptionB << ", \"display_a_on_left\": " << (record.DisplayAOnLeft ? "true" : "false") << ", \"result\": " << static_cast<uint32_t>(record.Result) << ", \"recipe\": " << serializeShipGenerationRecipe(recipeDocument) << " }";
             if (index + 1u < session.Records.size()) { stream << ','; }
             stream << '\n';
         }
@@ -280,7 +281,7 @@ namespace SpectralShipGenStudioPreview
     {
         GenerationCalibrationSessionLoadResult result;
         uint32_t version = 0u;
-        if (!extractUInt32(text, "format_version", version) || version != 1u) { result.Error = "Unsupported or missing calibration format_version."; return result; }
+        if (!extractUInt32(text, "format_version", version) || version != 2u) { result.Error = "Unsupported or missing calibration format_version."; return result; }
         result.Session.FormatVersion = version;
         if (!extractUnsigned(text, "root_seed", result.Session.RootSeed)) { result.Error = "Missing root_seed."; return result; }
         std::vector<uint64_t> sequence;
@@ -293,16 +294,16 @@ namespace SpectralShipGenStudioPreview
         for (const std::string& object : records)
         {
             CalibrationComparisonRecord record;
-            uint32_t group = 0u, resultValue = 0u, style = 0u, faction = 0u;
+            uint32_t group = 0u, resultValue = 0u;
             if (!extractUnsigned(object, "pair_index", record.PairIndex) || !extractUInt32(object, "group", group) || !extractUInt32(object, "option_a", record.OptionA) || !extractUInt32(object, "option_b", record.OptionB) || !extractBool(object, "display_a_on_left", record.DisplayAOnLeft) || !extractUInt32(object, "result", resultValue)) { result.Error = "Invalid calibration record header."; return result; }
             if (group >= static_cast<uint32_t>(GenerationWeightGroup::GENERATION_WEIGHT_GROUP_END) || resultValue > static_cast<uint32_t>(CalibrationPreferenceResult::SKIP)) { result.Error = "Calibration record enum value out of range."; return result; }
             record.Group = static_cast<GenerationWeightGroup>(group);
             record.Result = static_cast<CalibrationPreferenceResult>(resultValue);
-            if (!extractUInt32(object, "width", record.Recipe.Dimensions.Width) || !extractUInt32(object, "height", record.Recipe.Dimensions.Height) || !extractUInt32(object, "style", style) || !extractUInt32(object, "faction", faction) || !extractUInt32(object, "detail_density", record.Recipe.DetailDensity) || !extractUInt32(object, "asymmetric_detail_chance", record.Recipe.AsymmetricDetailChance) || !extractBool(object, "attachments_enabled", record.Recipe.AttachmentsEnabled)) { result.Error = "Invalid calibration record context."; return result; }
-            if (style >= static_cast<uint32_t>(ShipStyle::SHIP_STYLE_END) || faction >= static_cast<uint32_t>(ShipFactionType::SHIP_FACTION_TYPE_END)) { result.Error = "Calibration record context enum out of range."; return result; }
-            record.Recipe.Style = static_cast<ShipStyle>(style);
-            record.Recipe.Faction = static_cast<ShipFactionType>(faction);
-            if (!extractUnsigned(object, "master_seed", record.Recipe.Seeds.Master) || !extractUnsigned(object, "structure_seed", record.Recipe.Seeds.Structure) || !extractUnsigned(object, "palette_seed", record.Recipe.Seeds.Palette) || !extractUnsigned(object, "details_seed", record.Recipe.Seeds.Details) || !extractUnsigned(object, "attachments_seed", record.Recipe.Seeds.Attachments)) { result.Error = "Invalid calibration record seeds."; return result; }
+            std::string recipeJson;
+            if (!extractObject(object, "recipe", recipeJson)) { result.Error = "Missing calibration record recipe."; return result; }
+            const ShipGenerationRecipeLoadResult recipeLoad = deserializeShipGenerationRecipe(recipeJson);
+            if (!recipeLoad.Success) { result.Error = "Invalid calibration record recipe: " + recipeLoad.Error; return result; }
+            record.Recipe = recipeLoad.Document.Recipe;
             result.Session.Records.push_back(record);
         }
         result.Success = true;
@@ -330,10 +331,10 @@ namespace SpectralShipGenStudioPreview
     {
         std::ofstream stream(path, std::ios::binary);
         if (!stream) { error = "Failed to open calibration CSV for writing: " + path.string(); return false; }
-        stream << "pair_index,group,option_a,option_b,display_a_on_left,result,width,height,style,faction,dimension_bucket,master_seed,structure_seed,palette_seed,details_seed,attachments_seed\n";
+        stream << "pair_index,group,option_a,option_b,display_a_on_left,result,width,height,structural_preset,faction_preset,dimension_bucket,master_seed,structure_seed,palette_seed,details_seed,attachments_seed\n";
         for (const CalibrationComparisonRecord& record : session.Records)
         {
-            stream << record.PairIndex << ',' << groupKey(record.Group) << ',' << getCalibrationOptionName(record.Group, record.OptionA) << ',' << getCalibrationOptionName(record.Group, record.OptionB) << ',' << (record.DisplayAOnLeft ? 1 : 0) << ',' << resultKey(record.Result) << ',' << record.Recipe.Dimensions.Width << ',' << record.Recipe.Dimensions.Height << ',' << styleKey(record.Recipe.Style) << ',' << static_cast<uint32_t>(record.Recipe.Faction) << ',' << getCalibrationDimensionBucketName(getCalibrationDimensionBucket(record.Recipe.Dimensions)) << ',' << record.Recipe.Seeds.Master << ',' << record.Recipe.Seeds.Structure << ',' << record.Recipe.Seeds.Palette << ',' << record.Recipe.Seeds.Details << ',' << record.Recipe.Seeds.Attachments << '\n';
+            stream << record.PairIndex << ',' << groupKey(record.Group) << ',' << getCalibrationOptionName(record.Group, record.OptionA) << ',' << getCalibrationOptionName(record.Group, record.OptionB) << ',' << (record.DisplayAOnLeft ? 1 : 0) << ',' << resultKey(record.Result) << ',' << record.Recipe.Dimensions.Width << ',' << record.Recipe.Dimensions.Height << ',' << (record.Recipe.StructuralPreset.has_value() ? styleKey(*record.Recipe.StructuralPreset) : "CUSTOM") << ',' << (record.Recipe.FactionPreset.has_value() ? std::to_string(static_cast<uint32_t>(*record.Recipe.FactionPreset)) : "CUSTOM") << ',' << getCalibrationDimensionBucketName(getCalibrationDimensionBucket(record.Recipe.Dimensions)) << ',' << record.Recipe.Seeds.Master << ',' << record.Recipe.Seeds.Structure << ',' << record.Recipe.Seeds.Palette << ',' << record.Recipe.Seeds.Details << ',' << record.Recipe.Seeds.Attachments << '\n';
         }
         if (!stream) { error = "Failed while writing calibration CSV: " + path.string(); return false; }
         return true;

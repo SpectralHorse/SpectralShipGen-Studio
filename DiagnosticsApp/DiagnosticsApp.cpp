@@ -512,8 +512,8 @@ namespace SpectralShipGenStudioDiagnosticsApp
         if (snapshot.ScheduledSamples > 0u)
         {
             drawLabelValue("CURRENT", std::to_string(snapshot.Progress.CurrentWidth) + "X" + std::to_string(snapshot.Progress.CurrentHeight), RightX + 14.0f, y); y += RowHeight;
-            drawLabelValue("STYLE", styleName(snapshot.Progress.CurrentStyle), RightX + 14.0f, y); y += RowHeight;
-            drawLabelValue("FACTION", factionName(snapshot.Progress.CurrentFaction), RightX + 14.0f, y); y += RowHeight;
+            drawLabelValue("STYLE", snapshot.Progress.CurrentStyle.has_value() ? styleName(*snapshot.Progress.CurrentStyle) : "CUSTOM", RightX + 14.0f, y); y += RowHeight;
+            drawLabelValue("FACTION", snapshot.Progress.CurrentFaction.has_value() ? factionName(*snapshot.Progress.CurrentFaction) : "CUSTOM", RightX + 14.0f, y); y += RowHeight;
             drawLabelValue("STAGE", snapshot.Progress.CurrentStage == SpectralShipGen::ShipGenerationPerformanceStage::SHIP_GENERATION_PERFORMANCE_STAGE_END ? "SAMPLE COMPLETE" : SpectralShipGen::getShipGenerationPerformanceStageName(snapshot.Progress.CurrentStage), RightX + 14.0f, y);
         }
         if (snapshot.CompletedSamples > 0u)

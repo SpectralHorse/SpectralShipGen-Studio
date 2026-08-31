@@ -34,8 +34,8 @@ namespace
         PreviewGenerationRecipe recipe;
         recipe.Seeds = deriveShipGenerationSeeds(seed);
         recipe.Dimensions = dimensions;
-        recipe.Style = ShipStyle::INDUSTRIAL;
-        recipe.Faction = ShipFactionType::CORPORATE;
+        recipe.StructuralPreset = ShipStyle::INDUSTRIAL;
+        recipe.FactionPreset = ShipFactionType::CORPORATE;
         recipe.DetailDensity = 67u;
         recipe.AsymmetricDetailChance = 31u;
         return recipe;

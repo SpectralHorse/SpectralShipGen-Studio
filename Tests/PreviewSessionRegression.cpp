@@ -24,8 +24,8 @@ namespace
         SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe;
         recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(seed);
         recipe.Dimensions = { width, height };
-        recipe.Style = SpectralShipGen::ShipStyle::FIGHTER;
-        recipe.Faction = SpectralShipGen::ShipFactionType::MILITARY;
+        recipe.StructuralPreset = SpectralShipGen::ShipStyle::FIGHTER;
+        recipe.FactionPreset = SpectralShipGen::ShipFactionType::MILITARY;
         return recipe;
     }
 
