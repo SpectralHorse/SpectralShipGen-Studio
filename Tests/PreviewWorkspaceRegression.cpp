@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <array>
 #include <cstdint>
@@ -15,7 +15,7 @@
 #include "PreviewConfigurationEditor.h"
 #include "PreviewWorkspace.h"
 #include "RuntimeCustomPresetWorkspace.h"
-#include "ShipGenerationProfile.h"
+#include <PixelShipGenerator/ShipGenerationProfile.h>
 #include "StructuralProfileSelection.h"
 
 namespace PixelShipGeneratorTests

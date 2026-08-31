@@ -10,11 +10,11 @@
 #include <string>
 #include <vector>
 
-#include "GeneratedShip.h"
-#include "ShipFactionType.h"
-#include "ShipGenerationDebugInfo.h"
-#include "ShipGenerationProfile.h"
-#include "ShipGenerator.h"
+#include <PixelShipGenerator/GeneratedShip.h>
+#include <PixelShipGenerator/ShipFactionType.h>
+#include <PixelShipGenerator/ShipGenerationDebugInfo.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <PixelShipGenerator/ShipGenerator.h>
 
 #include "AttributeRerollStudio.h"
 #include "GenerationCalibration.h"

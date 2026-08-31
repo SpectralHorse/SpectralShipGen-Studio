@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics/Image.hpp>
 
-#include "Image.h"
+#include <PixelShipGenerator/Image.h>
 
 namespace PixelShipGenerator
 {

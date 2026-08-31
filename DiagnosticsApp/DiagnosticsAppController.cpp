@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <utility>
 
-#include "DiagnosticsResultSerializer.h"
+#include <PixelShipGenerator/Diagnostics/DiagnosticsResultSerializer.h>
 
 namespace PixelShipGeneratorDiagnosticsApp
 {

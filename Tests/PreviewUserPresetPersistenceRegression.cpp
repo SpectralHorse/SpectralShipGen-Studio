@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -7,19 +7,19 @@
 #include <string>
 #include <vector>
 
-#include "BuiltInPresetCatalog.h"
+#include <PixelShipGenerator/BuiltInPresetCatalog.h>
 #include "FactionProfileSelection.h"
 #include "PaletteProfileSelection.h"
 #include "PreviewConfigurationEditor.h"
 #include "PreviewFavoritesPersistence.h"
 #include "PreviewGenerationRecipe.h"
 #include "RuntimeCustomPresetWorkspace.h"
-#include "ShipFactionProfile.h"
-#include "ShipGenerationProfile.h"
+#include <PixelShipGenerator/ShipFactionProfile.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
 #include "ShipGenerationRecipeSerializer.h"
-#include "ShipGenerationSeeds.h"
-#include "ShipGenerator.h"
-#include "ShipPaletteGenerationProfile.h"
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <PixelShipGenerator/ShipGenerator.h>
+#include <PixelShipGenerator/ShipPaletteGenerationProfile.h>
 #include "StructuralProfileSelection.h"
 #include "UserPresetPersistence.h"
 

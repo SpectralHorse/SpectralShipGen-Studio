@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "ShipGenerationRecipe.h"
+#include <PixelShipGenerator/ShipGenerationRecipe.h>
 
 #include "RuntimeCustomPresetWorkspace.h"
 

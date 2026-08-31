@@ -1,16 +1,16 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <cstdint>
 #include <iostream>
 #include <optional>
 #include <string>
 
-#include "BuiltInPresetCatalog.h"
-#include "GenerationDomain.h"
+#include <PixelShipGenerator/BuiltInPresetCatalog.h>
+#include <PixelShipGenerator/GenerationDomain.h>
 #include "ShipGenerationRecipeSerializer.h"
-#include "ShipGenerator.h"
-#include "ShipPaletteGenerationProfile.h"
-#include "ShipPaletteGenerationProfileValidation.h"
+#include <PixelShipGenerator/ShipGenerator.h>
+#include <PixelShipGenerator/ShipPaletteGenerationProfile.h>
+#include <PixelShipGenerator/ShipPaletteGenerationProfileValidation.h>
 
 #include "ConfigurationEditorControls.h"
 #include "PaletteProfileSelection.h"

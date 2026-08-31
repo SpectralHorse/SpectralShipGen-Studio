@@ -5,11 +5,11 @@
 #include <sstream>
 #include <utility>
 
-#include "ShipFactionProfileValidation.h"
-#include "ShipGenerationProfileValidation.h"
-#include "ShipGenerationRecipeJson.h"
-#include "ShipGenerationRecipeProfileSerialization.h"
-#include "ShipPaletteGenerationProfileValidation.h"
+#include <PixelShipGenerator/ShipFactionProfileValidation.h>
+#include <PixelShipGenerator/ShipGenerationProfileValidation.h>
+#include <PixelShipGenerator/Serialization/ShipGenerationRecipeJson.h>
+#include <PixelShipGenerator/Serialization/ShipGenerationRecipeProfileSerialization.h>
+#include <PixelShipGenerator/ShipPaletteGenerationProfileValidation.h>
 
 namespace
 {

@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "Color.h"
-#include "GeneratedShip.h"
-#include "ShipGenerationDebugInfo.h"
+#include <PixelShipGenerator/Color.h>
+#include <PixelShipGenerator/GeneratedShip.h>
+#include <PixelShipGenerator/ShipGenerationDebugInfo.h>
 
 namespace PixelShipGeneratorPreview
 {

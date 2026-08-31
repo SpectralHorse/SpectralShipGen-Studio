@@ -12,10 +12,10 @@
 #include <vector>
 
 #include "SFMLCharts.h"
-#include "DiagnosticsAnalysis.h"
+#include <PixelShipGenerator/Diagnostics/DiagnosticsAnalysis.h>
 #include "DiagnosticsAppController.h"
-#include "ShipFactionType.h"
-#include "ShipGenerationProfile.h"
+#include <PixelShipGenerator/ShipFactionType.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
 
 namespace PixelShipGeneratorDiagnosticsApp
 {

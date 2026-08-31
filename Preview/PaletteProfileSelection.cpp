@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "BuiltInPresetCatalog.h"
+#include <PixelShipGenerator/BuiltInPresetCatalog.h>
 
 namespace PixelShipGeneratorPreview
 {

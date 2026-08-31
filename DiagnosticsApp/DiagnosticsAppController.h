@@ -8,7 +8,7 @@
 #include <string>
 #include <thread>
 
-#include "DiagnosticsRunner.h"
+#include <PixelShipGenerator/Diagnostics/DiagnosticsRunner.h>
 
 namespace PixelShipGeneratorDiagnosticsApp
 {

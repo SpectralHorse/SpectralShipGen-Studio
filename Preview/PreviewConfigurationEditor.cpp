@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <utility>
 
-#include "ShipFactionProfileValidation.h"
-#include "ShipGenerationProfileValidation.h"
-#include "ShipPaletteGenerationProfileValidation.h"
+#include <PixelShipGenerator/ShipFactionProfileValidation.h>
+#include <PixelShipGenerator/ShipGenerationProfileValidation.h>
+#include <PixelShipGenerator/ShipPaletteGenerationProfileValidation.h>
 
 namespace PixelShipGeneratorPreview
 {

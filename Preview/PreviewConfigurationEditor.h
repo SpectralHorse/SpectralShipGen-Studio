@@ -7,10 +7,10 @@
 #include <string>
 #include <string_view>
 
-#include "ShipFactionProfile.h"
-#include "ShipGenerationProfile.h"
-#include "ShipPaletteConfiguration.h"
-#include "Validation.h"
+#include <PixelShipGenerator/ShipFactionProfile.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <PixelShipGenerator/ShipPaletteConfiguration.h>
+#include <PixelShipGenerator/Validation.h>
 
 #include "ConfigurationBundle.h"
 #include "ConfigurationEditorControls.h"

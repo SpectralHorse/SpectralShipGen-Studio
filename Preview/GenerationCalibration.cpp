@@ -1,14 +1,14 @@
 #include "GenerationCalibration.h"
 
-#include "GenerationScaleTraits.h"
+#include <PixelShipGenerator/GenerationScaleTraits.h>
 
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
 
-#include "ShipGenerationSeeds.h"
-#include "ShipGenerationSettings.h"
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <PixelShipGenerator/ShipGenerationSettings.h>
 
 namespace
 {

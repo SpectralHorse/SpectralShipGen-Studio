@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -12,8 +12,8 @@
 #include "PreviewWorkspace.h"
 #include "RuntimeCustomPresetWorkspace.h"
 #include "ShipGenerationRecipeSerializer.h"
-#include "ShipGenerationSeeds.h"
-#include "ShipGenerator.h"
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <PixelShipGenerator/ShipGenerator.h>
 #include "UserPresetPersistence.h"
 
 namespace

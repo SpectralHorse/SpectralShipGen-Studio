@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <cstdint>
 #include <iostream>
@@ -6,11 +6,11 @@
 #include <vector>
 
 #include "AttributeRerollStudio.h"
-#include "GenerationDomainReroll.h"
+#include <PixelShipGenerator/GenerationDomainReroll.h>
 #include "PreviewCommandPanel.h"
-#include "ShipGenerationSeeds.h"
-#include "ShipGenerationSettings.h"
-#include "ShipGenerator.h"
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <PixelShipGenerator/ShipGenerationSettings.h>
+#include <PixelShipGenerator/ShipGenerator.h>
 
 namespace
 {

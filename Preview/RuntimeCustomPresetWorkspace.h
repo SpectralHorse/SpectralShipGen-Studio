@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "ShipFactionProfile.h"
-#include "ShipGenerationProfile.h"
-#include "ShipPaletteConfiguration.h"
+#include <PixelShipGenerator/ShipFactionProfile.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <PixelShipGenerator/ShipPaletteConfiguration.h>
 
 #include "ConfigurationBundle.h"
 

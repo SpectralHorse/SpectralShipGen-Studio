@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "ShipFactionType.h"
-#include "ShipGenerationRecipe.h"
+#include <PixelShipGenerator/ShipFactionType.h>
+#include <PixelShipGenerator/ShipGenerationRecipe.h>
 
 #include "RuntimeCustomPresetWorkspace.h"
 

@@ -6,7 +6,7 @@
 #include <string_view>
 #include <vector>
 
-#include "ShipPaletteConfiguration.h"
+#include <PixelShipGenerator/ShipPaletteConfiguration.h>
 
 #include "ConfigurationEditorControls.h"
 

@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,9 +10,9 @@
 
 #include "GenerationCalibration.h"
 #include "GenerationCalibrationSerializer.h"
-#include "GenerationTuningProfile.h"
-#include "ShipGenerationSeeds.h"
-#include "ShipGenerator.h"
+#include <PixelShipGenerator/GenerationTuningProfile.h>
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <PixelShipGenerator/ShipGenerator.h>
 
 namespace
 {

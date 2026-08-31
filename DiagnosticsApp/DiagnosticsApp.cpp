@@ -8,8 +8,8 @@
 #include <utility>
 
 #include "SFMLPixelText.h"
-#include "DiagnosticsResultSerializer.h"
-#include "ShipGenerationPerformance.h"
+#include <PixelShipGenerator/Diagnostics/DiagnosticsResultSerializer.h>
+#include <PixelShipGenerator/ShipGenerationPerformance.h>
 
 namespace
 {

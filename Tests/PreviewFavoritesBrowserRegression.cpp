@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <filesystem>
 #include <iostream>
@@ -10,7 +10,7 @@
 #include "PreviewCommand.h"
 #include "PreviewFavoritesPersistence.h"
 #include "PreviewWorkspace.h"
-#include "ShipGenerationSeeds.h"
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
 
 namespace
 {

@@ -6,13 +6,13 @@
 #include <cstdint>
 #include <string>
 
-#include "GeneratedShip.h"
+#include <PixelShipGenerator/GeneratedShip.h>
 #include "AttributeRerollStudio.h"
 #include "GenerationCalibration.h"
-#include "ShipGenerationDebugInfo.h"
-#include "ShipFiringAnimation.h"
-#include "ShipIdleAnimation.h"
-#include "ShipMovementAnimation.h"
+#include <PixelShipGenerator/ShipGenerationDebugInfo.h>
+#include <PixelShipGenerator/ShipFiringAnimation.h>
+#include <PixelShipGenerator/ShipIdleAnimation.h>
+#include <PixelShipGenerator/ShipMovementAnimation.h>
 
 #include "PreviewCommandPanel.h"
 #include "PreviewConfigurationEditor.h"

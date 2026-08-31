@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <cstdint>
 #include <iostream>
@@ -6,11 +6,11 @@
 
 #include "PreviewAnimationSession.h"
 #include "PreviewCollectionSession.h"
-#include "ShipFiringAnimator.h"
-#include "ShipIdleAnimator.h"
-#include "ShipLateralMovementAnimator.h"
-#include "ShipGenerationSettings.h"
-#include "ShipGenerator.h"
+#include <PixelShipGenerator/ShipFiringAnimator.h>
+#include <PixelShipGenerator/ShipIdleAnimator.h>
+#include <PixelShipGenerator/ShipLateralMovementAnimator.h>
+#include <PixelShipGenerator/ShipGenerationSettings.h>
+#include <PixelShipGenerator/ShipGenerator.h>
 
 namespace
 {

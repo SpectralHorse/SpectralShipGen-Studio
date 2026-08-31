@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "GenerationDomain.h"
+#include <PixelShipGenerator/GenerationDomain.h>
 #include "PreviewGenerationRecipe.h"
 
 namespace PixelShipGeneratorPreview

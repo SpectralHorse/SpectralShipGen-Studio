@@ -1,13 +1,13 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <iostream>
 #include <string>
 
 #include "PreviewInspection.h"
 #include "PreviewWorkspace.h"
-#include "ShipGenerationRecipe.h"
-#include "ShipGenerationSettings.h"
-#include "ShipGenerator.h"
+#include <PixelShipGenerator/ShipGenerationRecipe.h>
+#include <PixelShipGenerator/ShipGenerationSettings.h>
+#include <PixelShipGenerator/ShipGenerator.h>
 
 namespace PixelShipGeneratorTests
 {

@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-#include "ShipGenerationProfile.h"
+#include <PixelShipGenerator/ShipGenerationProfile.h>
 
 #include "ConfigurationEditorControls.h"
 

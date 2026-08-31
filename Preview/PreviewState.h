@@ -7,11 +7,11 @@
 #include <cstdint>
 #include <vector>
 
-#include "Color.h"
-#include "GeneratedShip.h"
-#include "ShipFactionType.h"
-#include "ShipGenerationProfile.h"
-#include "ShipGenerationSeeds.h"
+#include <PixelShipGenerator/Color.h>
+#include <PixelShipGenerator/GeneratedShip.h>
+#include <PixelShipGenerator/ShipFactionType.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
 
 #include "PreviewGenerationRecipe.h"
 #include "PreviewInspection.h"

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "ShipDimensions.h"
+#include <PixelShipGenerator/ShipDimensions.h>
 
 namespace PixelShipGeneratorPreview
 {

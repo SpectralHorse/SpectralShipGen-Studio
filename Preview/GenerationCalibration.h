@@ -6,11 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "GeneratedShip.h"
-#include "GenerationTuningProfile.h"
-#include "ShipGenerationDebugInfo.h"
-#include "ShipGenerator.h"
-#include "GenerationStatistics.h"
+#include <PixelShipGenerator/GeneratedShip.h>
+#include <PixelShipGenerator/GenerationTuningProfile.h>
+#include <PixelShipGenerator/ShipGenerationDebugInfo.h>
+#include <PixelShipGenerator/ShipGenerator.h>
+#include <PixelShipGenerator/Diagnostics/GenerationStatistics.h>
 
 #include "PreviewGenerationRecipe.h"
 

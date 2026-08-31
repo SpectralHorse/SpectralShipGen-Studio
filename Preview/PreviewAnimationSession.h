@@ -4,16 +4,16 @@
 #include <string>
 #include <vector>
 
-#include "AnimationSamplingPlanner.h"
-#include "GeneratedShip.h"
-#include "ShipAnimationStateCoordinator.h"
-#include "ShipFiringAnimation.h"
-#include "ShipFiringAnimator.h"
-#include "ShipIdleAnimation.h"
-#include "ShipIdleAnimator.h"
-#include "ShipLateralMovementAnimator.h"
-#include "ShipLongitudinalMovementAnimator.h"
-#include "ShipMovementAnimation.h"
+#include <PixelShipGenerator/AnimationSamplingPlanner.h>
+#include <PixelShipGenerator/GeneratedShip.h>
+#include <PixelShipGenerator/ShipAnimationStateCoordinator.h>
+#include <PixelShipGenerator/ShipFiringAnimation.h>
+#include <PixelShipGenerator/ShipFiringAnimator.h>
+#include <PixelShipGenerator/ShipIdleAnimation.h>
+#include <PixelShipGenerator/ShipIdleAnimator.h>
+#include <PixelShipGenerator/ShipLateralMovementAnimator.h>
+#include <PixelShipGenerator/ShipLongitudinalMovementAnimator.h>
+#include <PixelShipGenerator/ShipMovementAnimation.h>
 
 namespace PixelShipGeneratorPreview
 {

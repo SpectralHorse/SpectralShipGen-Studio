@@ -1,4 +1,4 @@
-#include <PixelShipGenerator/SFMLImageAdapter.h>
+#include "SFMLImageAdapter.h"
 
 namespace PixelShipGenerator
 {

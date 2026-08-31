@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <cstdint>
 #include <iostream>
@@ -8,15 +8,15 @@
 #include "PreviewConfigurationEditor.h"
 #include "RuntimeCustomPresetWorkspace.h"
 
-#include "ShipFactionProfile.h"
-#include "ShipFactionProfileValidation.h"
-#include "ShipFiringAnimator.h"
-#include "ShipGenerationProfile.h"
-#include "ShipGenerationSettings.h"
-#include "ShipGenerator.h"
-#include "ShipIdleAnimator.h"
-#include "ShipLateralMovementAnimator.h"
-#include "ShipLongitudinalMovementAnimator.h"
+#include <PixelShipGenerator/ShipFactionProfile.h>
+#include <PixelShipGenerator/ShipFactionProfileValidation.h>
+#include <PixelShipGenerator/ShipFiringAnimator.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <PixelShipGenerator/ShipGenerationSettings.h>
+#include <PixelShipGenerator/ShipGenerator.h>
+#include <PixelShipGenerator/ShipIdleAnimator.h>
+#include <PixelShipGenerator/ShipLateralMovementAnimator.h>
+#include <PixelShipGenerator/ShipLongitudinalMovementAnimator.h>
 
 namespace PixelShipGeneratorTests
 {

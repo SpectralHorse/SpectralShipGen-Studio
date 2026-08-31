@@ -10,7 +10,7 @@
 #include <string>
 #include <utility>
 
-#include <PixelShipGenerator/SFMLImageAdapter.h>
+#include "SFMLImageAdapter.h"
 #include <PixelShipGenerator/BuiltInPresetCatalog.h>
 #include "GenerationCalibration.h"
 #include "GenerationCalibrationSerializer.h"
@@ -20,9 +20,9 @@
 #include "UserPresetPersistence.h"
 #include "ShipGenerationRecipeSerializer.h"
 #include "PreviewThumbnailGrid.h"
-#include "ShipGenerationSeeds.h"
-#include "ShipGenerationSettings.h"
-#include "ShipSpritesheetUtils.h"
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <PixelShipGenerator/ShipGenerationSettings.h>
+#include <PixelShipGenerator/ShipSpritesheetUtils.h>
 
 namespace
 {

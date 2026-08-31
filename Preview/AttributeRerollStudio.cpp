@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "GenerationDomainReroll.h"
+#include <PixelShipGenerator/GenerationDomainReroll.h>
 
 namespace PixelShipGeneratorPreview
 {
@@ -80,7 +80,7 @@ namespace PixelShipGeneratorPreview
         if (!state.Active || !hasSelectedAttributeRerollDomains(state)) { return state.BaseRecipe; }
 
         state.CandidateRerollSeed = rerollSeed;
-        state.CandidateRecipe = rerollGenerationDomains(state.BaseRecipe, getSelectedAttributeRerollDomains(state), rerollSeed);
+        state.CandidateRecipe = PixelShipGenerator::rerollGenerationDomains(state.BaseRecipe, getSelectedAttributeRerollDomains(state), rerollSeed);
         state.CandidateValid = true;
         ++state.CandidateSequence;
         return state.CandidateRecipe;

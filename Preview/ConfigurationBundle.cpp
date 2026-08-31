@@ -2,9 +2,9 @@
 
 #include <utility>
 
-#include "ShipFactionProfile.h"
-#include "ShipGenerationProfile.h"
-#include "ShipResolvedGenerationConfiguration.h"
+#include <PixelShipGenerator/ShipFactionProfile.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <PixelShipGenerator/ShipResolvedGenerationConfiguration.h>
 
 namespace PixelShipGeneratorPreview
 {

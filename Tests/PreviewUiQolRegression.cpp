@@ -1,4 +1,4 @@
-#include "RegressionSuites.h"
+#include "PreviewRegressionSuites.h"
 
 #include <cstddef>
 #include <filesystem>
@@ -12,9 +12,9 @@
 #include "PreviewFavoritesPersistence.h"
 #include "PreviewGenerationRecipe.h"
 #include "PreviewPagination.h"
-#include "ShipFactionProfile.h"
-#include "ShipGenerationProfile.h"
-#include "ShipGenerationSeeds.h"
+#include <PixelShipGenerator/ShipFactionProfile.h>
+#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <PixelShipGenerator/ShipGenerationSeeds.h>
 
 namespace
 {
