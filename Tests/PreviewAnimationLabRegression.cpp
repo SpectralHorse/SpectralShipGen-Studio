@@ -8,42 +8,42 @@
 #include "PreviewAnimationSession.h"
 #include "PreviewGenerationRecipe.h"
 #include "PreviewWorkspace.h"
-#include <PixelShipGenerator/ShipFactionProfile.h>
-#include <PixelShipGenerator/ShipFiringAnimator.h>
-#include <PixelShipGenerator/ShipGenerationProfile.h>
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
-#include <PixelShipGenerator/ShipGenerationSettings.h>
-#include <PixelShipGenerator/ShipGenerator.h>
-#include <PixelShipGenerator/ShipSpritesheetUtils.h>
+#include <SpectralShipGen/ShipFactionProfile.h>
+#include <SpectralShipGen/ShipFiringAnimator.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipGenerationSettings.h>
+#include <SpectralShipGen/ShipGenerator.h>
+#include <SpectralShipGen/ShipSpritesheetUtils.h>
 
 namespace
 {
-    bool imagesEqual(const PixelShipGenerator::Image& first, const PixelShipGenerator::Image& second)
+    bool imagesEqual(const SpectralShipGen::Image& first, const SpectralShipGen::Image& second)
     {
         return first.getWidth() == second.getWidth() && first.getHeight() == second.getHeight() && first.getPixels() == second.getPixels();
     }
 
-    PixelShipGenerator::GeneratedShip generateAnimatedShip()
+    SpectralShipGen::GeneratedShip generateAnimatedShip()
     {
-        PixelShipGenerator::ShipGenerator generator;
-        PixelShipGenerator::ShipFiringAnimator firingAnimator;
+        SpectralShipGen::ShipGenerator generator;
+        SpectralShipGen::ShipFiringAnimator firingAnimator;
         for (uint64_t seed = 1u; seed <= 256u; ++seed)
         {
-            PixelShipGenerator::ShipGenerationSettings settings;
+            SpectralShipGen::ShipGenerationSettings settings;
             settings.Seed = seed;
             settings.Dimensions = { 96u, 96u };
-            settings.Style = PixelShipGenerator::ShipStyle::FIGHTER;
-            settings.Faction = PixelShipGenerator::ShipFactionType::MILITARY;
-            PixelShipGenerator::GeneratedShip ship = generator.generate(settings);
+            settings.Style = SpectralShipGen::ShipStyle::FIGHTER;
+            settings.Faction = SpectralShipGen::ShipFactionType::MILITARY;
+            SpectralShipGen::GeneratedShip ship = generator.generate(settings);
             if (!firingAnimator.getAvailableTargets(ship).empty()) { return ship; }
         }
         return {};
     }
 
-    PixelShipGeneratorPreview::PreviewGenerationRecipe makeCustomRecipe()
+    SpectralShipGenStudioPreview::PreviewGenerationRecipe makeCustomRecipe()
     {
-        using namespace PixelShipGenerator;
-        PixelShipGeneratorPreview::PreviewGenerationRecipe recipe;
+        using namespace SpectralShipGen;
+        SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe;
         recipe.Seeds = deriveShipGenerationSeeds(0x9900000000000001ull);
         recipe.Dimensions = { 96u, 64u };
         recipe.StructuralSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
@@ -60,17 +60,17 @@ namespace
         return recipe;
     }
 
-    bool checkSampledTime(const PixelShipGeneratorPreview::PreviewAnimationSession& session)
+    bool checkSampledTime(const SpectralShipGenStudioPreview::PreviewAnimationSession& session)
     {
         const double time = session.getActiveNormalizedTime();
         return time >= 0.0 && time <= 1.0 && session.getFrameIndex() < session.getActiveFrames().size();
     }
 }
 
-int PixelShipGeneratorTests::runPreviewAnimationLabRegression()
+int SpectralShipGenStudioTests::runPreviewAnimationLabRegression()
 {
-    using namespace PixelShipGeneratorPreview;
-    using namespace PixelShipGenerator;
+    using namespace SpectralShipGenStudioPreview;
+    using namespace SpectralShipGen;
 
     const GeneratedShip ship = generateAnimatedShip();
     if (ship.FinalImage.empty()) { std::cerr << "animation_lab_ship failed.\n"; return 1; }

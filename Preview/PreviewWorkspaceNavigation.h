@@ -9,7 +9,7 @@
 
 #include "PreviewWorkspace.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct PreviewWorkspaceNavigationButton
     {

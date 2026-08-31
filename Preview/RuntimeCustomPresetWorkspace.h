@@ -5,13 +5,13 @@
 #include <string>
 #include <vector>
 
-#include <PixelShipGenerator/ShipFactionProfile.h>
-#include <PixelShipGenerator/ShipGenerationProfile.h>
-#include <PixelShipGenerator/ShipPaletteConfiguration.h>
+#include <SpectralShipGen/ShipFactionProfile.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipPaletteConfiguration.h>
 
 #include "ConfigurationBundle.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     using RuntimeCustomPresetId = uint32_t;
 
@@ -19,21 +19,21 @@ namespace PixelShipGeneratorPreview
     {
         RuntimeCustomPresetId Id = 0u;
         std::string Name;
-        PixelShipGenerator::ShipGenerationProfile Profile;
+        SpectralShipGen::ShipGenerationProfile Profile;
     };
 
     struct RuntimeFactionPreset
     {
         RuntimeCustomPresetId Id = 0u;
         std::string Name;
-        PixelShipGenerator::ShipFactionProfile Profile;
+        SpectralShipGen::ShipFactionProfile Profile;
     };
 
     struct RuntimePalettePreset
     {
         RuntimeCustomPresetId Id = 0u;
         std::string Name;
-        PixelShipGenerator::ShipPaletteConfiguration Configuration;
+        SpectralShipGen::ShipPaletteConfiguration Configuration;
     };
 
     struct RuntimeConfigurationBundle
@@ -48,21 +48,21 @@ namespace PixelShipGeneratorPreview
     class RuntimeCustomPresetWorkspace
     {
     public:
-        RuntimeCustomPresetId addStructural(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
-        RuntimeCustomPresetId addFaction(std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
-        RuntimeCustomPresetId addPalette(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
+        RuntimeCustomPresetId addStructural(std::string name, const SpectralShipGen::ShipGenerationProfile& profile);
+        RuntimeCustomPresetId addFaction(std::string name, const SpectralShipGen::ShipFactionProfile& profile);
+        RuntimeCustomPresetId addPalette(std::string name, const SpectralShipGen::ShipPaletteConfiguration& configuration);
         RuntimeCustomPresetId addConfigurationBundle(std::string name, const ConfigurationBundle& bundle);
 
         // Persistence restore path. IDs are retained across restarts and remain globally
         // unique across all application-side user preset categories.
-        bool restoreStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
-        bool restoreFaction(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
-        bool restorePalette(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
+        bool restoreStructural(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipGenerationProfile& profile);
+        bool restoreFaction(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipFactionProfile& profile);
+        bool restorePalette(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipPaletteConfiguration& configuration);
         bool restoreConfigurationBundle(RuntimeCustomPresetId id, std::string name, const ConfigurationBundle& bundle);
 
-        bool updateStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile);
-        bool updateFaction(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipFactionProfile& profile);
-        bool updatePalette(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration);
+        bool updateStructural(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipGenerationProfile& profile);
+        bool updateFaction(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipFactionProfile& profile);
+        bool updatePalette(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipPaletteConfiguration& configuration);
         bool updateConfigurationBundle(RuntimeCustomPresetId id, std::string name, const ConfigurationBundle& bundle);
         bool removeStructural(RuntimeCustomPresetId id);
         bool removeFaction(RuntimeCustomPresetId id);

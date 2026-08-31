@@ -6,12 +6,12 @@
 #include <string>
 #include <vector>
 
-#include <PixelShipGenerator/ShipFactionType.h>
-#include <PixelShipGenerator/ShipGenerationRecipe.h>
+#include <SpectralShipGen/ShipFactionType.h>
+#include <SpectralShipGen/ShipGenerationRecipe.h>
 
 #include "RuntimeCustomPresetWorkspace.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     enum class FactionProfileSelectionKind : uint32_t
     {
@@ -24,10 +24,10 @@ namespace PixelShipGeneratorPreview
     {
         FactionProfileSelectionKind Kind = FactionProfileSelectionKind::BUILT_IN;
         std::string Label;
-        PixelShipGenerator::ShipFactionType Faction = PixelShipGenerator::ShipFactionType::FRONTIER;
+        SpectralShipGen::ShipFactionType Faction = SpectralShipGen::ShipFactionType::FRONTIER;
         RuntimeCustomPresetId CustomPresetId = 0u;
     };
 
     std::vector<FactionProfileSelectionEntry> buildFactionProfileSelection(const RuntimeCustomPresetWorkspace& workspace);
-    std::size_t findFactionProfileSelectionIndex(const std::vector<FactionProfileSelectionEntry>& entries, const PixelShipGenerator::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId);
+    std::size_t findFactionProfileSelectionIndex(const std::vector<FactionProfileSelectionEntry>& entries, const SpectralShipGen::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId);
 }

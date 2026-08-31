@@ -5,7 +5,7 @@
 
 int main(int argc, char** argv)
 {
-    PixelShipGeneratorDiagnosticsApp::DiagnosticsAppLaunchOptions options;
+    SpectralShipGenStudioDiagnosticsApp::DiagnosticsAppLaunchOptions options;
     for (int index = 1; index < argc; ++index)
     {
         const std::string argument = argv[index];
@@ -14,6 +14,6 @@ int main(int argc, char** argv)
         else if (argument == "--screenshot" && index + 1 < argc) { options.ScreenshotPath = std::filesystem::path(argv[++index]); }
         else if (argument == "--csv" && index + 1 < argc) { options.SmokeCsvPath = std::filesystem::path(argv[++index]); }
     }
-    PixelShipGeneratorDiagnosticsApp::DiagnosticsApp app(options);
+    SpectralShipGenStudioDiagnosticsApp::DiagnosticsApp app(options);
     return app.run();
 }

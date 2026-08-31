@@ -1,19 +1,19 @@
 #include "GenerationCalibration.h"
 
-#include <PixelShipGenerator/GenerationScaleTraits.h>
+#include <SpectralShipGen/GenerationScaleTraits.h>
 
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
 
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
-#include <PixelShipGenerator/ShipGenerationSettings.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipGenerationSettings.h>
 
 namespace
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     constexpr uint32_t MaximumPairGenerationAttempts = 24u;
     constexpr double ScorePrior = 1.0;
@@ -245,24 +245,24 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     GenerationCalibrationSession createGenerationCalibrationSession(uint64_t rootSeed)
     {
         GenerationCalibrationSession result;
         result.RootSeed = rootSeed;
-        result.DefaultProfile = PixelShipGenerator::createDefaultGenerationTuningProfile();
+        result.DefaultProfile = SpectralShipGen::createDefaultGenerationTuningProfile();
         result.TunedProfile = result.DefaultProfile;
         return result;
     }
 
-    CalibrationObjectiveBatch collectCalibrationObjectiveBatch(PixelShipGenerator::ShipGenerator& generator, const GenerationCalibrationSession& session, const PreviewGenerationRecipe& contextRecipe, uint32_t sampleCount)
+    CalibrationObjectiveBatch collectCalibrationObjectiveBatch(SpectralShipGen::ShipGenerator& generator, const GenerationCalibrationSession& session, const PreviewGenerationRecipe& contextRecipe, uint32_t sampleCount)
     {
         CalibrationObjectiveBatch result;
         result.SampleCount = sampleCount;
         if (sampleCount == 0u) { return result; }
 
-        PixelShipGeneratorDiagnostics::DiagnosticGenerationConfiguration configuration;
+        SpectralShipGenDiagnostics::DiagnosticGenerationConfiguration configuration;
         configuration.Width = contextRecipe.Dimensions.Width;
         configuration.Height = contextRecipe.Dimensions.Height;
         configuration.Style = contextRecipe.Style;
@@ -271,19 +271,19 @@ namespace PixelShipGeneratorPreview
         configuration.AsymmetricDetailChance = contextRecipe.AsymmetricDetailChance;
         configuration.AttachmentsEnabled = contextRecipe.AttachmentsEnabled;
         configuration.Samples = sampleCount;
-        configuration.DiagnosticSeed = PixelShipGenerator::mixGenerationSeed64(session.RootSeed ^ 0x94D049BB133111EBull);
+        configuration.DiagnosticSeed = SpectralShipGen::mixGenerationSeed64(session.RootSeed ^ 0x94D049BB133111EBull);
 
         for (uint32_t index = 0u; index < sampleCount; ++index)
         {
-            const uint64_t masterSeed = PixelShipGeneratorDiagnostics::deriveDiagnosticSampleSeed(configuration.DiagnosticSeed, index);
+            const uint64_t masterSeed = SpectralShipGenDiagnostics::deriveDiagnosticSampleSeed(configuration.DiagnosticSeed, index);
             PreviewGenerationRecipe recipe = contextRecipe;
-            recipe.Seeds = PixelShipGenerator::deriveShipGenerationSeeds(masterSeed);
-            const PixelShipGenerator::ShipGenerationSettings settings = createSettings(recipe);
+            recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(masterSeed);
+            const SpectralShipGen::ShipGenerationSettings settings = createSettings(recipe);
 
-            PixelShipGenerator::ShipGenerationDebugInfo productionDebug;
+            SpectralShipGen::ShipGenerationDebugInfo productionDebug;
             try
             {
-                const PixelShipGenerator::GeneratedShip productionShip = generator.generate(settings, &productionDebug);
+                const SpectralShipGen::GeneratedShip productionShip = generator.generate(settings, &productionDebug);
                 result.Production.recordSuccess(productionShip, productionDebug, configuration);
             }
             catch (const std::exception&)
@@ -291,12 +291,12 @@ namespace PixelShipGeneratorPreview
                 result.Production.recordFailure(productionDebug);
             }
 
-            PixelShipGenerator::ShipGenerationDebugInfo tunedDebug;
-            PixelShipGenerator::GenerationCalibrationSettings calibration;
+            SpectralShipGen::ShipGenerationDebugInfo tunedDebug;
+            SpectralShipGen::GenerationCalibrationSettings calibration;
             calibration.TuningProfile = &session.TunedProfile;
             try
             {
-                const PixelShipGenerator::GeneratedShip tunedShip = generator.generateCalibrated(settings, calibration, &tunedDebug);
+                const SpectralShipGen::GeneratedShip tunedShip = generator.generateCalibrated(settings, calibration, &tunedDebug);
                 result.Tuned.recordSuccess(tunedShip, tunedDebug, configuration);
             }
             catch (const std::exception&)
@@ -309,19 +309,19 @@ namespace PixelShipGeneratorPreview
         return result;
     }
 
-    CalibrationCandidatePair generateNextCalibrationPair(PixelShipGenerator::ShipGenerator& generator, GenerationCalibrationSession& session, const PreviewGenerationRecipe& contextRecipe, PixelShipGenerator::GenerationWeightGroup group)
+    CalibrationCandidatePair generateNextCalibrationPair(SpectralShipGen::ShipGenerator& generator, GenerationCalibrationSession& session, const PreviewGenerationRecipe& contextRecipe, SpectralShipGen::GenerationWeightGroup group)
     {
         CalibrationCandidatePair result;
         result.Group = group;
-        const uint32_t optionCount = PixelShipGenerator::getGenerationWeightOptionCount(group);
+        const uint32_t optionCount = SpectralShipGen::getGenerationWeightOptionCount(group);
         const std::vector<std::pair<uint32_t, uint32_t>> pairs = createBalancedPairs(optionCount);
         if (pairs.empty()) { return result; }
 
         const std::size_t groupIndex = static_cast<std::size_t>(group);
         const uint64_t sequenceIndex = session.PairSequenceIndices[groupIndex];
-        const uint64_t pairOffset = PixelShipGenerator::mixGenerationSeed64(session.RootSeed ^ (static_cast<uint64_t>(group) << 32u)) % pairs.size();
+        const uint64_t pairOffset = SpectralShipGen::mixGenerationSeed64(session.RootSeed ^ (static_cast<uint64_t>(group) << 32u)) % pairs.size();
         result.PairIndex = sequenceIndex;
-        result.DisplayAOnLeft = (PixelShipGenerator::mixGenerationSeed64(session.RootSeed ^ sequenceIndex ^ (static_cast<uint64_t>(group) * 0xD1B54A32D192ED03ull)) & 1ull) == 0ull;
+        result.DisplayAOnLeft = (SpectralShipGen::mixGenerationSeed64(session.RootSeed ^ sequenceIndex ^ (static_cast<uint64_t>(group) * 0xD1B54A32D192ED03ull)) & 1ull) == 0ull;
         result.IsolationNote = getIsolationNote(group);
 
         for (uint32_t pairAdvance = 0u; pairAdvance < pairs.size(); ++pairAdvance)
@@ -335,16 +335,16 @@ namespace PixelShipGeneratorPreview
                 const uint32_t deterministicAttempt = pairAdvance * MaximumPairGenerationAttempts + attempt;
                 const uint64_t masterSeed = derivePairMasterSeed(session.RootSeed, group, sequenceIndex, deterministicAttempt);
                 result.Recipe = createPairRecipe(contextRecipe, masterSeed);
-                const PixelShipGenerator::ShipGenerationSettings settings = createSettings(result.Recipe);
+                const SpectralShipGen::ShipGenerationSettings settings = createSettings(result.Recipe);
 
-                PixelShipGenerator::GenerationCalibrationSettings referenceCalibration;
+                SpectralShipGen::GenerationCalibrationSettings referenceCalibration;
                 referenceCalibration.TuningProfile = &session.TunedProfile;
                 referenceCalibration.IsolatedGroup = group;
-                referenceCalibration.IsolationSalt = PixelShipGenerator::mixGenerationSeed64(masterSeed ^ 0xA24BAED4963EE407ull);
+                referenceCalibration.IsolationSalt = SpectralShipGen::mixGenerationSeed64(masterSeed ^ 0xA24BAED4963EE407ull);
 
-                PixelShipGenerator::ShipGenerationDebugInfo referenceDebug;
-                PixelShipGenerator::GenerationCalibrationSettings calibrationA = referenceCalibration;
-                PixelShipGenerator::GenerationCalibrationSettings calibrationB = referenceCalibration;
+                SpectralShipGen::ShipGenerationDebugInfo referenceDebug;
+                SpectralShipGen::GenerationCalibrationSettings calibrationA = referenceCalibration;
+                SpectralShipGen::GenerationCalibrationSettings calibrationB = referenceCalibration;
                 calibrationA.Overrides = createForcedOverride(group, result.OptionA);
                 calibrationB.Overrides = createForcedOverride(group, result.OptionB);
 
@@ -391,11 +391,11 @@ namespace PixelShipGeneratorPreview
         session.Records.push_back(record);
     }
 
-    CalibrationGroupStatistics calculateCalibrationGroupStatistics(const GenerationCalibrationSession& session, PixelShipGenerator::GenerationWeightGroup group, const CalibrationContextFilter& filter)
+    CalibrationGroupStatistics calculateCalibrationGroupStatistics(const GenerationCalibrationSession& session, SpectralShipGen::GenerationWeightGroup group, const CalibrationContextFilter& filter)
     {
         CalibrationGroupStatistics result;
         result.Group = group;
-        result.Options.resize(PixelShipGenerator::getGenerationWeightOptionCount(group));
+        result.Options.resize(SpectralShipGen::getGenerationWeightOptionCount(group));
 
         for (const CalibrationComparisonRecord& record : session.Records)
         {
@@ -428,23 +428,23 @@ namespace PixelShipGeneratorPreview
         return result;
     }
 
-    std::vector<uint32_t> calculateSuggestedGroupWeights(const GenerationCalibrationSession& session, PixelShipGenerator::ShipStyle style, PixelShipGenerator::GenerationWeightGroup group, const CalibrationContextFilter& filter)
+    std::vector<uint32_t> calculateSuggestedGroupWeights(const GenerationCalibrationSession& session, SpectralShipGen::ShipStyle style, SpectralShipGen::GenerationWeightGroup group, const CalibrationContextFilter& filter)
     {
         const CalibrationGroupStatistics statistics = calculateCalibrationGroupStatistics(session, group, filter);
-        const uint32_t optionCount = PixelShipGenerator::getGenerationWeightOptionCount(group);
+        const uint32_t optionCount = SpectralShipGen::getGenerationWeightOptionCount(group);
         std::vector<uint32_t> result(optionCount, 0u);
         if (optionCount == 0u) { return result; }
 
-        const uint32_t currentTotal = PixelShipGenerator::getGenerationTuningGroupTotalWeight(session.TunedProfile, style, group);
+        const uint32_t currentTotal = SpectralShipGen::getGenerationTuningGroupTotalWeight(session.TunedProfile, style, group);
         double scoreTotal = 0.0;
         for (const CalibrationOptionStatistics& option : statistics.Options) { scoreTotal += option.PreferenceScore; }
         const double evidence = std::min(1.0, static_cast<double>(statistics.UsefulComparisonCount) / static_cast<double>(FullSuggestionEvidence));
-        const uint32_t outputTotal = PixelShipGenerator::getGenerationWeightGroupKind(group) == PixelShipGenerator::GenerationWeightGroupKind::BINARY_PROBABILITY ? 100u : std::max(1u, currentTotal);
+        const uint32_t outputTotal = SpectralShipGen::getGenerationWeightGroupKind(group) == SpectralShipGen::GenerationWeightGroupKind::BINARY_PROBABILITY ? 100u : std::max(1u, currentTotal);
 
         uint32_t assigned = 0u;
         for (uint32_t index = 0u; index < optionCount; ++index)
         {
-            const double currentShare = currentTotal == 0u ? 1.0 / optionCount : static_cast<double>(PixelShipGenerator::getGenerationTuningWeight(session.TunedProfile, style, group, index)) / currentTotal;
+            const double currentShare = currentTotal == 0u ? 1.0 / optionCount : static_cast<double>(SpectralShipGen::getGenerationTuningWeight(session.TunedProfile, style, group, index)) / currentTotal;
             const double preferenceShare = scoreTotal <= 0.0 ? 1.0 / optionCount : statistics.Options[index].PreferenceScore / scoreTotal;
             const double blended = currentShare * (1.0 - evidence) + preferenceShare * evidence;
             result[index] = static_cast<uint32_t>(std::lround(blended * outputTotal));
@@ -460,21 +460,21 @@ namespace PixelShipGeneratorPreview
         return result;
     }
 
-    void applySuggestedGroupWeights(GenerationCalibrationSession& session, PixelShipGenerator::ShipStyle style, PixelShipGenerator::GenerationWeightGroup group, const CalibrationContextFilter& filter)
+    void applySuggestedGroupWeights(GenerationCalibrationSession& session, SpectralShipGen::ShipStyle style, SpectralShipGen::GenerationWeightGroup group, const CalibrationContextFilter& filter)
     {
         const std::vector<uint32_t> suggested = calculateSuggestedGroupWeights(session, style, group, filter);
         for (uint32_t index = 0u; index < suggested.size(); ++index)
         {
-            PixelShipGenerator::setGenerationTuningWeight(session.TunedProfile, style, group, index, suggested[index]);
+            SpectralShipGen::setGenerationTuningWeight(session.TunedProfile, style, group, index, suggested[index]);
         }
     }
 
-    void resetCalibrationGroup(GenerationCalibrationSession& session, PixelShipGenerator::ShipStyle style, PixelShipGenerator::GenerationWeightGroup group)
+    void resetCalibrationGroup(GenerationCalibrationSession& session, SpectralShipGen::ShipStyle style, SpectralShipGen::GenerationWeightGroup group)
     {
-        const uint32_t optionCount = PixelShipGenerator::getGenerationWeightOptionCount(group);
+        const uint32_t optionCount = SpectralShipGen::getGenerationWeightOptionCount(group);
         for (uint32_t index = 0u; index < optionCount; ++index)
         {
-            PixelShipGenerator::setGenerationTuningWeight(session.TunedProfile, style, group, index, PixelShipGenerator::getGenerationTuningWeight(session.DefaultProfile, style, group, index));
+            SpectralShipGen::setGenerationTuningWeight(session.TunedProfile, style, group, index, SpectralShipGen::getGenerationTuningWeight(session.DefaultProfile, style, group, index));
         }
     }
 
@@ -483,9 +483,9 @@ namespace PixelShipGeneratorPreview
         session.TunedProfile = session.DefaultProfile;
     }
 
-    const char* getCalibrationGroupName(PixelShipGenerator::GenerationWeightGroup group)
+    const char* getCalibrationGroupName(SpectralShipGen::GenerationWeightGroup group)
     {
-        using PixelShipGenerator::GenerationWeightGroup;
+        using SpectralShipGen::GenerationWeightGroup;
         switch (group)
         {
         case GenerationWeightGroup::ENGINE_LAYOUT: return "ENGINE LAYOUT";
@@ -502,9 +502,9 @@ namespace PixelShipGeneratorPreview
         }
     }
 
-    const char* getCalibrationOptionName(PixelShipGenerator::GenerationWeightGroup group, uint32_t optionIndex)
+    const char* getCalibrationOptionName(SpectralShipGen::GenerationWeightGroup group, uint32_t optionIndex)
     {
-        using namespace PixelShipGenerator;
+        using namespace SpectralShipGen;
         if (getGenerationWeightGroupKind(group) == GenerationWeightGroupKind::BINARY_PROBABILITY) { return optionIndex == 0u ? "OFF" : "ON"; }
         switch (group)
         {
@@ -566,11 +566,11 @@ namespace PixelShipGeneratorPreview
         }
     }
 
-    CalibrationDimensionBucket getCalibrationDimensionBucket(const PixelShipGenerator::ShipDimensions& dimensions)
+    CalibrationDimensionBucket getCalibrationDimensionBucket(const SpectralShipGen::ShipDimensions& dimensions)
     {
-        const PixelShipGenerator::GenerationScaleTraits scaleTraits = PixelShipGenerator::GenerationScaleTraits::fromDimensions(dimensions);
-        if (scaleTraits.Tier == PixelShipGenerator::GenerationScaleTier::TINY || scaleTraits.Tier == PixelShipGenerator::GenerationScaleTier::SMALL) { return CalibrationDimensionBucket::SMALL; }
-        if (scaleTraits.Tier == PixelShipGenerator::GenerationScaleTier::MEDIUM) { return CalibrationDimensionBucket::MEDIUM; }
+        const SpectralShipGen::GenerationScaleTraits scaleTraits = SpectralShipGen::GenerationScaleTraits::fromDimensions(dimensions);
+        if (scaleTraits.Tier == SpectralShipGen::GenerationScaleTier::TINY || scaleTraits.Tier == SpectralShipGen::GenerationScaleTier::SMALL) { return CalibrationDimensionBucket::SMALL; }
+        if (scaleTraits.Tier == SpectralShipGen::GenerationScaleTier::MEDIUM) { return CalibrationDimensionBucket::MEDIUM; }
         return CalibrationDimensionBucket::LARGE;
     }
 

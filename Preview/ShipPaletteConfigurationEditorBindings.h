@@ -6,11 +6,11 @@
 #include <string_view>
 #include <vector>
 
-#include <PixelShipGenerator/ShipPaletteConfiguration.h>
+#include <SpectralShipGen/ShipPaletteConfiguration.h>
 
 #include "ConfigurationEditorControls.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct PaletteRangeValue
     {
@@ -31,32 +31,32 @@ namespace PixelShipGeneratorPreview
     {
         std::string Path;
         ConfigurationIntegerControl Control;
-        std::function<int32_t(const PixelShipGenerator::ShipPaletteConfiguration&)> Read;
-        std::function<void(PixelShipGenerator::ShipPaletteConfiguration&, int32_t)> Write;
+        std::function<int32_t(const SpectralShipGen::ShipPaletteConfiguration&)> Read;
+        std::function<void(SpectralShipGen::ShipPaletteConfiguration&, int32_t)> Write;
     };
 
     struct PaletteRangeFieldBinding
     {
         std::string Path;
         ConfigurationRangeControl Control;
-        std::function<PaletteRangeValue(const PixelShipGenerator::ShipPaletteConfiguration&)> Read;
-        std::function<void(PixelShipGenerator::ShipPaletteConfiguration&, PaletteRangeValue)> Write;
+        std::function<PaletteRangeValue(const SpectralShipGen::ShipPaletteConfiguration&)> Read;
+        std::function<void(SpectralShipGen::ShipPaletteConfiguration&, PaletteRangeValue)> Write;
     };
 
     struct PaletteChoiceFieldBinding
     {
         std::string Path;
         ConfigurationChoiceControl Control;
-        std::function<uint32_t(const PixelShipGenerator::ShipPaletteConfiguration&)> Read;
-        std::function<void(PixelShipGenerator::ShipPaletteConfiguration&, uint32_t)> Write;
+        std::function<uint32_t(const SpectralShipGen::ShipPaletteConfiguration&)> Read;
+        std::function<void(SpectralShipGen::ShipPaletteConfiguration&, uint32_t)> Write;
     };
 
     struct PaletteColorFieldBinding
     {
         std::string Path;
         ConfigurationColorControl Control;
-        std::function<PixelShipGenerator::Color(const PixelShipGenerator::ShipPaletteConfiguration&)> Read;
-        std::function<void(PixelShipGenerator::ShipPaletteConfiguration&, PixelShipGenerator::Color)> Write;
+        std::function<SpectralShipGen::Color(const SpectralShipGen::ShipPaletteConfiguration&)> Read;
+        std::function<void(SpectralShipGen::ShipPaletteConfiguration&, SpectralShipGen::Color)> Write;
     };
 
     struct PaletteProfileEditorSection
@@ -76,9 +76,9 @@ namespace PixelShipGeneratorPreview
     public:
         ShipPaletteConfigurationEditorBindings();
 
-        void load(const PixelShipGenerator::ShipPaletteConfiguration& configuration);
-        void write(PixelShipGenerator::ShipPaletteConfiguration& configuration) const;
-        bool equivalent(const PixelShipGenerator::ShipPaletteConfiguration& first, const PixelShipGenerator::ShipPaletteConfiguration& second) const;
+        void load(const SpectralShipGen::ShipPaletteConfiguration& configuration);
+        void write(SpectralShipGen::ShipPaletteConfiguration& configuration) const;
+        bool equivalent(const SpectralShipGen::ShipPaletteConfiguration& first, const SpectralShipGen::ShipPaletteConfiguration& second) const;
         bool isSectionVisible(const PaletteProfileEditorSection& section) const;
 
         std::vector<PaletteProfileEditorSection>& getSections();
@@ -96,7 +96,7 @@ namespace PixelShipGeneratorPreview
         std::size_t getBoundValueCount() const;
 
     private:
-        PixelShipGenerator::ShipPaletteSourceMode getEditedMode() const;
+        SpectralShipGen::ShipPaletteSourceMode getEditedMode() const;
 
     private:
         std::vector<PaletteProfileEditorSection> m_Sections;

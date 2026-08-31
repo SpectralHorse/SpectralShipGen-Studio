@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     inline std::size_t getPreviewPageCount(std::size_t itemCount, std::size_t pageSize)
     {

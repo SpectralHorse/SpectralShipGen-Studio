@@ -78,7 +78,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorApplication
+namespace SpectralShipGenStudioApplication
 {
     void drawPixelText(sf::RenderTarget& target, const std::string& text, float x, float y, const sf::Color& color, uint32_t scale)
     {

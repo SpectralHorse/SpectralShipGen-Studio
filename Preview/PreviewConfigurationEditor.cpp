@@ -3,11 +3,11 @@
 #include <algorithm>
 #include <utility>
 
-#include <PixelShipGenerator/ShipFactionProfileValidation.h>
-#include <PixelShipGenerator/ShipGenerationProfileValidation.h>
-#include <PixelShipGenerator/ShipPaletteGenerationProfileValidation.h>
+#include <SpectralShipGen/ShipFactionProfileValidation.h>
+#include <SpectralShipGen/ShipGenerationProfileValidation.h>
+#include <SpectralShipGen/ShipPaletteGenerationProfileValidation.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     namespace
     {
@@ -43,7 +43,7 @@ namespace PixelShipGeneratorPreview
         rebuildLayout();
     }
 
-    void PreviewConfigurationEditor::openStructuralProfile(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
+    void PreviewConfigurationEditor::openStructuralProfile(std::string name, const SpectralShipGen::ShipGenerationProfile& profile)
     {
         m_ExistingCustomPreset = false;
         m_Open = true;
@@ -61,7 +61,7 @@ namespace PixelShipGeneratorPreview
         rebuildLayout();
     }
 
-    void PreviewConfigurationEditor::openFactionProfile(std::string name, const PixelShipGenerator::ShipFactionProfile& profile)
+    void PreviewConfigurationEditor::openFactionProfile(std::string name, const SpectralShipGen::ShipFactionProfile& profile)
     {
         m_ExistingCustomPreset = false;
         m_Open = true;
@@ -79,7 +79,7 @@ namespace PixelShipGeneratorPreview
         rebuildLayout();
     }
 
-    void PreviewConfigurationEditor::openPaletteConfiguration(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    void PreviewConfigurationEditor::openPaletteConfiguration(std::string name, const SpectralShipGen::ShipPaletteConfiguration& configuration)
     {
         m_ExistingCustomPreset = false;
         m_Open = true;
@@ -273,20 +273,20 @@ namespace PixelShipGeneratorPreview
 
     ConfigurationEditorEvent PreviewConfigurationEditor::createCancelEvent() const { return { ConfigurationEditorAction::CANCEL }; }
 
-    void PreviewConfigurationEditor::setValidationResult(const PixelShipGenerator::ValidationResult& result) { m_ValidationResult = result; }
+    void PreviewConfigurationEditor::setValidationResult(const SpectralShipGen::ValidationResult& result) { m_ValidationResult = result; }
     void PreviewConfigurationEditor::setExistingCustomPreset(bool existingCustomPreset) { m_ExistingCustomPreset = existingCustomPreset; rebuildLayout(); }
-    const PixelShipGenerator::ValidationResult& PreviewConfigurationEditor::getValidationResult() const { return m_ValidationResult; }
+    const SpectralShipGen::ValidationResult& PreviewConfigurationEditor::getValidationResult() const { return m_ValidationResult; }
     const std::string& PreviewConfigurationEditor::getName() const { return m_NameField.Value; }
-    const PixelShipGenerator::ShipGenerationProfile& PreviewConfigurationEditor::getDraftProfile() const { return m_DraftProfile; }
-    const PixelShipGenerator::ShipGenerationProfile& PreviewConfigurationEditor::getInitialProfile() const { return m_InitialProfile; }
-    const PixelShipGenerator::ShipFactionProfile& PreviewConfigurationEditor::getDraftFactionProfile() const { return m_DraftFactionProfile; }
-    const PixelShipGenerator::ShipFactionProfile& PreviewConfigurationEditor::getInitialFactionProfile() const { return m_InitialFactionProfile; }
-    const PixelShipGenerator::ShipPaletteConfiguration& PreviewConfigurationEditor::getDraftPaletteConfiguration() const { return m_DraftPaletteConfiguration; }
-    const PixelShipGenerator::ShipPaletteConfiguration& PreviewConfigurationEditor::getInitialPaletteConfiguration() const { return m_InitialPaletteConfiguration; }
+    const SpectralShipGen::ShipGenerationProfile& PreviewConfigurationEditor::getDraftProfile() const { return m_DraftProfile; }
+    const SpectralShipGen::ShipGenerationProfile& PreviewConfigurationEditor::getInitialProfile() const { return m_InitialProfile; }
+    const SpectralShipGen::ShipFactionProfile& PreviewConfigurationEditor::getDraftFactionProfile() const { return m_DraftFactionProfile; }
+    const SpectralShipGen::ShipFactionProfile& PreviewConfigurationEditor::getInitialFactionProfile() const { return m_InitialFactionProfile; }
+    const SpectralShipGen::ShipPaletteConfiguration& PreviewConfigurationEditor::getDraftPaletteConfiguration() const { return m_DraftPaletteConfiguration; }
+    const SpectralShipGen::ShipPaletteConfiguration& PreviewConfigurationEditor::getInitialPaletteConfiguration() const { return m_InitialPaletteConfiguration; }
     const ConfigurationBundle& PreviewConfigurationEditor::getDraftConfigurationBundle() const { return m_DraftConfigurationBundle; }
     const ConfigurationBundle& PreviewConfigurationEditor::getInitialConfigurationBundle() const { return m_InitialConfigurationBundle; }
 
-    void PreviewConfigurationEditor::replaceBundleStructural(std::string displayName, const PixelShipGenerator::ShipGenerationProfile& profile)
+    void PreviewConfigurationEditor::replaceBundleStructural(std::string displayName, const SpectralShipGen::ShipGenerationProfile& profile)
     {
         m_DraftConfigurationBundle.StructuralDisplayName = std::move(displayName);
         m_DraftConfigurationBundle.StructuralProfile = profile;
@@ -294,7 +294,7 @@ namespace PixelShipGeneratorPreview
         rebuildLayout();
     }
 
-    void PreviewConfigurationEditor::replaceBundleFaction(std::string displayName, const PixelShipGenerator::ShipFactionProfile& profile)
+    void PreviewConfigurationEditor::replaceBundleFaction(std::string displayName, const SpectralShipGen::ShipFactionProfile& profile)
     {
         m_DraftConfigurationBundle.FactionDisplayName = std::move(displayName);
         m_DraftConfigurationBundle.FactionProfile = profile;
@@ -302,7 +302,7 @@ namespace PixelShipGeneratorPreview
         rebuildLayout();
     }
 
-    void PreviewConfigurationEditor::replaceBundlePalette(std::string displayName, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    void PreviewConfigurationEditor::replaceBundlePalette(std::string displayName, const SpectralShipGen::ShipPaletteConfiguration& configuration)
     {
         m_DraftConfigurationBundle.PaletteDisplayName = std::move(displayName);
         m_DraftConfigurationBundle.PaletteConfiguration = configuration;
@@ -417,15 +417,15 @@ namespace PixelShipGeneratorPreview
     {
         if (m_ProfileKind == ConfigurationEditorProfileKind::STRUCTURAL)
         {
-            setValidationResult(PixelShipGenerator::validateShipGenerationProfile(m_DraftProfile));
+            setValidationResult(SpectralShipGen::validateShipGenerationProfile(m_DraftProfile));
         }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FACTION)
         {
-            setValidationResult(PixelShipGenerator::validateShipFactionProfile(m_DraftFactionProfile));
+            setValidationResult(SpectralShipGen::validateShipFactionProfile(m_DraftFactionProfile));
         }
-        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE && m_DraftPaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED)
+        else if (m_ProfileKind == ConfigurationEditorProfileKind::PALETTE && m_DraftPaletteConfiguration.Mode == SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED)
         {
-            setValidationResult(PixelShipGenerator::validateShipPaletteGenerationProfile(m_DraftPaletteConfiguration.Generated));
+            setValidationResult(SpectralShipGen::validateShipPaletteGenerationProfile(m_DraftPaletteConfiguration.Generated));
         }
         else if (m_ProfileKind == ConfigurationEditorProfileKind::FULL_CONFIGURATION)
         {

@@ -10,14 +10,14 @@
 
 #include "GenerationCalibration.h"
 #include "GenerationCalibrationSerializer.h"
-#include <PixelShipGenerator/GenerationTuningProfile.h>
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
-#include <PixelShipGenerator/ShipGenerator.h>
+#include <SpectralShipGen/GenerationTuningProfile.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipGenerator.h>
 
 namespace
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     bool imagesEqual(const Image& first, const Image& second)
     {
@@ -57,10 +57,10 @@ namespace
     }
 }
 
-int PixelShipGeneratorTests::runGenerationCalibrationRegression()
+int SpectralShipGenStudioTests::runGenerationCalibrationRegression()
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     bool success = true;
     ShipGenerator generator;

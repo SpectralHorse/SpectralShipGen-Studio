@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     PreviewWorkspaceNavigation::PreviewWorkspaceNavigation()
     {

@@ -4,18 +4,18 @@
 #include <string>
 #include <vector>
 
-#include <PixelShipGenerator/AnimationSamplingPlanner.h>
-#include <PixelShipGenerator/GeneratedShip.h>
-#include <PixelShipGenerator/ShipAnimationStateCoordinator.h>
-#include <PixelShipGenerator/ShipFiringAnimation.h>
-#include <PixelShipGenerator/ShipFiringAnimator.h>
-#include <PixelShipGenerator/ShipIdleAnimation.h>
-#include <PixelShipGenerator/ShipIdleAnimator.h>
-#include <PixelShipGenerator/ShipLateralMovementAnimator.h>
-#include <PixelShipGenerator/ShipLongitudinalMovementAnimator.h>
-#include <PixelShipGenerator/ShipMovementAnimation.h>
+#include <SpectralShipGen/AnimationSamplingPlanner.h>
+#include <SpectralShipGen/GeneratedShip.h>
+#include <SpectralShipGen/ShipAnimationStateCoordinator.h>
+#include <SpectralShipGen/ShipFiringAnimation.h>
+#include <SpectralShipGen/ShipFiringAnimator.h>
+#include <SpectralShipGen/ShipIdleAnimation.h>
+#include <SpectralShipGen/ShipIdleAnimator.h>
+#include <SpectralShipGen/ShipLateralMovementAnimator.h>
+#include <SpectralShipGen/ShipLongitudinalMovementAnimator.h>
+#include <SpectralShipGen/ShipMovementAnimation.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct PreviewAnimationActionResult
     {
@@ -35,29 +35,29 @@ namespace PixelShipGeneratorPreview
     class PreviewAnimationSession
     {
     public:
-        PreviewAnimationActionResult resetForGeneratedShip(const PixelShipGenerator::GeneratedShip& ship);
-        PreviewAnimationActionResult regenerateSelectedAnimation(const PixelShipGenerator::GeneratedShip& ship);
-        PreviewAnimationActionResult cycleAnimationType(const PixelShipGenerator::GeneratedShip& ship);
-        PreviewAnimationActionResult cycleBaseMovementState(const PixelShipGenerator::GeneratedShip& ship);
+        PreviewAnimationActionResult resetForGeneratedShip(const SpectralShipGen::GeneratedShip& ship);
+        PreviewAnimationActionResult regenerateSelectedAnimation(const SpectralShipGen::GeneratedShip& ship);
+        PreviewAnimationActionResult cycleAnimationType(const SpectralShipGen::GeneratedShip& ship);
+        PreviewAnimationActionResult cycleBaseMovementState(const SpectralShipGen::GeneratedShip& ship);
         PreviewAnimationActionResult cyclePlaybackSpeed();
         PreviewAnimationActionResult cycleMovementPhase();
-        PreviewAnimationActionResult cycleFiringTarget(const PixelShipGenerator::GeneratedShip& ship);
-        PreviewAnimationActionResult applySelectedState(const PixelShipGenerator::GeneratedShip& ship);
-        PreviewAnimationActionResult returnToIdle(const PixelShipGenerator::GeneratedShip& ship);
-        PreviewAnimationActionResult beginComposedFiringEvent(const PixelShipGenerator::GeneratedShip& ship);
-        PreviewAnimationActionResult triggerFiringEvent(const PixelShipGenerator::GeneratedShip& ship);
-        PreviewAnimationAdvanceResult advancePlayback(const PixelShipGenerator::GeneratedShip& ship, double elapsedMicroseconds);
+        PreviewAnimationActionResult cycleFiringTarget(const SpectralShipGen::GeneratedShip& ship);
+        PreviewAnimationActionResult applySelectedState(const SpectralShipGen::GeneratedShip& ship);
+        PreviewAnimationActionResult returnToIdle(const SpectralShipGen::GeneratedShip& ship);
+        PreviewAnimationActionResult beginComposedFiringEvent(const SpectralShipGen::GeneratedShip& ship);
+        PreviewAnimationActionResult triggerFiringEvent(const SpectralShipGen::GeneratedShip& ship);
+        PreviewAnimationAdvanceResult advancePlayback(const SpectralShipGen::GeneratedShip& ship, double elapsedMicroseconds);
 
         void resetPlaybackAccumulator();
         bool moveFrame(int32_t delta);
         void setFrameIndex(uint32_t frameIndex);
         bool setNormalizedTime(double normalizedTime);
 
-        const std::vector<PixelShipGenerator::Image>& getActiveFrames() const;
-        const PixelShipGenerator::ShipMovementAnimationClip* getActiveMovementClip() const;
+        const std::vector<SpectralShipGen::Image>& getActiveFrames() const;
+        const SpectralShipGen::ShipMovementAnimationClip* getActiveMovementClip() const;
         double getActiveFrameDurationMilliseconds() const;
         uint64_t getActiveSeed() const;
-        const PixelShipGenerator::AnimationSamplingPlan& getActiveSampling() const;
+        const SpectralShipGen::AnimationSamplingPlan& getActiveSampling() const;
         uint32_t getActiveDurationMilliseconds() const;
         double getActiveNormalizedTime() const;
         double getPlaybackSpeed() const { return m_PlaybackSpeed; }
@@ -66,61 +66,61 @@ namespace PixelShipGeneratorPreview
         std::string getSemanticPhaseDisplay() const;
         std::string getEffectDisplay() const;
 
-        PixelShipGenerator::ShipAnimationType getSelectedAnimationType() const { return m_SelectedAnimationType; }
-        PixelShipGenerator::ShipMovementAnimationPhase getMovementPhase() const { return m_MovementAnimationPhase; }
+        SpectralShipGen::ShipAnimationType getSelectedAnimationType() const { return m_SelectedAnimationType; }
+        SpectralShipGen::ShipMovementAnimationPhase getMovementPhase() const { return m_MovementAnimationPhase; }
         uint32_t getFrameIndex() const { return m_AnimationFrameIndex; }
-        PixelShipGenerator::ShipAnimationType getRuntimeMovementType() const { return m_RuntimeMovementType; }
-        PixelShipGenerator::ShipAnimationType getPendingMovementType() const { return m_PendingMovementType; }
+        SpectralShipGen::ShipAnimationType getRuntimeMovementType() const { return m_RuntimeMovementType; }
+        SpectralShipGen::ShipAnimationType getPendingMovementType() const { return m_PendingMovementType; }
         bool isMovementTransitionPending() const { return m_MovementTransitionPending; }
         bool isTransientStatePreviewActive() const { return m_TransientStatePreviewActive; }
         double getRuntimeMovementNormalizedTime() const { return m_RuntimeMovementNormalizedTime; }
-        const std::vector<PixelShipGenerator::ShipFiringAnimationTarget>& getFiringTargets() const { return m_FiringTargets; }
+        const std::vector<SpectralShipGen::ShipFiringAnimationTarget>& getFiringTargets() const { return m_FiringTargets; }
         uint32_t getSelectedFiringTargetIndex() const { return m_SelectedFiringTargetIndex; }
 
-        const PixelShipGenerator::ShipIdleAnimationSettings& getIdleSettings() const { return m_IdleAnimationSettings; }
-        PixelShipGenerator::ShipIdleAnimationSettings& getIdleSettings() { return m_IdleAnimationSettings; }
-        const PixelShipGenerator::ShipIdleAnimation& getIdleAnimation() const { return m_IdleAnimation; }
-        const PixelShipGenerator::ShipMovementAnimationSettings& getMovementSettings() const { return m_MovementAnimationSettings; }
-        PixelShipGenerator::ShipMovementAnimationSettings& getMovementSettings() { return m_MovementAnimationSettings; }
-        const PixelShipGenerator::ShipMovementAnimation& getMovementAnimation() const { return m_MovementAnimation; }
-        const PixelShipGenerator::ShipFiringAnimationSettings& getFiringSettings() const { return m_FiringAnimationSettings; }
-        PixelShipGenerator::ShipFiringAnimationSettings& getFiringSettings() { return m_FiringAnimationSettings; }
-        const PixelShipGenerator::ShipFiringAnimation& getFiringAnimation() const { return m_FiringAnimation; }
+        const SpectralShipGen::ShipIdleAnimationSettings& getIdleSettings() const { return m_IdleAnimationSettings; }
+        SpectralShipGen::ShipIdleAnimationSettings& getIdleSettings() { return m_IdleAnimationSettings; }
+        const SpectralShipGen::ShipIdleAnimation& getIdleAnimation() const { return m_IdleAnimation; }
+        const SpectralShipGen::ShipMovementAnimationSettings& getMovementSettings() const { return m_MovementAnimationSettings; }
+        SpectralShipGen::ShipMovementAnimationSettings& getMovementSettings() { return m_MovementAnimationSettings; }
+        const SpectralShipGen::ShipMovementAnimation& getMovementAnimation() const { return m_MovementAnimation; }
+        const SpectralShipGen::ShipFiringAnimationSettings& getFiringSettings() const { return m_FiringAnimationSettings; }
+        SpectralShipGen::ShipFiringAnimationSettings& getFiringSettings() { return m_FiringAnimationSettings; }
+        const SpectralShipGen::ShipFiringAnimation& getFiringAnimation() const { return m_FiringAnimation; }
 
     private:
-        static bool isMovementAnimationType(PixelShipGenerator::ShipAnimationType type);
+        static bool isMovementAnimationType(SpectralShipGen::ShipAnimationType type);
         static double wrapNormalizedAnimationTime(double normalizedTime);
         const std::vector<double>& getActiveNormalizedSampleTimes() const;
-        PreviewAnimationActionResult generateSelected(const PixelShipGenerator::GeneratedShip& ship);
+        PreviewAnimationActionResult generateSelected(const SpectralShipGen::GeneratedShip& ship);
 
-        PixelShipGenerator::ShipIdleAnimator m_IdleAnimator;
-        PixelShipGenerator::ShipAnimationStateCoordinator m_AnimationStateCoordinator;
-        PixelShipGenerator::ShipFiringAnimator m_FiringAnimator;
-        PixelShipGenerator::ShipLateralMovementAnimator m_LateralMovementAnimator;
-        PixelShipGenerator::ShipLongitudinalMovementAnimator m_LongitudinalMovementAnimator;
+        SpectralShipGen::ShipIdleAnimator m_IdleAnimator;
+        SpectralShipGen::ShipAnimationStateCoordinator m_AnimationStateCoordinator;
+        SpectralShipGen::ShipFiringAnimator m_FiringAnimator;
+        SpectralShipGen::ShipLateralMovementAnimator m_LateralMovementAnimator;
+        SpectralShipGen::ShipLongitudinalMovementAnimator m_LongitudinalMovementAnimator;
 
-        PixelShipGenerator::ShipIdleAnimationSettings m_IdleAnimationSettings;
-        PixelShipGenerator::ShipIdleAnimation m_IdleAnimation;
-        PixelShipGenerator::ShipMovementAnimationSettings m_MovementAnimationSettings;
-        PixelShipGenerator::ShipMovementAnimation m_MovementAnimation;
-        PixelShipGenerator::ShipFiringAnimationSettings m_FiringAnimationSettings;
-        PixelShipGenerator::ShipFiringAnimation m_FiringAnimation;
-        std::vector<PixelShipGenerator::ShipFiringAnimationTarget> m_FiringTargets;
+        SpectralShipGen::ShipIdleAnimationSettings m_IdleAnimationSettings;
+        SpectralShipGen::ShipIdleAnimation m_IdleAnimation;
+        SpectralShipGen::ShipMovementAnimationSettings m_MovementAnimationSettings;
+        SpectralShipGen::ShipMovementAnimation m_MovementAnimation;
+        SpectralShipGen::ShipFiringAnimationSettings m_FiringAnimationSettings;
+        SpectralShipGen::ShipFiringAnimation m_FiringAnimation;
+        std::vector<SpectralShipGen::ShipFiringAnimationTarget> m_FiringTargets;
         uint32_t m_SelectedFiringTargetIndex = 0u;
 
-        PixelShipGenerator::ShipAnimationType m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
-        PixelShipGenerator::ShipMovementAnimationPhase m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+        SpectralShipGen::ShipAnimationType m_SelectedAnimationType = SpectralShipGen::ShipAnimationType::IDLE;
+        SpectralShipGen::ShipMovementAnimationPhase m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::ENTER;
         uint32_t m_AnimationFrameIndex = 0u;
         double m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
 
-        PixelShipGenerator::ShipAnimationType m_RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
-        PixelShipGenerator::ShipAnimationType m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        SpectralShipGen::ShipAnimationType m_RuntimeMovementType = SpectralShipGen::ShipAnimationType::IDLE;
+        SpectralShipGen::ShipAnimationType m_PendingMovementType = SpectralShipGen::ShipAnimationType::IDLE;
         bool m_MovementTransitionPending = false;
         bool m_TransientStatePreviewActive = false;
         double m_RuntimeMovementNormalizedTime = 0.0;
         double m_ResumeMovementNormalizedTime = 0.0;
         double m_StatePreviewFrameDurationMilliseconds = 0.0;
         double m_PlaybackSpeed = 1.0;
-        std::vector<PixelShipGenerator::Image> m_StatePreviewFrames;
+        std::vector<SpectralShipGen::Image> m_StatePreviewFrames;
     };
 }

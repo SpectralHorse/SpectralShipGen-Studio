@@ -11,8 +11,8 @@
 
 namespace
 {
-    using namespace PixelShipGeneratorPreview;
-    using PixelShipGenerator::ShipDimensions;
+    using namespace SpectralShipGenStudioPreview;
+    using SpectralShipGen::ShipDimensions;
 
     std::size_t skipWhitespace(const std::string& text, std::size_t position)
     {
@@ -151,7 +151,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     std::string serializePreviewPreferences(const PreviewPreferences& preferences)
     {

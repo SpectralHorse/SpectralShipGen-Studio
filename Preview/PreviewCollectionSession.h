@@ -8,7 +8,7 @@
 #include "PreviewGenerationRecipe.h"
 #include "PreviewResolution.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct PreviewGalleryRecipeEntry
     {
@@ -50,15 +50,15 @@ namespace PixelShipGeneratorPreview
         uint64_t getGalleryBatchSeed() const;
         const PreviewGenerationRecipe& getGalleryTemplateRecipe() const;
 
-        bool addResolutionBookmark(const PixelShipGenerator::ShipDimensions& dimensions);
-        bool removeResolutionBookmark(const PixelShipGenerator::ShipDimensions& dimensions);
-        bool hasResolutionBookmark(const PixelShipGenerator::ShipDimensions& dimensions) const;
-        const PixelShipGenerator::ShipDimensions* getResolutionBookmark(std::size_t index) const;
-        const std::vector<PixelShipGenerator::ShipDimensions>& getResolutionBookmarks() const;
-        void setResolutionBookmarks(std::vector<PixelShipGenerator::ShipDimensions> bookmarks);
+        bool addResolutionBookmark(const SpectralShipGen::ShipDimensions& dimensions);
+        bool removeResolutionBookmark(const SpectralShipGen::ShipDimensions& dimensions);
+        bool hasResolutionBookmark(const SpectralShipGen::ShipDimensions& dimensions) const;
+        const SpectralShipGen::ShipDimensions* getResolutionBookmark(std::size_t index) const;
+        const std::vector<SpectralShipGen::ShipDimensions>& getResolutionBookmarks() const;
+        void setResolutionBookmarks(std::vector<SpectralShipGen::ShipDimensions> bookmarks);
 
     private:
-        static bool dimensionsLess(const PixelShipGenerator::ShipDimensions& first, const PixelShipGenerator::ShipDimensions& second);
+        static bool dimensionsLess(const SpectralShipGen::ShipDimensions& first, const SpectralShipGen::ShipDimensions& second);
 
         std::size_t m_MaximumHistorySize = 20u;
         std::vector<PreviewGenerationRecipe> m_History;
@@ -67,6 +67,6 @@ namespace PixelShipGeneratorPreview
         std::vector<PreviewGalleryRecipeEntry> m_GalleryRecipes;
         uint64_t m_GalleryBatchSeed = 0u;
         PreviewGenerationRecipe m_GalleryTemplateRecipe;
-        std::vector<PixelShipGenerator::ShipDimensions> m_ResolutionBookmarks;
+        std::vector<SpectralShipGen::ShipDimensions> m_ResolutionBookmarks;
     };
 }

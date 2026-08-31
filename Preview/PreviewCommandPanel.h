@@ -14,7 +14,7 @@
 #include "PreviewResolution.h"
 #include "PreviewState.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     enum class PreviewCommandPanelMode : uint32_t
     {
@@ -83,9 +83,9 @@ namespace PixelShipGeneratorPreview
     {
         std::array<bool, static_cast<std::size_t>(PreviewCommandType::PREVIEW_COMMAND_TYPE_END)> Enabled = {};
         std::array<bool, static_cast<std::size_t>(PreviewCommandType::PREVIEW_COMMAND_TYPE_END)> Active = {};
-        std::array<PixelShipGenerator::ShipDimensions, MaximumResolutionBookmarks> ResolutionBookmarks = {};
+        std::array<SpectralShipGen::ShipDimensions, MaximumResolutionBookmarks> ResolutionBookmarks = {};
         uint32_t ResolutionBookmarkCount = 0u;
-        PixelShipGenerator::ShipDimensions CurrentDimensions;
+        SpectralShipGen::ShipDimensions CurrentDimensions;
         bool AspectRatioLocked = true;
         std::string StyleValue;
         std::string FactionValue;
@@ -104,7 +104,7 @@ namespace PixelShipGeneratorPreview
         uint32_t AnimationTimelineValue = 0u;
         std::string AnimationTimelineDetail;
         PreviewCommandPanelMode Mode = PreviewCommandPanelMode::GENERATE;
-        std::array<bool, PixelShipGenerator::GenerationDomainCount> RerollStudioSelectedDomains = {};
+        std::array<bool, SpectralShipGen::GenerationDomainCount> RerollStudioSelectedDomains = {};
         std::string CalibrationGroupValue;
         std::string CalibrationEvidenceValue;
         std::array<PreviewCalibrationWeightRowState, 6u> CalibrationWeightRows = {};
@@ -146,7 +146,7 @@ namespace PixelShipGeneratorPreview
         void addDimensionControlButtons(float& y);
         void addCalibrationWeightSliders(float& y);
         void addAnimationTimelineSlider(float& y);
-        void addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain domain, float x, float y, float width, float height);
+        void addRerollStudioDomainButton(SpectralShipGen::GenerationDomain domain, float x, float y, float width, float height);
         void buildLayout(PreviewCommandPanelMode mode = PreviewCommandPanelMode::GENERATE);
         int32_t findButtonIndex(sf::Vector2f position) const;
         PreviewCommandPanelSlider* findSlider(sf::Vector2f position);

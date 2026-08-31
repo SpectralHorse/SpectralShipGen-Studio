@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     namespace
     {
@@ -51,30 +51,30 @@ namespace PixelShipGeneratorPreview
             return views[static_cast<std::size_t>(wrapped)];
         }
 
-        bool maskMatches(const PixelShipGenerator::PixelMask& mask, uint32_t width, uint32_t height)
+        bool maskMatches(const SpectralShipGen::PixelMask& mask, uint32_t width, uint32_t height)
         {
             return mask.getWidth() == width && mask.getHeight() == height;
         }
 
-        PixelShipGenerator::Color blendDiagnosticColor(const PixelShipGenerator::Color& base, const PixelShipGenerator::Color& overlay)
+        SpectralShipGen::Color blendDiagnosticColor(const SpectralShipGen::Color& base, const SpectralShipGen::Color& overlay)
         {
             if (base.A == 0u) { return overlay; }
             constexpr uint32_t OverlayWeight = 60u;
             constexpr uint32_t BaseWeight = 100u - OverlayWeight;
-            return PixelShipGenerator::Color(
+            return SpectralShipGen::Color(
                 static_cast<uint8_t>((static_cast<uint32_t>(base.R) * BaseWeight + static_cast<uint32_t>(overlay.R) * OverlayWeight) / 100u),
                 static_cast<uint8_t>((static_cast<uint32_t>(base.G) * BaseWeight + static_cast<uint32_t>(overlay.G) * OverlayWeight) / 100u),
                 static_cast<uint8_t>((static_cast<uint32_t>(base.B) * BaseWeight + static_cast<uint32_t>(overlay.B) * OverlayWeight) / 100u),
                 255u);
         }
 
-        void drawDiagnosticPixel(PixelShipGenerator::Image& image, uint32_t x, uint32_t y, const PixelShipGenerator::Color& color, PreviewInspectionPresentation presentation)
+        void drawDiagnosticPixel(SpectralShipGen::Image& image, uint32_t x, uint32_t y, const SpectralShipGen::Color& color, PreviewInspectionPresentation presentation)
         {
             if (!image.isInBounds(x, y)) { return; }
             image.setPixel(x, y, presentation == PreviewInspectionPresentation::OVERLAY ? blendDiagnosticColor(image.getPixel(x, y), color) : color);
         }
 
-        void drawBounds(PixelShipGenerator::Image& image, uint32_t minX, uint32_t maxX, uint32_t minY, uint32_t maxY, const PixelShipGenerator::Color& color, PreviewInspectionPresentation presentation)
+        void drawBounds(SpectralShipGen::Image& image, uint32_t minX, uint32_t maxX, uint32_t minY, uint32_t maxY, const SpectralShipGen::Color& color, PreviewInspectionPresentation presentation)
         {
             if (minX > maxX || minY > maxY) { return; }
             for (uint32_t x = minX; x <= maxX; ++x)
@@ -186,14 +186,14 @@ namespace PixelShipGeneratorPreview
         }
     }
 
-    bool hasPreviewInspectionShip(const PixelShipGenerator::GeneratedShip& ship)
+    bool hasPreviewInspectionShip(const SpectralShipGen::GeneratedShip& ship)
     {
         return !ship.FinalImage.empty();
     }
 
-    PixelShipGenerator::Image createPreviewInspectionImage(
-        const PixelShipGenerator::GeneratedShip& ship,
-        const PixelShipGenerator::ShipGenerationDebugInfo& debugInfo,
+    SpectralShipGen::Image createPreviewInspectionImage(
+        const SpectralShipGen::GeneratedShip& ship,
+        const SpectralShipGen::ShipGenerationDebugInfo& debugInfo,
         DiagnosticViewMode mode,
         PreviewInspectionPresentation presentation,
         bool generationStageView,
@@ -201,16 +201,16 @@ namespace PixelShipGeneratorPreview
     {
         const uint32_t width = ship.FinalImage.getWidth();
         const uint32_t height = ship.FinalImage.getHeight();
-        PixelShipGenerator::Image image;
+        SpectralShipGen::Image image;
         if (presentation == PreviewInspectionPresentation::OVERLAY) { image = ship.FinalImage; }
-        else { image.reset(width, height, PixelShipGenerator::Color(0u, 0u, 0u, 0u)); }
+        else { image.reset(width, height, SpectralShipGen::Color(0u, 0u, 0u, 0u)); }
 
         if (width == 0u || height == 0u) { return image; }
 
         if (generationStageView && !debugInfo.HullStages.empty())
         {
             const uint32_t index = std::min(generationStageIndex, static_cast<uint32_t>(debugInfo.HullStages.size() - 1u));
-            const PixelShipGenerator::PixelMask& stageMask = debugInfo.HullStages[index].HullMask;
+            const SpectralShipGen::PixelMask& stageMask = debugInfo.HullStages[index].HullMask;
             if (!maskMatches(stageMask, width, height)) { return image; }
             for (uint32_t y = 0u; y < height; ++y)
             {
@@ -224,7 +224,7 @@ namespace PixelShipGeneratorPreview
 
         if (mode == DiagnosticViewMode::FINAL) { return ship.FinalImage; }
 
-        const auto drawMask = [&](const PixelShipGenerator::PixelMask& mask, const PixelShipGenerator::Color& color)
+        const auto drawMask = [&](const SpectralShipGen::PixelMask& mask, const SpectralShipGen::Color& color)
         {
             if (!maskMatches(mask, width, height)) { return; }
             for (uint32_t y = 0u; y < height; ++y)
@@ -250,7 +250,7 @@ namespace PixelShipGeneratorPreview
             break;
         case DiagnosticViewMode::ATTACHMENTS:
             drawMask(ship.AttachmentMask, PreviewDiagnosticColors::Attachment);
-            for (const PixelShipGenerator::ShipAttachmentPlacement& attachment : ship.AttachmentPlacements)
+            for (const SpectralShipGen::ShipAttachmentPlacement& attachment : ship.AttachmentPlacements)
             {
                 drawBounds(image, attachment.MinimumX, attachment.MaximumX, attachment.MinimumY, attachment.MaximumY, PreviewDiagnosticColors::AttachmentBounds, presentation);
                 drawDiagnosticPixel(image, attachment.AnchorX, attachment.AnchorY, PreviewDiagnosticColors::AttachmentRoot, presentation);
@@ -269,7 +269,7 @@ namespace PixelShipGeneratorPreview
             break;
         case DiagnosticViewMode::WEAPONS:
             drawMask(debugInfo.WeaponOccupiedMask, PreviewDiagnosticColors::Weapon);
-            for (const PixelShipGenerator::WeaponUnitDebugInfo& weapon : debugInfo.WeaponUnits)
+            for (const SpectralShipGen::WeaponUnitDebugInfo& weapon : debugInfo.WeaponUnits)
             {
                 drawBounds(image, weapon.BodyMinX, weapon.BodyMaxX, weapon.BodyMinY, weapon.BodyMaxY, PreviewDiagnosticColors::WeaponBounds, presentation);
                 drawBounds(image, weapon.BarrelMinX, weapon.BarrelMaxX, weapon.BarrelMinY, weapon.BarrelMaxY, PreviewDiagnosticColors::WeaponBounds, presentation);
@@ -309,11 +309,11 @@ namespace PixelShipGeneratorPreview
                     for (uint32_t x = 0u; x < width; ++x)
                     {
                         const uint8_t regionValue = debugInfo.SpatialRegionMap[static_cast<std::size_t>(y) * width + x];
-                        if (regionValue >= static_cast<uint8_t>(PixelShipGenerator::GenerationSpatialRegion::GENERATION_SPATIAL_REGION_END)) { continue; }
+                        if (regionValue >= static_cast<uint8_t>(SpectralShipGen::GenerationSpatialRegion::GENERATION_SPATIAL_REGION_END)) { continue; }
                         const std::size_t regionIndex = static_cast<std::size_t>(regionValue);
                         const uint32_t capacity = debugInfo.SpatialRegionCapacities[regionIndex];
                         const uint32_t utilization = capacity == 0u ? 0u : (debugInfo.SpatialRegionLoads[regionIndex] * 100u) / capacity;
-                        const PixelShipGenerator::Color color = utilization < 40u ? PreviewDiagnosticColors::SpatialLow : utilization < 75u ? PreviewDiagnosticColors::SpatialModerate : utilization < 100u ? PreviewDiagnosticColors::SpatialHigh : PreviewDiagnosticColors::SpatialOverloaded;
+                        const SpectralShipGen::Color color = utilization < 40u ? PreviewDiagnosticColors::SpatialLow : utilization < 75u ? PreviewDiagnosticColors::SpatialModerate : utilization < 100u ? PreviewDiagnosticColors::SpatialHigh : PreviewDiagnosticColors::SpatialOverloaded;
                         drawDiagnosticPixel(image, x, y, color, presentation);
                     }
                 }

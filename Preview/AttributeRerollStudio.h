@@ -4,16 +4,16 @@
 #include <cstdint>
 #include <vector>
 
-#include <PixelShipGenerator/GenerationDomain.h>
+#include <SpectralShipGen/GenerationDomain.h>
 #include "PreviewGenerationRecipe.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct AttributeRerollStudioState
     {
         PreviewGenerationRecipe BaseRecipe;
         PreviewGenerationRecipe CandidateRecipe;
-        std::array<bool, PixelShipGenerator::GenerationDomainCount> SelectedDomains = {};
+        std::array<bool, SpectralShipGen::GenerationDomainCount> SelectedDomains = {};
         uint64_t CandidateRerollSeed = 0u;
         uint32_t CandidateSequence = 0u;
         bool Active = false;
@@ -22,13 +22,13 @@ namespace PixelShipGeneratorPreview
 
     void beginAttributeRerollStudio(AttributeRerollStudioState& state, const PreviewGenerationRecipe& baseRecipe);
     void resetAttributeRerollStudio(AttributeRerollStudioState& state);
-    void setAttributeRerollDomainSelected(AttributeRerollStudioState& state, PixelShipGenerator::GenerationDomain domain, bool selected);
-    void toggleAttributeRerollDomain(AttributeRerollStudioState& state, PixelShipGenerator::GenerationDomain domain);
+    void setAttributeRerollDomainSelected(AttributeRerollStudioState& state, SpectralShipGen::GenerationDomain domain, bool selected);
+    void toggleAttributeRerollDomain(AttributeRerollStudioState& state, SpectralShipGen::GenerationDomain domain);
     void selectAllAttributeRerollDomains(AttributeRerollStudioState& state);
     void clearAttributeRerollDomains(AttributeRerollStudioState& state);
-    void selectAttributeRerollParentChannel(AttributeRerollStudioState& state, PixelShipGenerator::GenerationSeedChannel channel, bool clearExisting = true);
+    void selectAttributeRerollParentChannel(AttributeRerollStudioState& state, SpectralShipGen::GenerationSeedChannel channel, bool clearExisting = true);
     void selectAttributeRerollAppearanceDomains(AttributeRerollStudioState& state, bool clearExisting = true);
     bool hasSelectedAttributeRerollDomains(const AttributeRerollStudioState& state);
-    std::vector<PixelShipGenerator::GenerationDomain> getSelectedAttributeRerollDomains(const AttributeRerollStudioState& state);
+    std::vector<SpectralShipGen::GenerationDomain> getSelectedAttributeRerollDomains(const AttributeRerollStudioState& state);
     PreviewGenerationRecipe generateAttributeRerollCandidate(AttributeRerollStudioState& state, uint64_t rerollSeed);
 }

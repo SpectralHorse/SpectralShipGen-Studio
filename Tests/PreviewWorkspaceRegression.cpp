@@ -7,7 +7,7 @@
 
 #include "PreviewCollectionSession.h"
 #include "PreviewCommand.h"
-#if PIXEL_SHIP_GENERATOR_PREVIEW_HAS_SFML
+#if SPECTRAL_SHIP_GEN_PREVIEW_HAS_SFML
 #include "PreviewCommandPanel.h"
 #endif
 #include "FactionProfileSelection.h"
@@ -15,10 +15,10 @@
 #include "PreviewConfigurationEditor.h"
 #include "PreviewWorkspace.h"
 #include "RuntimeCustomPresetWorkspace.h"
-#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
 #include "StructuralProfileSelection.h"
 
-namespace PixelShipGeneratorTests
+namespace SpectralShipGenStudioTests
 {
     namespace
     {
@@ -28,17 +28,17 @@ namespace PixelShipGeneratorTests
             return 1;
         }
 
-        PixelShipGeneratorPreview::PreviewGenerationRecipe makeRecipe(uint64_t seed)
+        SpectralShipGenStudioPreview::PreviewGenerationRecipe makeRecipe(uint64_t seed)
         {
-            PixelShipGeneratorPreview::PreviewGenerationRecipe recipe;
-            recipe.Seeds = PixelShipGenerator::deriveShipGenerationSeeds(seed);
+            SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe;
+            recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(seed);
             recipe.Dimensions = { 96u, 64u };
-            recipe.Style = PixelShipGenerator::ShipStyle::INDUSTRIAL;
-            recipe.Faction = PixelShipGenerator::ShipFactionType::CORPORATE;
+            recipe.Style = SpectralShipGen::ShipStyle::INDUSTRIAL;
+            recipe.Faction = SpectralShipGen::ShipFactionType::CORPORATE;
             return recipe;
         }
 
-        bool containsShortcut(const PixelShipGeneratorPreview::PreviewHelpSection& section, const std::string& shortcut)
+        bool containsShortcut(const SpectralShipGenStudioPreview::PreviewHelpSection& section, const std::string& shortcut)
         {
             for (std::size_t index = 0u; index < section.Count; ++index)
             {
@@ -50,7 +50,7 @@ namespace PixelShipGeneratorTests
 
     int runPreviewWorkspaceRegression()
     {
-        using namespace PixelShipGeneratorPreview;
+        using namespace SpectralShipGenStudioPreview;
 
         PreviewWorkspaceSession session;
         if (session.getActiveWorkspace() != PreviewWorkspace::GENERATE || session.getLocalMode(PreviewWorkspace::GENERATE) != PreviewMode::STATIC)
@@ -141,7 +141,7 @@ namespace PixelShipGeneratorTests
 
         PreviewConfigurationEditor editor;
         editor.setPanelBounds({ 0.0f, 40.0f, 760.0f, 900.0f });
-        editor.openStructuralProfile("Focus 2 Space", PixelShipGenerator::ShipGenerationProfile{});
+        editor.openStructuralProfile("Focus 2 Space", SpectralShipGen::ShipGenerationProfile{});
         const ConfigurationTextField& nameField = editor.getNameField();
         editor.onMousePress(nameField.Bounds.Left + nameField.Bounds.Width * 0.5f, nameField.Bounds.Top + nameField.Bounds.Height * 0.5f);
         if (!editor.hasKeyboardFocus()) { return fail("configuration editor did not report name-field keyboard focus"); }
@@ -186,7 +186,7 @@ namespace PixelShipGeneratorTests
         {
             return fail("Generate IDLE spritesheet export command metadata is missing");
         }
-#if PIXEL_SHIP_GENERATOR_PREVIEW_HAS_SFML
+#if SPECTRAL_SHIP_GEN_PREVIEW_HAS_SFML
         PreviewCommandPanel generatePanel;
         bool generateHasSpritesheet = false;
         for (const PreviewCommandPanelButton& button : generatePanel.getButtons())

@@ -8,17 +8,17 @@
 #include "PreviewConfigurationEditor.h"
 #include "RuntimeCustomPresetWorkspace.h"
 
-#include <PixelShipGenerator/ShipFactionProfile.h>
-#include <PixelShipGenerator/ShipFactionProfileValidation.h>
-#include <PixelShipGenerator/ShipFiringAnimator.h>
-#include <PixelShipGenerator/ShipGenerationProfile.h>
-#include <PixelShipGenerator/ShipGenerationSettings.h>
-#include <PixelShipGenerator/ShipGenerator.h>
-#include <PixelShipGenerator/ShipIdleAnimator.h>
-#include <PixelShipGenerator/ShipLateralMovementAnimator.h>
-#include <PixelShipGenerator/ShipLongitudinalMovementAnimator.h>
+#include <SpectralShipGen/ShipFactionProfile.h>
+#include <SpectralShipGen/ShipFactionProfileValidation.h>
+#include <SpectralShipGen/ShipFiringAnimator.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerationSettings.h>
+#include <SpectralShipGen/ShipGenerator.h>
+#include <SpectralShipGen/ShipIdleAnimator.h>
+#include <SpectralShipGen/ShipLateralMovementAnimator.h>
+#include <SpectralShipGen/ShipLongitudinalMovementAnimator.h>
 
-namespace PixelShipGeneratorTests
+namespace SpectralShipGenStudioTests
 {
     namespace
     {
@@ -28,23 +28,23 @@ namespace PixelShipGeneratorTests
             return 1;
         }
 
-        bool imagesEqual(const PixelShipGenerator::Image& first, const PixelShipGenerator::Image& second)
+        bool imagesEqual(const SpectralShipGen::Image& first, const SpectralShipGen::Image& second)
         {
             return first.getWidth() == second.getWidth() && first.getHeight() == second.getHeight() && first.getPixels() == second.getPixels();
         }
 
-        bool hasValidationErrorPrefix(const PixelShipGenerator::ValidationResult& result, const std::string& fieldPrefix)
+        bool hasValidationErrorPrefix(const SpectralShipGen::ValidationResult& result, const std::string& fieldPrefix)
         {
-            for (const PixelShipGenerator::ValidationIssue& issue : result.Errors)
+            for (const SpectralShipGen::ValidationIssue& issue : result.Errors)
             {
                 if (issue.Field.rfind(fieldPrefix, 0u) == 0u) { return true; }
             }
             return false;
         }
 
-        bool deterministicAnimationEqual(const PixelShipGenerator::GeneratedShip& first, const PixelShipGenerator::GeneratedShip& second)
+        bool deterministicAnimationEqual(const SpectralShipGen::GeneratedShip& first, const SpectralShipGen::GeneratedShip& second)
         {
-            using namespace PixelShipGenerator;
+            using namespace SpectralShipGen;
             ShipIdleAnimator idle;
             ShipLateralMovementAnimator lateral;
             ShipLongitudinalMovementAnimator longitudinal;
@@ -64,8 +64,8 @@ namespace PixelShipGeneratorTests
 
     int runPreviewFactionProfileEditorRegression()
     {
-        using namespace PixelShipGeneratorPreview;
-        using namespace PixelShipGenerator;
+        using namespace SpectralShipGenStudioPreview;
+        using namespace SpectralShipGen;
 
         RuntimeCustomPresetWorkspace workspace;
         const ShipFactionProfile relicBefore = getShipFactionProfile(ShipFactionType::RELIC);

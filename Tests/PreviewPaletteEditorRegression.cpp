@@ -5,12 +5,12 @@
 #include <optional>
 #include <string>
 
-#include <PixelShipGenerator/BuiltInPresetCatalog.h>
-#include <PixelShipGenerator/GenerationDomain.h>
+#include <SpectralShipGen/BuiltInPresetCatalog.h>
+#include <SpectralShipGen/GenerationDomain.h>
 #include "ShipGenerationRecipeSerializer.h"
-#include <PixelShipGenerator/ShipGenerator.h>
-#include <PixelShipGenerator/ShipPaletteGenerationProfile.h>
-#include <PixelShipGenerator/ShipPaletteGenerationProfileValidation.h>
+#include <SpectralShipGen/ShipGenerator.h>
+#include <SpectralShipGen/ShipPaletteGenerationProfile.h>
+#include <SpectralShipGen/ShipPaletteGenerationProfileValidation.h>
 
 #include "ConfigurationEditorControls.h"
 #include "PaletteProfileSelection.h"
@@ -21,8 +21,8 @@
 
 namespace
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     bool imagesEqual(const Image& first, const Image& second)
     {
@@ -295,7 +295,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorTests
+namespace SpectralShipGenStudioTests
 {
     int runPreviewPaletteEditorRegression()
     {

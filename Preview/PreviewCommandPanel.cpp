@@ -17,9 +17,9 @@ namespace
     constexpr float SelectorButtonWidth = 42.0f;
     constexpr float PairSpacing = 4.0f;
 
-    const char* getRerollStudioDomainLabel(PixelShipGenerator::GenerationDomain domain)
+    const char* getRerollStudioDomainLabel(SpectralShipGen::GenerationDomain domain)
     {
-        using PixelShipGenerator::GenerationDomain;
+        using SpectralShipGen::GenerationDomain;
         switch (domain)
         {
         case GenerationDomain::HULL: return "Hull Shape";
@@ -38,7 +38,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     PreviewCommandPanel::PreviewCommandPanel()
     {
@@ -63,7 +63,7 @@ namespace PixelShipGeneratorPreview
                 const std::size_t domainIndex = static_cast<std::size_t>(button.Command.Value);
                 const bool selected = domainIndex < state.RerollStudioSelectedDomains.size() && state.RerollStudioSelectedDomains[domainIndex];
                 button.Active = selected;
-                const PixelShipGenerator::GenerationDomain domain = domainIndex < PixelShipGenerator::GenerationDomainCount ? static_cast<PixelShipGenerator::GenerationDomain>(domainIndex) : PixelShipGenerator::GenerationDomain::GENERATION_DOMAIN_END;
+                const SpectralShipGen::GenerationDomain domain = domainIndex < SpectralShipGen::GenerationDomainCount ? static_cast<SpectralShipGen::GenerationDomain>(domainIndex) : SpectralShipGen::GenerationDomain::GENERATION_DOMAIN_END;
                 button.Label = std::string(selected ? "[X] " : "[ ] ") + getRerollStudioDomainLabel(domain);
             }
 
@@ -84,7 +84,7 @@ namespace PixelShipGeneratorPreview
                 button.Enabled = button.Enabled && validSlot;
                 if (validSlot)
                 {
-                    const PixelShipGenerator::ShipDimensions& dimensions = state.ResolutionBookmarks[slot];
+                    const SpectralShipGen::ShipDimensions& dimensions = state.ResolutionBookmarks[slot];
                     button.Label = std::to_string(dimensions.Width) + "x" + std::to_string(dimensions.Height);
                     button.Active = dimensions == state.CurrentDimensions;
                 }
@@ -421,7 +421,7 @@ namespace PixelShipGeneratorPreview
         }
     }
 
-    void PreviewCommandPanel::addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain domain, float x, float y, float width, float height)
+    void PreviewCommandPanel::addRerollStudioDomainButton(SpectralShipGen::GenerationDomain domain, float x, float y, float width, float height)
     {
         addButton({ PreviewCommandType::REROLL_STUDIO_TOGGLE_DOMAIN, static_cast<uint32_t>(domain) }, x, y, width, height, std::string("[ ] ") + getRerollStudioDomainLabel(domain));
     }
@@ -459,26 +459,26 @@ namespace PixelShipGeneratorPreview
 
             addGroupHeader("ATTRIBUTE REROLL STUDIO", y);
             addGroupHeader("STRUCTURE", y);
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::HULL, x, y, pairWidth, ButtonHeight);
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::WINGS, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::HULL, x, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::WINGS, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
             y += ButtonHeight + RowSpacing;
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::COCKPIT, x, y, pairWidth, ButtonHeight);
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::ENGINES, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::COCKPIT, x, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::ENGINES, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
             y += ButtonHeight + RowSpacing;
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::HULL_LAYERS, x, y, pairWidth, ButtonHeight);
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::MAJOR_FEATURES, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::HULL_LAYERS, x, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::MAJOR_FEATURES, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
             y += ButtonHeight + RowSpacing;
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::MACRO_ASYMMETRY, x, y, totalWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::MACRO_ASYMMETRY, x, y, totalWidth, ButtonHeight);
             y += ButtonHeight + RowSpacing;
 
             addGroupHeader("EQUIPMENT", y);
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::WEAPONS, x, y, pairWidth, ButtonHeight);
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::ATTACHMENTS, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::WEAPONS, x, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::ATTACHMENTS, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
             y += ButtonHeight + RowSpacing;
 
             addGroupHeader("APPEARANCE", y);
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::PALETTE, x, y, pairWidth, ButtonHeight);
-            addRerollStudioDomainButton(PixelShipGenerator::GenerationDomain::DETAILS, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::PALETTE, x, y, pairWidth, ButtonHeight);
+            addRerollStudioDomainButton(SpectralShipGen::GenerationDomain::DETAILS, x + pairWidth + PairSpacing, y, pairWidth, ButtonHeight);
             y += ButtonHeight + RowSpacing;
 
             addGroupHeader("SELECTION", y);

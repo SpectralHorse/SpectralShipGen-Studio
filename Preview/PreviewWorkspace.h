@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     enum class PreviewWorkspace : uint32_t
     {

@@ -5,7 +5,7 @@
 #include <limits>
 #include <utility>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     namespace
     {

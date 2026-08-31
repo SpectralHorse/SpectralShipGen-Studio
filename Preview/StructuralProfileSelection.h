@@ -6,11 +6,11 @@
 #include <string>
 #include <vector>
 
-#include <PixelShipGenerator/ShipGenerationRecipe.h>
+#include <SpectralShipGen/ShipGenerationRecipe.h>
 
 #include "RuntimeCustomPresetWorkspace.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     enum class StructuralProfileSelectionKind : uint32_t
     {
@@ -23,10 +23,10 @@ namespace PixelShipGeneratorPreview
     {
         StructuralProfileSelectionKind Kind = StructuralProfileSelectionKind::BUILT_IN;
         std::string Label;
-        PixelShipGenerator::ShipStyle Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
+        SpectralShipGen::ShipStyle Style = SpectralShipGen::ShipStyle::SHIP_STYLE_END;
         RuntimeCustomPresetId CustomPresetId = 0u;
     };
 
     std::vector<StructuralProfileSelectionEntry> buildStructuralProfileSelection(const RuntimeCustomPresetWorkspace& workspace);
-    std::size_t findStructuralProfileSelectionIndex(const std::vector<StructuralProfileSelectionEntry>& entries, const PixelShipGenerator::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId);
+    std::size_t findStructuralProfileSelectionIndex(const std::vector<StructuralProfileSelectionEntry>& entries, const SpectralShipGen::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId);
 }

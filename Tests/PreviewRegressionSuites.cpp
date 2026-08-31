@@ -1,6 +1,6 @@
 #include "PreviewRegressionSuites.h"
 
-namespace PixelShipGeneratorTests
+namespace SpectralShipGenStudioTests
 {
     std::vector<RegressionSuite> createPreviewRegressionSuites()
     {
@@ -21,7 +21,7 @@ namespace PixelShipGeneratorTests
             { "palette-editor", "Preview Palette Editor", RegressionCategory::TOOLING, runPreviewPaletteEditorRegression, false },
             { "calibration", "Calibration Lab", RegressionCategory::TOOLING, runGenerationCalibrationRegression, true }
         };
-#if PIXEL_SHIP_GENERATOR_PREVIEW_HAS_SFML
+#if SPECTRAL_SHIP_GEN_PREVIEW_HAS_SFML
         suites.push_back({ "attribute-reroll-studio", "Attribute Reroll Studio", RegressionCategory::TOOLING, runAttributeRerollStudioRegression, false });
 #endif
         return suites;

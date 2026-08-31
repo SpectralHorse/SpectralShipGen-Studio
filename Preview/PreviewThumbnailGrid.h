@@ -9,7 +9,7 @@
 #include "PreviewPagination.h"
 #include "PreviewState.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     inline uint32_t getPreviewThumbnailPageCapacity(const PreviewThumbnailGridState& grid)
     {

@@ -11,19 +11,19 @@
 #include "PreviewCollectionSession.h"
 #include "PreviewFavoritesPersistence.h"
 #include "ShipGenerationRecipeSerializer.h"
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
-#include <PixelShipGenerator/ShipPaletteGenerationProfile.h>
-#include <PixelShipGenerator/ShipGenerationSettings.h>
-#include <PixelShipGenerator/ShipGenerator.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipPaletteGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerationSettings.h>
+#include <SpectralShipGen/ShipGenerator.h>
 
 namespace
 {
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGenStudioPreview;
 
-    PreviewGenerationRecipe makeRecipe(uint64_t seed, uint32_t width, uint32_t height, PixelShipGenerator::ShipStyle style, PixelShipGenerator::ShipFactionType faction)
+    PreviewGenerationRecipe makeRecipe(uint64_t seed, uint32_t width, uint32_t height, SpectralShipGen::ShipStyle style, SpectralShipGen::ShipFactionType faction)
     {
         PreviewGenerationRecipe recipe;
-        recipe.Seeds = PixelShipGenerator::deriveShipGenerationSeeds(seed);
+        recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(seed);
         recipe.Dimensions = { width, height };
         recipe.Style = style;
         recipe.Faction = faction;
@@ -36,7 +36,7 @@ namespace
 
     PreviewGenerationRecipe makeCustomRecipe()
     {
-        using namespace PixelShipGenerator;
+        using namespace SpectralShipGen;
         PreviewGenerationRecipe recipe = makeRecipe(0x7800000000000004ull, 96u, 64u, ShipStyle::FIGHTER, ShipFactionType::FRONTIER);
         recipe.StructuralSource = ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
         recipe.Style = ShipStyle::SHIP_STYLE_END;
@@ -52,9 +52,9 @@ namespace
         return recipe;
     }
 
-    PixelShipGenerator::Image generateImage(const PreviewGenerationRecipe& recipe)
+    SpectralShipGen::Image generateImage(const PreviewGenerationRecipe& recipe)
     {
-        return PixelShipGenerator::ShipGenerator{}.generate(recipe).FinalImage;
+        return SpectralShipGen::ShipGenerator{}.generate(recipe).FinalImage;
     }
 
     std::string recipeJson(const PreviewGenerationRecipe& recipe)
@@ -91,17 +91,17 @@ namespace
     }
 }
 
-int PixelShipGeneratorTests::runPreviewFavoritesPersistenceRegression()
+int SpectralShipGenStudioTests::runPreviewFavoritesPersistenceRegression()
 {
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGenStudioPreview;
 
     bool success = true;
-    const PreviewGenerationRecipe recipeA = makeRecipe(0x7800000000000001ull, 64u, 64u, PixelShipGenerator::ShipStyle::FIGHTER, PixelShipGenerator::ShipFactionType::MILITARY);
-    const PreviewGenerationRecipe recipeB = makeRecipe(0x7800000000000002ull, 96u, 64u, PixelShipGenerator::ShipStyle::DELTA, PixelShipGenerator::ShipFactionType::CORPORATE);
-    const PreviewGenerationRecipe recipeC = makeRecipe(0x7800000000000003ull, 128u, 128u, PixelShipGenerator::ShipStyle::INDUSTRIAL, PixelShipGenerator::ShipFactionType::FRONTIER);
+    const PreviewGenerationRecipe recipeA = makeRecipe(0x7800000000000001ull, 64u, 64u, SpectralShipGen::ShipStyle::FIGHTER, SpectralShipGen::ShipFactionType::MILITARY);
+    const PreviewGenerationRecipe recipeB = makeRecipe(0x7800000000000002ull, 96u, 64u, SpectralShipGen::ShipStyle::DELTA, SpectralShipGen::ShipFactionType::CORPORATE);
+    const PreviewGenerationRecipe recipeC = makeRecipe(0x7800000000000003ull, 128u, 128u, SpectralShipGen::ShipStyle::INDUSTRIAL, SpectralShipGen::ShipFactionType::FRONTIER);
     const PreviewGenerationRecipe customRecipe = makeCustomRecipe();
 
-    const std::filesystem::path directory = std::filesystem::temp_directory_path() / "pixel_ship_generator_favorites_regression";
+    const std::filesystem::path directory = std::filesystem::temp_directory_path() / "spectral_ship_gen_favorites_regression";
     const std::filesystem::path path = directory / "favorites.json";
     const std::filesystem::path temporaryPath = path.string() + ".tmp";
     const std::filesystem::path backupPath = path.string() + ".bak";
@@ -179,8 +179,8 @@ int PixelShipGeneratorTests::runPreviewFavoritesPersistenceRegression()
         std::cerr << "PreviewCollectionSession did not restore Favorite ordering.\n";
     }
 
-    const PixelShipGenerator::Image originalImage = generateImage(recipeA);
-    const PixelShipGenerator::Image recreatedImage = generateImage(secondSession.getFavorites().front());
+    const SpectralShipGen::Image originalImage = generateImage(recipeA);
+    const SpectralShipGen::Image recreatedImage = generateImage(secondSession.getFavorites().front());
     if (originalImage.getWidth() != recreatedImage.getWidth() || originalImage.getHeight() != recreatedImage.getHeight() || originalImage.getPixels() != recreatedImage.getPixels())
     {
         success = false;

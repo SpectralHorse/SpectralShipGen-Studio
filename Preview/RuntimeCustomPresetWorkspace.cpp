@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     namespace
     {
@@ -51,21 +51,21 @@ namespace PixelShipGeneratorPreview
         }
     }
 
-    RuntimeCustomPresetId RuntimeCustomPresetWorkspace::addStructural(std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
+    RuntimeCustomPresetId RuntimeCustomPresetWorkspace::addStructural(std::string name, const SpectralShipGen::ShipGenerationProfile& profile)
     {
         const RuntimeCustomPresetId id = allocateId();
         m_StructuralPresets.push_back({ id, makeUniqueStructuralName(name), profile });
         return id;
     }
 
-    RuntimeCustomPresetId RuntimeCustomPresetWorkspace::addFaction(std::string name, const PixelShipGenerator::ShipFactionProfile& profile)
+    RuntimeCustomPresetId RuntimeCustomPresetWorkspace::addFaction(std::string name, const SpectralShipGen::ShipFactionProfile& profile)
     {
         const RuntimeCustomPresetId id = allocateId();
         m_FactionPresets.push_back({ id, makeUniqueFactionName(name), profile });
         return id;
     }
 
-    RuntimeCustomPresetId RuntimeCustomPresetWorkspace::addPalette(std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    RuntimeCustomPresetId RuntimeCustomPresetWorkspace::addPalette(std::string name, const SpectralShipGen::ShipPaletteConfiguration& configuration)
     {
         const RuntimeCustomPresetId id = allocateId();
         m_PalettePresets.push_back({ id, makeUniquePaletteName(name), configuration });
@@ -80,7 +80,7 @@ namespace PixelShipGeneratorPreview
         return id;
     }
 
-    bool RuntimeCustomPresetWorkspace::restoreStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
+    bool RuntimeCustomPresetWorkspace::restoreStructural(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipGenerationProfile& profile)
     {
         if (id == 0u || containsId(id)) { return false; }
         m_StructuralPresets.push_back({ id, makeUniqueStructuralName(name), profile });
@@ -88,7 +88,7 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    bool RuntimeCustomPresetWorkspace::restoreFaction(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipFactionProfile& profile)
+    bool RuntimeCustomPresetWorkspace::restoreFaction(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipFactionProfile& profile)
     {
         if (id == 0u || containsId(id)) { return false; }
         m_FactionPresets.push_back({ id, makeUniqueFactionName(name), profile });
@@ -96,7 +96,7 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    bool RuntimeCustomPresetWorkspace::restorePalette(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    bool RuntimeCustomPresetWorkspace::restorePalette(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipPaletteConfiguration& configuration)
     {
         if (id == 0u || containsId(id)) { return false; }
         m_PalettePresets.push_back({ id, makeUniquePaletteName(name), configuration });
@@ -113,7 +113,7 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    bool RuntimeCustomPresetWorkspace::updateStructural(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipGenerationProfile& profile)
+    bool RuntimeCustomPresetWorkspace::updateStructural(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipGenerationProfile& profile)
     {
         RuntimeStructuralPreset* preset = findStructural(id);
         if (preset == nullptr) { return false; }
@@ -131,7 +131,7 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    bool RuntimeCustomPresetWorkspace::updateFaction(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipFactionProfile& profile)
+    bool RuntimeCustomPresetWorkspace::updateFaction(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipFactionProfile& profile)
     {
         RuntimeFactionPreset* preset = findFaction(id);
         if (preset == nullptr) { return false; }
@@ -149,7 +149,7 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    bool RuntimeCustomPresetWorkspace::updatePalette(RuntimeCustomPresetId id, std::string name, const PixelShipGenerator::ShipPaletteConfiguration& configuration)
+    bool RuntimeCustomPresetWorkspace::updatePalette(RuntimeCustomPresetId id, std::string name, const SpectralShipGen::ShipPaletteConfiguration& configuration)
     {
         RuntimePalettePreset* preset = findPalette(id);
         if (preset == nullptr) { return false; }

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace PixelShipGeneratorApplication
+namespace SpectralShipGenStudioApplication
 {
     struct ChartDatum
     {

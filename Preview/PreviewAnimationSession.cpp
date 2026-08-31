@@ -4,64 +4,64 @@
 #include <array>
 #include <cmath>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     namespace
     {
-        std::string getAnimationTypeDisplayName(PixelShipGenerator::ShipAnimationType type)
+        std::string getAnimationTypeDisplayName(SpectralShipGen::ShipAnimationType type)
         {
             switch (type)
             {
-            case PixelShipGenerator::ShipAnimationType::IDLE: return "IDLE";
-            case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
-            case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
-            case PixelShipGenerator::ShipAnimationType::MOVE_UP: return "MOVE UP";
-            case PixelShipGenerator::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
-            case PixelShipGenerator::ShipAnimationType::FIRE: return "FIRE";
+            case SpectralShipGen::ShipAnimationType::IDLE: return "IDLE";
+            case SpectralShipGen::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
+            case SpectralShipGen::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
+            case SpectralShipGen::ShipAnimationType::MOVE_UP: return "MOVE UP";
+            case SpectralShipGen::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
+            case SpectralShipGen::ShipAnimationType::FIRE: return "FIRE";
             default: return "UNSUPPORTED";
             }
         }
 
-        std::string getMovementPhaseDisplayName(PixelShipGenerator::ShipMovementAnimationPhase phase)
+        std::string getMovementPhaseDisplayName(SpectralShipGen::ShipMovementAnimationPhase phase)
         {
             switch (phase)
             {
-            case PixelShipGenerator::ShipMovementAnimationPhase::ENTER: return "ENTER";
-            case PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN: return "SUSTAIN";
-            case PixelShipGenerator::ShipMovementAnimationPhase::EXIT: return "EXIT";
+            case SpectralShipGen::ShipMovementAnimationPhase::ENTER: return "ENTER";
+            case SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN: return "SUSTAIN";
+            case SpectralShipGen::ShipMovementAnimationPhase::EXIT: return "EXIT";
             default: return "UNKNOWN";
             }
         }
 
-        std::string getFiringPhaseDisplayName(PixelShipGenerator::ShipFiringAnimationPhase phase)
+        std::string getFiringPhaseDisplayName(SpectralShipGen::ShipFiringAnimationPhase phase)
         {
             switch (phase)
             {
-            case PixelShipGenerator::ShipFiringAnimationPhase::REST: return "REST";
-            case PixelShipGenerator::ShipFiringAnimationPhase::PRE_FIRE: return "PREFIRE";
-            case PixelShipGenerator::ShipFiringAnimationPhase::RECOIL: return "RECOIL";
-            case PixelShipGenerator::ShipFiringAnimationPhase::RECOVERY: return "RECOVERY";
+            case SpectralShipGen::ShipFiringAnimationPhase::REST: return "REST";
+            case SpectralShipGen::ShipFiringAnimationPhase::PRE_FIRE: return "PREFIRE";
+            case SpectralShipGen::ShipFiringAnimationPhase::RECOIL: return "RECOIL";
+            case SpectralShipGen::ShipFiringAnimationPhase::RECOVERY: return "RECOVERY";
             default: return "UNKNOWN";
             }
         }
 
-        std::string getWeaponTypeDisplayName(PixelShipGenerator::ShipWeaponType type)
+        std::string getWeaponTypeDisplayName(SpectralShipGen::ShipWeaponType type)
         {
             switch (type)
             {
-            case PixelShipGenerator::ShipWeaponType::SINGLE_CANNON: return "SINGLE CANNON";
-            case PixelShipGenerator::ShipWeaponType::TWIN_CANNON: return "TWIN CANNON";
-            case PixelShipGenerator::ShipWeaponType::COMPACT_TURRET: return "COMPACT TURRET";
-            case PixelShipGenerator::ShipWeaponType::RAIL_WEAPON: return "RAIL WEAPON";
-            case PixelShipGenerator::ShipWeaponType::WEAPON_POD: return "WEAPON POD";
+            case SpectralShipGen::ShipWeaponType::SINGLE_CANNON: return "SINGLE CANNON";
+            case SpectralShipGen::ShipWeaponType::TWIN_CANNON: return "TWIN CANNON";
+            case SpectralShipGen::ShipWeaponType::COMPACT_TURRET: return "COMPACT TURRET";
+            case SpectralShipGen::ShipWeaponType::RAIL_WEAPON: return "RAIL WEAPON";
+            case SpectralShipGen::ShipWeaponType::WEAPON_POD: return "WEAPON POD";
             default: return "WEAPON";
             }
         }
     }
 
-    bool PreviewAnimationSession::isMovementAnimationType(PixelShipGenerator::ShipAnimationType type)
+    bool PreviewAnimationSession::isMovementAnimationType(SpectralShipGen::ShipAnimationType type)
     {
-        return type == PixelShipGenerator::ShipAnimationType::MOVE_LEFT || type == PixelShipGenerator::ShipAnimationType::MOVE_RIGHT || type == PixelShipGenerator::ShipAnimationType::MOVE_UP || type == PixelShipGenerator::ShipAnimationType::MOVE_DOWN;
+        return type == SpectralShipGen::ShipAnimationType::MOVE_LEFT || type == SpectralShipGen::ShipAnimationType::MOVE_RIGHT || type == SpectralShipGen::ShipAnimationType::MOVE_UP || type == SpectralShipGen::ShipAnimationType::MOVE_DOWN;
     }
 
     double PreviewAnimationSession::wrapNormalizedAnimationTime(double normalizedTime)
@@ -71,10 +71,10 @@ namespace PixelShipGeneratorPreview
         return wrapped;
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::resetForGeneratedShip(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::resetForGeneratedShip(const SpectralShipGen::GeneratedShip& ship)
     {
-        m_RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
-        m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        m_RuntimeMovementType = SpectralShipGen::ShipAnimationType::IDLE;
+        m_PendingMovementType = SpectralShipGen::ShipAnimationType::IDLE;
         m_MovementTransitionPending = false;
         m_TransientStatePreviewActive = false;
         m_RuntimeMovementNormalizedTime = 0.0;
@@ -84,26 +84,26 @@ namespace PixelShipGeneratorPreview
         return generateSelected(ship);
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::regenerateSelectedAnimation(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::regenerateSelectedAnimation(const SpectralShipGen::GeneratedShip& ship)
     {
         return generateSelected(ship);
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::generateSelected(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::generateSelected(const SpectralShipGen::GeneratedShip& ship)
     {
         PreviewAnimationActionResult result;
         result.ActiveFramesChanged = true;
         m_IdleAnimation = m_IdleAnimator.generate(ship, m_IdleAnimationSettings);
 
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_LEFT || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_RIGHT)
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::MOVE_LEFT || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::MOVE_RIGHT)
         {
             m_MovementAnimation = m_LateralMovementAnimator.generate(ship, m_SelectedAnimationType, m_MovementAnimationSettings);
         }
-        else if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_UP || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_DOWN)
+        else if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::MOVE_UP || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::MOVE_DOWN)
         {
             m_MovementAnimation = m_LongitudinalMovementAnimator.generate(ship, m_SelectedAnimationType, m_MovementAnimationSettings);
         }
-        else if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE)
+        else if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE)
         {
             m_FiringTargets = m_FiringAnimator.getAvailableTargets(ship);
             if (m_FiringTargets.empty())
@@ -122,44 +122,44 @@ namespace PixelShipGeneratorPreview
         return result;
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::cycleAnimationType(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::cycleAnimationType(const SpectralShipGen::GeneratedShip& ship)
     {
         m_TransientStatePreviewActive = false;
         m_StatePreviewFrames.clear();
-        constexpr std::array<PixelShipGenerator::ShipAnimationType, 6u> Types = {
-            PixelShipGenerator::ShipAnimationType::IDLE,
-            PixelShipGenerator::ShipAnimationType::MOVE_LEFT,
-            PixelShipGenerator::ShipAnimationType::MOVE_RIGHT,
-            PixelShipGenerator::ShipAnimationType::MOVE_UP,
-            PixelShipGenerator::ShipAnimationType::MOVE_DOWN,
-            PixelShipGenerator::ShipAnimationType::FIRE
+        constexpr std::array<SpectralShipGen::ShipAnimationType, 6u> Types = {
+            SpectralShipGen::ShipAnimationType::IDLE,
+            SpectralShipGen::ShipAnimationType::MOVE_LEFT,
+            SpectralShipGen::ShipAnimationType::MOVE_RIGHT,
+            SpectralShipGen::ShipAnimationType::MOVE_UP,
+            SpectralShipGen::ShipAnimationType::MOVE_DOWN,
+            SpectralShipGen::ShipAnimationType::FIRE
         };
         const auto iterator = std::find(Types.begin(), Types.end(), m_SelectedAnimationType);
         const std::size_t currentIndex = iterator == Types.end() ? 0u : static_cast<std::size_t>(std::distance(Types.begin(), iterator));
         m_SelectedAnimationType = Types[(currentIndex + 1u) % Types.size()];
-        m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+        m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::ENTER;
         m_AnimationFrameIndex = 0u;
         PreviewAnimationActionResult result = generateSelected(ship);
         if (result.StatusMessage.empty()) { result.StatusMessage = "Animation type: " + getAnimationTypeDisplayName(m_SelectedAnimationType); }
         return result;
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::cycleBaseMovementState(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::cycleBaseMovementState(const SpectralShipGen::GeneratedShip& ship)
     {
-        constexpr std::array<PixelShipGenerator::ShipAnimationType, 5u> BaseStates = {
-            PixelShipGenerator::ShipAnimationType::IDLE,
-            PixelShipGenerator::ShipAnimationType::MOVE_LEFT,
-            PixelShipGenerator::ShipAnimationType::MOVE_RIGHT,
-            PixelShipGenerator::ShipAnimationType::MOVE_UP,
-            PixelShipGenerator::ShipAnimationType::MOVE_DOWN
+        constexpr std::array<SpectralShipGen::ShipAnimationType, 5u> BaseStates = {
+            SpectralShipGen::ShipAnimationType::IDLE,
+            SpectralShipGen::ShipAnimationType::MOVE_LEFT,
+            SpectralShipGen::ShipAnimationType::MOVE_RIGHT,
+            SpectralShipGen::ShipAnimationType::MOVE_UP,
+            SpectralShipGen::ShipAnimationType::MOVE_DOWN
         };
-        const PixelShipGenerator::ShipAnimationType reference = m_MovementTransitionPending ? m_PendingMovementType : m_RuntimeMovementType;
+        const SpectralShipGen::ShipAnimationType reference = m_MovementTransitionPending ? m_PendingMovementType : m_RuntimeMovementType;
         const auto iterator = std::find(BaseStates.begin(), BaseStates.end(), reference);
         const std::size_t currentIndex = iterator == BaseStates.end() ? 0u : static_cast<std::size_t>(std::distance(BaseStates.begin(), iterator));
-        const PixelShipGenerator::ShipAnimationType target = BaseStates[(currentIndex + 1u) % BaseStates.size()];
+        const SpectralShipGen::ShipAnimationType target = BaseStates[(currentIndex + 1u) % BaseStates.size()];
         m_SelectedAnimationType = target;
         m_AnimationFrameIndex = 0u;
-        PreviewAnimationActionResult result = target == PixelShipGenerator::ShipAnimationType::IDLE ? returnToIdle(ship) : applySelectedState(ship);
+        PreviewAnimationActionResult result = target == SpectralShipGen::ShipAnimationType::IDLE ? returnToIdle(ship) : applySelectedState(ship);
         if (result.Success) { result.StatusMessage = "Base movement: " + getAnimationTypeDisplayName(target); }
         return result;
     }
@@ -179,9 +179,9 @@ namespace PixelShipGeneratorPreview
     PreviewAnimationActionResult PreviewAnimationSession::cycleMovementPhase()
     {
         PreviewAnimationActionResult result;
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return result; }
-        const uint32_t phaseCount = static_cast<uint32_t>(PixelShipGenerator::ShipMovementAnimationPhase::SHIP_MOVEMENT_ANIMATION_PHASE_END);
-        m_MovementAnimationPhase = static_cast<PixelShipGenerator::ShipMovementAnimationPhase>((static_cast<uint32_t>(m_MovementAnimationPhase) + 1u) % phaseCount);
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return result; }
+        const uint32_t phaseCount = static_cast<uint32_t>(SpectralShipGen::ShipMovementAnimationPhase::SHIP_MOVEMENT_ANIMATION_PHASE_END);
+        m_MovementAnimationPhase = static_cast<SpectralShipGen::ShipMovementAnimationPhase>((static_cast<uint32_t>(m_MovementAnimationPhase) + 1u) % phaseCount);
         m_AnimationFrameIndex = 0u;
         m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
         result.ActiveFramesChanged = true;
@@ -189,10 +189,10 @@ namespace PixelShipGeneratorPreview
         return result;
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::cycleFiringTarget(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::cycleFiringTarget(const SpectralShipGen::GeneratedShip& ship)
     {
         PreviewAnimationActionResult result;
-        if (m_SelectedAnimationType != PixelShipGenerator::ShipAnimationType::FIRE || m_FiringTargets.empty()) { return result; }
+        if (m_SelectedAnimationType != SpectralShipGen::ShipAnimationType::FIRE || m_FiringTargets.empty()) { return result; }
         m_SelectedFiringTargetIndex = (m_SelectedFiringTargetIndex + 1u) % static_cast<uint32_t>(m_FiringTargets.size());
         m_AnimationFrameIndex = 0u;
         m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
@@ -212,21 +212,21 @@ namespace PixelShipGeneratorPreview
         return result;
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::applySelectedState(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::applySelectedState(const SpectralShipGen::GeneratedShip& ship)
     {
         m_TransientStatePreviewActive = false;
         m_StatePreviewFrames.clear();
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return beginComposedFiringEvent(ship); }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return returnToIdle(ship); }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return beginComposedFiringEvent(ship); }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return returnToIdle(ship); }
 
         PreviewAnimationActionResult result;
         if (!isMovementAnimationType(m_SelectedAnimationType)) { return result; }
-        const PixelShipGenerator::ShipAnimationType target = m_SelectedAnimationType;
+        const SpectralShipGen::ShipAnimationType target = m_SelectedAnimationType;
         if (m_RuntimeMovementType == target)
         {
             m_MovementTransitionPending = false;
-            m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
-            m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
+            m_PendingMovementType = SpectralShipGen::ShipAnimationType::IDLE;
+            m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN;
             result = generateSelected(ship);
             const auto* clip = getActiveMovementClip();
             if (clip != nullptr && !clip->Frames.empty())
@@ -238,12 +238,12 @@ namespace PixelShipGeneratorPreview
             return result;
         }
 
-        if (m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::IDLE)
+        if (m_RuntimeMovementType == SpectralShipGen::ShipAnimationType::IDLE)
         {
             m_RuntimeMovementType = target;
             m_MovementTransitionPending = false;
-            m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
-            m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+            m_PendingMovementType = SpectralShipGen::ShipAnimationType::IDLE;
+            m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::ENTER;
             m_RuntimeMovementNormalizedTime = 0.0;
             result = generateSelected(ship);
             result.StartPlayback = true;
@@ -251,47 +251,47 @@ namespace PixelShipGeneratorPreview
             return result;
         }
 
-        const PixelShipGenerator::ShipAnimationType current = m_RuntimeMovementType;
-        const PixelShipGenerator::ShipMovementTransitionPlan plan = m_AnimationStateCoordinator.planMovementTransition(current, target, m_MovementAnimationSettings);
+        const SpectralShipGen::ShipAnimationType current = m_RuntimeMovementType;
+        const SpectralShipGen::ShipMovementTransitionPlan plan = m_AnimationStateCoordinator.planMovementTransition(current, target, m_MovementAnimationSettings);
         m_PendingMovementType = target;
         m_MovementTransitionPending = plan.ExitCurrentMovement && plan.EnterTargetMovement;
         m_SelectedAnimationType = current;
-        m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::EXIT;
+        m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::EXIT;
         result = generateSelected(ship);
         result.StartPlayback = true;
         result.StatusMessage = "State transition: " + getAnimationTypeDisplayName(current) + " -> NEUTRAL -> " + getAnimationTypeDisplayName(target);
         return result;
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::returnToIdle(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::returnToIdle(const SpectralShipGen::GeneratedShip& ship)
     {
         m_TransientStatePreviewActive = false;
         m_StatePreviewFrames.clear();
         PreviewAnimationActionResult result;
-        if (m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::IDLE)
+        if (m_RuntimeMovementType == SpectralShipGen::ShipAnimationType::IDLE)
         {
-            m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
+            m_SelectedAnimationType = SpectralShipGen::ShipAnimationType::IDLE;
             m_MovementTransitionPending = false;
-            m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+            m_PendingMovementType = SpectralShipGen::ShipAnimationType::IDLE;
             result = generateSelected(ship);
             result.StartPlayback = true;
             result.StatusMessage = "State: IDLE";
             return result;
         }
 
-        const PixelShipGenerator::ShipAnimationType current = m_RuntimeMovementType;
-        const PixelShipGenerator::ShipMovementTransitionPlan plan = m_AnimationStateCoordinator.planMovementTransition(current, PixelShipGenerator::ShipAnimationType::IDLE, m_MovementAnimationSettings);
-        m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        const SpectralShipGen::ShipAnimationType current = m_RuntimeMovementType;
+        const SpectralShipGen::ShipMovementTransitionPlan plan = m_AnimationStateCoordinator.planMovementTransition(current, SpectralShipGen::ShipAnimationType::IDLE, m_MovementAnimationSettings);
+        m_PendingMovementType = SpectralShipGen::ShipAnimationType::IDLE;
         m_MovementTransitionPending = plan.ExitCurrentMovement;
         m_SelectedAnimationType = current;
-        m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::EXIT;
+        m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::EXIT;
         result = generateSelected(ship);
         result.StartPlayback = true;
         result.StatusMessage = "State transition: " + getAnimationTypeDisplayName(current) + " -> IDLE";
         return result;
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::beginComposedFiringEvent(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::beginComposedFiringEvent(const SpectralShipGen::GeneratedShip& ship)
     {
         PreviewAnimationActionResult result;
         m_FiringTargets = m_FiringAnimator.getAvailableTargets(ship);
@@ -303,15 +303,15 @@ namespace PixelShipGeneratorPreview
         }
 
         m_SelectedFiringTargetIndex %= static_cast<uint32_t>(m_FiringTargets.size());
-        const PixelShipGenerator::ShipFiringAnimationTarget target = m_FiringTargets[m_SelectedFiringTargetIndex];
+        const SpectralShipGen::ShipFiringAnimationTarget target = m_FiringTargets[m_SelectedFiringTargetIndex];
         m_FiringAnimation = m_FiringAnimator.generate(ship, target, m_FiringAnimationSettings);
         if (m_FiringAnimation.Frames.empty()) { result.Success = false; return result; }
 
-        PixelShipGenerator::ShipMovementAnimation movement;
+        SpectralShipGen::ShipMovementAnimation movement;
         uint32_t sustainDurationMilliseconds = 0u;
-        if (m_RuntimeMovementType != PixelShipGenerator::ShipAnimationType::IDLE)
+        if (m_RuntimeMovementType != SpectralShipGen::ShipAnimationType::IDLE)
         {
-            if (m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::MOVE_LEFT || m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::MOVE_RIGHT)
+            if (m_RuntimeMovementType == SpectralShipGen::ShipAnimationType::MOVE_LEFT || m_RuntimeMovementType == SpectralShipGen::ShipAnimationType::MOVE_RIGHT)
             {
                 movement = m_LateralMovementAnimator.generate(ship, m_RuntimeMovementType, m_MovementAnimationSettings);
             }
@@ -326,9 +326,9 @@ namespace PixelShipGeneratorPreview
         m_StatePreviewFrames.reserve(m_FiringAnimation.NormalizedSampleTimes.size());
         for (double firingTime : m_FiringAnimation.NormalizedSampleTimes)
         {
-            PixelShipGenerator::ShipAnimationStateRequest request;
+            SpectralShipGen::ShipAnimationStateRequest request;
             request.UnderlyingMovementType = m_RuntimeMovementType;
-            request.MovementPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
+            request.MovementPhase = SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN;
             if (sustainDurationMilliseconds > 0u)
             {
                 const double elapsedMilliseconds = firingTime * static_cast<double>(m_FiringAnimation.DurationMilliseconds);
@@ -352,21 +352,21 @@ namespace PixelShipGeneratorPreview
         m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
         result.ActiveFramesChanged = true;
         result.StartPlayback = true;
-        result.StatusMessage = std::string("Transient FIRE over ") + (m_RuntimeMovementType == PixelShipGenerator::ShipAnimationType::IDLE ? "NEUTRAL" : getAnimationTypeDisplayName(m_RuntimeMovementType));
+        result.StatusMessage = std::string("Transient FIRE over ") + (m_RuntimeMovementType == SpectralShipGen::ShipAnimationType::IDLE ? "NEUTRAL" : getAnimationTypeDisplayName(m_RuntimeMovementType));
         return result;
     }
 
-    PreviewAnimationActionResult PreviewAnimationSession::triggerFiringEvent(const PixelShipGenerator::GeneratedShip& ship)
+    PreviewAnimationActionResult PreviewAnimationSession::triggerFiringEvent(const SpectralShipGen::GeneratedShip& ship)
     {
-        m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::FIRE;
+        m_SelectedAnimationType = SpectralShipGen::ShipAnimationType::FIRE;
         m_AnimationFrameIndex = 0u;
         return beginComposedFiringEvent(ship);
     }
 
-    PreviewAnimationAdvanceResult PreviewAnimationSession::advancePlayback(const PixelShipGenerator::GeneratedShip& ship, double elapsedMicroseconds)
+    PreviewAnimationAdvanceResult PreviewAnimationSession::advancePlayback(const SpectralShipGen::GeneratedShip& ship, double elapsedMicroseconds)
     {
         PreviewAnimationAdvanceResult result;
-        const std::vector<PixelShipGenerator::Image>& frames = getActiveFrames();
+        const std::vector<SpectralShipGen::Image>& frames = getActiveFrames();
         if (frames.empty()) { return result; }
         const double frameDurationMicroseconds = std::max(1.0, getActiveFrameDurationMilliseconds() * 1000.0);
         m_AnimationPlaybackAccumulatorMicroseconds += std::max(0.0, elapsedMicroseconds) * m_PlaybackSpeed;
@@ -376,7 +376,7 @@ namespace PixelShipGeneratorPreview
         m_AnimationPlaybackAccumulatorMicroseconds -= static_cast<double>(elapsedFrames) * frameDurationMicroseconds;
         const uint32_t frameCount = static_cast<uint32_t>(frames.size());
 
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE)
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE)
         {
             const uint64_t targetFrame = static_cast<uint64_t>(m_AnimationFrameIndex) + static_cast<uint64_t>(elapsedFrames);
             if (targetFrame < frameCount)
@@ -390,10 +390,10 @@ namespace PixelShipGeneratorPreview
                 m_StatePreviewFrames.clear();
                 m_AnimationFrameIndex = 0u;
                 m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
-                if (m_RuntimeMovementType != PixelShipGenerator::ShipAnimationType::IDLE)
+                if (m_RuntimeMovementType != SpectralShipGen::ShipAnimationType::IDLE)
                 {
                     m_SelectedAnimationType = m_RuntimeMovementType;
-                    m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
+                    m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN;
                     m_RuntimeMovementNormalizedTime = m_ResumeMovementNormalizedTime;
                     generateSelected(ship);
                     const auto* sustain = getActiveMovementClip();
@@ -404,7 +404,7 @@ namespace PixelShipGeneratorPreview
                 }
                 else
                 {
-                    m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
+                    m_SelectedAnimationType = SpectralShipGen::ShipAnimationType::IDLE;
                     generateSelected(ship);
                     m_AnimationFrameIndex = 0u;
                 }
@@ -420,7 +420,7 @@ namespace PixelShipGeneratorPreview
             return result;
         }
 
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE || m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN)
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE || m_MovementAnimationPhase == SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN)
         {
             m_AnimationFrameIndex = (m_AnimationFrameIndex + elapsedFrames) % frameCount;
             result.FrameChanged = true;
@@ -433,7 +433,7 @@ namespace PixelShipGeneratorPreview
         }
 
         const uint64_t targetFrame = static_cast<uint64_t>(m_AnimationFrameIndex) + static_cast<uint64_t>(elapsedFrames);
-        if (m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::ENTER)
+        if (m_MovementAnimationPhase == SpectralShipGen::ShipMovementAnimationPhase::ENTER)
         {
             if (targetFrame < frameCount)
             {
@@ -442,7 +442,7 @@ namespace PixelShipGeneratorPreview
             else
             {
                 const uint64_t leftoverFrames = targetFrame - frameCount;
-                m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN;
+                m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN;
                 const auto* sustain = getActiveMovementClip();
                 const uint32_t sustainCount = sustain != nullptr ? static_cast<uint32_t>(sustain->Frames.size()) : 0u;
                 if (sustainCount > 0u)
@@ -463,22 +463,22 @@ namespace PixelShipGeneratorPreview
         }
         else if (m_MovementTransitionPending)
         {
-            const PixelShipGenerator::ShipAnimationType target = m_PendingMovementType;
+            const SpectralShipGen::ShipAnimationType target = m_PendingMovementType;
             m_MovementTransitionPending = false;
-            m_PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+            m_PendingMovementType = SpectralShipGen::ShipAnimationType::IDLE;
             m_AnimationFrameIndex = 0u;
             m_AnimationPlaybackAccumulatorMicroseconds = 0.0;
             m_RuntimeMovementNormalizedTime = 0.0;
-            if (target == PixelShipGenerator::ShipAnimationType::IDLE)
+            if (target == SpectralShipGen::ShipAnimationType::IDLE)
             {
-                m_RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
-                m_SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
+                m_RuntimeMovementType = SpectralShipGen::ShipAnimationType::IDLE;
+                m_SelectedAnimationType = SpectralShipGen::ShipAnimationType::IDLE;
             }
             else
             {
                 m_RuntimeMovementType = target;
                 m_SelectedAnimationType = target;
-                m_MovementAnimationPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
+                m_MovementAnimationPhase = SpectralShipGen::ShipMovementAnimationPhase::ENTER;
             }
             generateSelected(ship);
             result.ActiveFramesChanged = true;
@@ -516,8 +516,8 @@ namespace PixelShipGeneratorPreview
     const std::vector<double>& PreviewAnimationSession::getActiveNormalizedSampleTimes() const
     {
         if (m_TransientStatePreviewActive) { return m_FiringAnimation.NormalizedSampleTimes; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.NormalizedSampleTimes; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return m_FiringAnimation.NormalizedSampleTimes; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return m_IdleAnimation.NormalizedSampleTimes; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return m_FiringAnimation.NormalizedSampleTimes; }
         const auto* clip = getActiveMovementClip();
         if (clip != nullptr) { return clip->NormalizedSampleTimes; }
         static const std::vector<double> EmptyTimes;
@@ -533,7 +533,7 @@ namespace PixelShipGeneratorPreview
         std::size_t index = iterator == sampleTimes.end() ? sampleTimes.size() - 1u : static_cast<std::size_t>(std::distance(sampleTimes.begin(), iterator));
         if (index > 0u && std::abs(sampleTimes[index - 1u] - target) <= std::abs(sampleTimes[index] - target)) { --index; }
         m_AnimationFrameIndex = static_cast<uint32_t>(index);
-        if (!m_TransientStatePreviewActive && m_SelectedAnimationType == m_RuntimeMovementType && isMovementAnimationType(m_SelectedAnimationType) && m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN)
+        if (!m_TransientStatePreviewActive && m_SelectedAnimationType == m_RuntimeMovementType && isMovementAnimationType(m_SelectedAnimationType) && m_MovementAnimationPhase == SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN)
         {
             m_RuntimeMovementNormalizedTime = sampleTimes[index];
         }
@@ -541,51 +541,51 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    const PixelShipGenerator::ShipMovementAnimationClip* PreviewAnimationSession::getActiveMovementClip() const
+    const SpectralShipGen::ShipMovementAnimationClip* PreviewAnimationSession::getActiveMovementClip() const
     {
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE || m_MovementAnimation.Type != m_SelectedAnimationType) { return nullptr; }
-        return &PixelShipGenerator::getMovementAnimationClip(m_MovementAnimation, m_MovementAnimationPhase);
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE || m_MovementAnimation.Type != m_SelectedAnimationType) { return nullptr; }
+        return &SpectralShipGen::getMovementAnimationClip(m_MovementAnimation, m_MovementAnimationPhase);
     }
 
-    const std::vector<PixelShipGenerator::Image>& PreviewAnimationSession::getActiveFrames() const
+    const std::vector<SpectralShipGen::Image>& PreviewAnimationSession::getActiveFrames() const
     {
         if (m_TransientStatePreviewActive) { return m_StatePreviewFrames; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.Frames; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return m_FiringAnimation.Frames; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return m_IdleAnimation.Frames; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return m_FiringAnimation.Frames; }
         const auto* clip = getActiveMovementClip();
         if (clip != nullptr) { return clip->Frames; }
-        static const std::vector<PixelShipGenerator::Image> EmptyFrames;
+        static const std::vector<SpectralShipGen::Image> EmptyFrames;
         return EmptyFrames;
     }
 
     double PreviewAnimationSession::getActiveFrameDurationMilliseconds() const
     {
         if (m_TransientStatePreviewActive) { return m_StatePreviewFrameDurationMilliseconds; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.FrameDurationMilliseconds; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return m_FiringAnimation.FrameDurationMilliseconds; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return m_IdleAnimation.FrameDurationMilliseconds; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return m_FiringAnimation.FrameDurationMilliseconds; }
         const auto* clip = getActiveMovementClip();
         return clip != nullptr ? clip->FrameDurationMilliseconds : 0.0;
     }
 
     uint64_t PreviewAnimationSession::getActiveSeed() const
     {
-        if (m_TransientStatePreviewActive || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return m_FiringAnimation.Seed; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.Seed; }
+        if (m_TransientStatePreviewActive || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return m_FiringAnimation.Seed; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return m_IdleAnimation.Seed; }
         return m_MovementAnimation.Seed;
     }
 
-    const PixelShipGenerator::AnimationSamplingPlan& PreviewAnimationSession::getActiveSampling() const
+    const SpectralShipGen::AnimationSamplingPlan& PreviewAnimationSession::getActiveSampling() const
     {
-        if (m_TransientStatePreviewActive || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return m_FiringAnimation.Sampling; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.Sampling; }
+        if (m_TransientStatePreviewActive || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return m_FiringAnimation.Sampling; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return m_IdleAnimation.Sampling; }
         const auto* clip = getActiveMovementClip();
         return clip != nullptr ? clip->Sampling : m_IdleAnimation.Sampling;
     }
 
     uint32_t PreviewAnimationSession::getActiveDurationMilliseconds() const
     {
-        if (m_TransientStatePreviewActive || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return m_FiringAnimation.DurationMilliseconds; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return m_IdleAnimation.DurationMilliseconds; }
+        if (m_TransientStatePreviewActive || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return m_FiringAnimation.DurationMilliseconds; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return m_IdleAnimation.DurationMilliseconds; }
         const auto* clip = getActiveMovementClip();
         return clip != nullptr ? clip->DurationMilliseconds : 0u;
     }
@@ -598,8 +598,8 @@ namespace PixelShipGeneratorPreview
 
     bool PreviewAnimationSession::isActiveLooping() const
     {
-        if (m_TransientStatePreviewActive || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE) { return false; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return true; }
+        if (m_TransientStatePreviewActive || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE) { return false; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return true; }
         const auto* clip = getActiveMovementClip();
         return clip != nullptr && clip->Looping;
     }
@@ -611,15 +611,15 @@ namespace PixelShipGeneratorPreview
 
     std::string PreviewAnimationSession::getSemanticPhaseDisplay() const
     {
-        if (m_TransientStatePreviewActive || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE)
+        if (m_TransientStatePreviewActive || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE)
         {
-            return getFiringPhaseDisplayName(PixelShipGenerator::getFiringAnimationPhase(getActiveNormalizedTime()));
+            return getFiringPhaseDisplayName(SpectralShipGen::getFiringAnimationPhase(getActiveNormalizedTime()));
         }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE) { return "LOOP"; }
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_UP || m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::MOVE_DOWN)
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE) { return "LOOP"; }
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::MOVE_UP || m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::MOVE_DOWN)
         {
-            if (m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::ENTER) { return "ENTER / ACCEL"; }
-            if (m_MovementAnimationPhase == PixelShipGenerator::ShipMovementAnimationPhase::EXIT) { return "EXIT / BRAKE"; }
+            if (m_MovementAnimationPhase == SpectralShipGen::ShipMovementAnimationPhase::ENTER) { return "ENTER / ACCEL"; }
+            if (m_MovementAnimationPhase == SpectralShipGen::ShipMovementAnimationPhase::EXIT) { return "EXIT / BRAKE"; }
         }
         return getMovementPhaseDisplayName(m_MovementAnimationPhase);
     }
@@ -627,7 +627,7 @@ namespace PixelShipGeneratorPreview
     std::string PreviewAnimationSession::getEffectDisplay() const
     {
         std::string effects;
-        if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE)
+        if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE)
         {
             if (m_IdleAnimationSettings.EngineFlicker) { effects += "E"; }
             if (m_IdleAnimationSettings.LightBlinking) { effects += "L"; }
@@ -635,7 +635,7 @@ namespace PixelShipGeneratorPreview
             if (m_IdleAnimationSettings.HoverOffset) { effects += "H"; }
             if (m_IdleAnimationSettings.SmallDetailVariation) { effects += "D"; }
         }
-        else if (m_SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE)
+        else if (m_SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE)
         {
             effects += "W";
             if (m_FiringAnimation.Diagnostics.PreFireMotion) { effects += "P"; }

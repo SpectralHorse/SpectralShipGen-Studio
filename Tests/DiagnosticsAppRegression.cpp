@@ -11,8 +11,8 @@
 
 namespace
 {
-    using PixelShipGeneratorDiagnosticsApp::DiagnosticsAppController;
-    using PixelShipGeneratorDiagnosticsApp::DiagnosticsAppRunState;
+    using SpectralShipGenStudioDiagnosticsApp::DiagnosticsAppController;
+    using SpectralShipGenStudioDiagnosticsApp::DiagnosticsAppRunState;
 
     bool expect(bool condition, const char* message)
     {
@@ -20,12 +20,12 @@ namespace
         return condition;
     }
 
-    PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration makeConfiguration(uint64_t samples, uint32_t resolution = 32u)
+    SpectralShipGenDiagnostics::DiagnosticsRunConfiguration makeConfiguration(uint64_t samples, uint32_t resolution = 32u)
     {
-        PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration configuration;
+        SpectralShipGenDiagnostics::DiagnosticsRunConfiguration configuration;
         configuration.Dimensions = { { resolution, resolution } };
-        configuration.Styles = { PixelShipGenerator::ShipStyle::FIGHTER };
-        configuration.Factions = { PixelShipGenerator::ShipFactionType::MILITARY };
+        configuration.Styles = { SpectralShipGen::ShipStyle::FIGHTER };
+        configuration.Factions = { SpectralShipGen::ShipFactionType::MILITARY };
         configuration.SamplesPerConfiguration = samples;
         configuration.DiagnosticSeed = 0x65D1A60000000001ull;
         configuration.DetailedPerformanceInstrumentation = true;
@@ -49,7 +49,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorTests
+namespace SpectralShipGenStudioTests
 {
     int runDiagnosticsAppRegression()
     {
@@ -57,19 +57,19 @@ namespace PixelShipGeneratorTests
             auto invalid = makeConfiguration(1u);
             invalid.Dimensions.clear();
             std::string error;
-            if (!expect(!PixelShipGeneratorDiagnosticsApp::validateDiagnosticsConfiguration(invalid, error), "empty dimensions should be rejected")) { return 1; }
+            if (!expect(!SpectralShipGenStudioDiagnosticsApp::validateDiagnosticsConfiguration(invalid, error), "empty dimensions should be rejected")) { return 1; }
             invalid = makeConfiguration(1u);
             invalid.Styles.clear();
-            if (!expect(!PixelShipGeneratorDiagnosticsApp::validateDiagnosticsConfiguration(invalid, error), "empty styles should be rejected")) { return 1; }
+            if (!expect(!SpectralShipGenStudioDiagnosticsApp::validateDiagnosticsConfiguration(invalid, error), "empty styles should be rejected")) { return 1; }
             invalid = makeConfiguration(1u);
             invalid.Factions.clear();
-            if (!expect(!PixelShipGeneratorDiagnosticsApp::validateDiagnosticsConfiguration(invalid, error), "empty factions should be rejected")) { return 1; }
+            if (!expect(!SpectralShipGenStudioDiagnosticsApp::validateDiagnosticsConfiguration(invalid, error), "empty factions should be rejected")) { return 1; }
             invalid = makeConfiguration(0u);
-            if (!expect(!PixelShipGeneratorDiagnosticsApp::validateDiagnosticsConfiguration(invalid, error), "zero samples should be rejected")) { return 1; }
+            if (!expect(!SpectralShipGenStudioDiagnosticsApp::validateDiagnosticsConfiguration(invalid, error), "zero samples should be rejected")) { return 1; }
         }
 
-        const std::filesystem::path csvPath = std::filesystem::temp_directory_path() / "pixel_ship_generator_diagnostics_app_regression.csv";
-        const std::filesystem::path runPath = std::filesystem::temp_directory_path() / "pixel_ship_generator_diagnostics_app_regression.shipdiag.json";
+        const std::filesystem::path csvPath = std::filesystem::temp_directory_path() / "spectral_ship_gen_diagnostics_app_regression.csv";
+        const std::filesystem::path runPath = std::filesystem::temp_directory_path() / "spectral_ship_gen_diagnostics_app_regression.shipdiag.json";
         std::filesystem::remove(csvPath);
         std::filesystem::remove(runPath);
 

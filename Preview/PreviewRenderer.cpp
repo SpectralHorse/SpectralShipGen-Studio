@@ -16,8 +16,8 @@
 
 namespace
 {
-    constexpr float StatePanelX = static_cast<float>(PixelShipGeneratorPreview::PreviewStatePanelX);
-    constexpr float CommandPanelX = static_cast<float>(PixelShipGeneratorPreview::PreviewCommandPanelX);
+    constexpr float StatePanelX = static_cast<float>(SpectralShipGenStudioPreview::PreviewStatePanelX);
+    constexpr float CommandPanelX = static_cast<float>(SpectralShipGenStudioPreview::PreviewCommandPanelX);
     constexpr float OverlayMargin = 24.0f;
     constexpr uint32_t TextScale = 2u;
     constexpr uint32_t SmallTextScale = 1u;
@@ -38,17 +38,17 @@ namespace
 
     void drawDebugText(sf::RenderTarget& target, const std::string& text, float x, float y, const sf::Color& color, uint32_t scale = TextScale)
     {
-        PixelShipGeneratorApplication::drawPixelText(target, text, x, y, color, scale);
+        SpectralShipGenStudioApplication::drawPixelText(target, text, x, y, color, scale);
     }
 
     float getDebugTextWidth(const std::string& text, uint32_t scale)
     {
-        return PixelShipGeneratorApplication::getPixelTextWidth(text, scale);
+        return SpectralShipGenStudioApplication::getPixelTextWidth(text, scale);
     }
 
     std::string wrapDebugText(const std::string& text, std::size_t maximumCharactersPerLine)
     {
-        return PixelShipGeneratorApplication::wrapPixelText(text, maximumCharactersPerLine);
+        return SpectralShipGenStudioApplication::wrapPixelText(text, maximumCharactersPerLine);
     }
 
     std::string getFixedString(double value, uint32_t precision)
@@ -71,22 +71,22 @@ namespace
         return text + ellipsis;
     }
 
-    std::string getCommandPanelButtonLabel(PixelShipGeneratorPreview::PreviewCommandType type)
+    std::string getCommandPanelButtonLabel(SpectralShipGenStudioPreview::PreviewCommandType type)
     {
-        using PixelShipGeneratorPreview::PreviewCommandType;
+        using SpectralShipGenStudioPreview::PreviewCommandType;
         switch (type)
         {
         case PreviewCommandType::GALLERY_LEFT: return "LEFT";
         case PreviewCommandType::GALLERY_RIGHT: return "RIGHT";
         case PreviewCommandType::GALLERY_UP: return "UP";
         case PreviewCommandType::GALLERY_DOWN: return "DOWN";
-        default: return PixelShipGeneratorPreview::getPreviewCommandCompactLabel(type);
+        default: return SpectralShipGenStudioPreview::getPreviewCommandCompactLabel(type);
         }
     }
 
-    bool isStatefulCommand(PixelShipGeneratorPreview::PreviewCommandType type)
+    bool isStatefulCommand(SpectralShipGenStudioPreview::PreviewCommandType type)
     {
-        using PixelShipGeneratorPreview::PreviewCommandType;
+        using SpectralShipGenStudioPreview::PreviewCommandType;
         switch (type)
         {
         case PreviewCommandType::TOGGLE_ATTACHMENTS_ENABLED:
@@ -119,124 +119,124 @@ namespace
         target.draw(panel);
     }
 
-    sf::Color toSFMLColor(const PixelShipGenerator::Color& color)
+    sf::Color toSFMLColor(const SpectralShipGen::Color& color)
     {
         return sf::Color(color.R, color.G, color.B, color.A);
     }
 
-    std::string getStyleName(PixelShipGenerator::ShipStyle style)
+    std::string getStyleName(SpectralShipGen::ShipStyle style)
     {
         switch (style)
         {
-        case PixelShipGenerator::ShipStyle::SLEEK: return "SLEEK";
-        case PixelShipGenerator::ShipStyle::FIGHTER: return "FIGHTER";
-        case PixelShipGenerator::ShipStyle::HEAVY: return "HEAVY";
-        case PixelShipGenerator::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
-        case PixelShipGenerator::ShipStyle::SPEARHEAD: return "SPEARHEAD";
-        case PixelShipGenerator::ShipStyle::DELTA: return "DELTA";
-        case PixelShipGenerator::ShipStyle::SHIP_STYLE_END: return "CUSTOM";
+        case SpectralShipGen::ShipStyle::SLEEK: return "SLEEK";
+        case SpectralShipGen::ShipStyle::FIGHTER: return "FIGHTER";
+        case SpectralShipGen::ShipStyle::HEAVY: return "HEAVY";
+        case SpectralShipGen::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
+        case SpectralShipGen::ShipStyle::SPEARHEAD: return "SPEARHEAD";
+        case SpectralShipGen::ShipStyle::DELTA: return "DELTA";
+        case SpectralShipGen::ShipStyle::SHIP_STYLE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getFactionName(PixelShipGenerator::ShipFactionType faction)
+    std::string getFactionName(SpectralShipGen::ShipFactionType faction)
     {
         switch (faction)
         {
-        case PixelShipGenerator::ShipFactionType::FRONTIER: return "FRONTIER";
-        case PixelShipGenerator::ShipFactionType::MILITARY: return "MILITARY";
-        case PixelShipGenerator::ShipFactionType::ASCENDANT: return "ASCENDANT";
-        case PixelShipGenerator::ShipFactionType::XENO: return "XENO";
-        case PixelShipGenerator::ShipFactionType::CORPORATE: return "CORPORATE";
-        case PixelShipGenerator::ShipFactionType::RELIC: return "RELIC";
-        case PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END: return "CUSTOM";
+        case SpectralShipGen::ShipFactionType::FRONTIER: return "FRONTIER";
+        case SpectralShipGen::ShipFactionType::MILITARY: return "MILITARY";
+        case SpectralShipGen::ShipFactionType::ASCENDANT: return "ASCENDANT";
+        case SpectralShipGen::ShipFactionType::XENO: return "XENO";
+        case SpectralShipGen::ShipFactionType::CORPORATE: return "CORPORATE";
+        case SpectralShipGen::ShipFactionType::RELIC: return "RELIC";
+        case SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getPreviewModeName(PixelShipGeneratorPreview::PreviewMode mode)
+    std::string getPreviewModeName(SpectralShipGenStudioPreview::PreviewMode mode)
     {
         switch (mode)
         {
-        case PixelShipGeneratorPreview::PreviewMode::STATIC: return "STATIC";
-        case PixelShipGeneratorPreview::PreviewMode::ANIMATION: return "ANIMATION";
-        case PixelShipGeneratorPreview::PreviewMode::FRAME_INSPECTION: return "FRAME INSPECTION";
-        case PixelShipGeneratorPreview::PreviewMode::GALLERY: return "GALLERY";
-        case PixelShipGeneratorPreview::PreviewMode::FAVORITES: return "FAVORITES";
-        case PixelShipGeneratorPreview::PreviewMode::REROLL_STUDIO: return "REROLL STUDIO";
-        case PixelShipGeneratorPreview::PreviewMode::CALIBRATION: return "CALIBRATION";
-        case PixelShipGeneratorPreview::PreviewMode::CONFIGURATION_EDITOR: return "CONFIGURATION EDITOR";
+        case SpectralShipGenStudioPreview::PreviewMode::STATIC: return "STATIC";
+        case SpectralShipGenStudioPreview::PreviewMode::ANIMATION: return "ANIMATION";
+        case SpectralShipGenStudioPreview::PreviewMode::FRAME_INSPECTION: return "FRAME INSPECTION";
+        case SpectralShipGenStudioPreview::PreviewMode::GALLERY: return "GALLERY";
+        case SpectralShipGenStudioPreview::PreviewMode::FAVORITES: return "FAVORITES";
+        case SpectralShipGenStudioPreview::PreviewMode::REROLL_STUDIO: return "REROLL STUDIO";
+        case SpectralShipGenStudioPreview::PreviewMode::CALIBRATION: return "CALIBRATION";
+        case SpectralShipGenStudioPreview::PreviewMode::CONFIGURATION_EDITOR: return "CONFIGURATION EDITOR";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getWingShapeName(PixelShipGenerator::WingShapeType type)
+    std::string getWingShapeName(SpectralShipGen::WingShapeType type)
     {
         switch (type)
         {
-        case PixelShipGenerator::WingShapeType::NONE: return "NONE";
-        case PixelShipGenerator::WingShapeType::SMALL: return "SMALL";
-        case PixelShipGenerator::WingShapeType::SWEPT: return "SWEPT";
-        case PixelShipGenerator::WingShapeType::BROAD: return "BROAD";
+        case SpectralShipGen::WingShapeType::NONE: return "NONE";
+        case SpectralShipGen::WingShapeType::SMALL: return "SMALL";
+        case SpectralShipGen::WingShapeType::SWEPT: return "SWEPT";
+        case SpectralShipGen::WingShapeType::BROAD: return "BROAD";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getWeaponTypeName(PixelShipGenerator::ShipWeaponType type)
+    std::string getWeaponTypeName(SpectralShipGen::ShipWeaponType type)
     {
         switch (type)
         {
-        case PixelShipGenerator::ShipWeaponType::SINGLE_CANNON: return "SINGLE CANNON";
-        case PixelShipGenerator::ShipWeaponType::TWIN_CANNON: return "TWIN CANNON";
-        case PixelShipGenerator::ShipWeaponType::COMPACT_TURRET: return "COMPACT TURRET";
-        case PixelShipGenerator::ShipWeaponType::RAIL_WEAPON: return "RAIL WEAPON";
-        case PixelShipGenerator::ShipWeaponType::WEAPON_POD: return "WEAPON POD";
+        case SpectralShipGen::ShipWeaponType::SINGLE_CANNON: return "SINGLE CANNON";
+        case SpectralShipGen::ShipWeaponType::TWIN_CANNON: return "TWIN CANNON";
+        case SpectralShipGen::ShipWeaponType::COMPACT_TURRET: return "COMPACT TURRET";
+        case SpectralShipGen::ShipWeaponType::RAIL_WEAPON: return "RAIL WEAPON";
+        case SpectralShipGen::ShipWeaponType::WEAPON_POD: return "WEAPON POD";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getWeaponRegionName(PixelShipGenerator::ShipWeaponHardpointRegion region)
+    std::string getWeaponRegionName(SpectralShipGen::ShipWeaponHardpointRegion region)
     {
         switch (region)
         {
-        case PixelShipGenerator::ShipWeaponHardpointRegion::CENTRAL_NOSE: return "CENTRAL NOSE";
-        case PixelShipGenerator::ShipWeaponHardpointRegion::FORWARD_FUSELAGE_SIDE: return "FWD FUSELAGE";
-        case PixelShipGenerator::ShipWeaponHardpointRegion::WING_ROOT: return "WING ROOT";
-        case PixelShipGenerator::ShipWeaponHardpointRegion::OUTER_WING: return "OUTER WING";
-        case PixelShipGenerator::ShipWeaponHardpointRegion::FORWARD_SHOULDER: return "FWD SHOULDER";
-        case PixelShipGenerator::ShipWeaponHardpointRegion::CENTRAL_BODY: return "CENTRAL BODY";
+        case SpectralShipGen::ShipWeaponHardpointRegion::CENTRAL_NOSE: return "CENTRAL NOSE";
+        case SpectralShipGen::ShipWeaponHardpointRegion::FORWARD_FUSELAGE_SIDE: return "FWD FUSELAGE";
+        case SpectralShipGen::ShipWeaponHardpointRegion::WING_ROOT: return "WING ROOT";
+        case SpectralShipGen::ShipWeaponHardpointRegion::OUTER_WING: return "OUTER WING";
+        case SpectralShipGen::ShipWeaponHardpointRegion::FORWARD_SHOULDER: return "FWD SHOULDER";
+        case SpectralShipGen::ShipWeaponHardpointRegion::CENTRAL_BODY: return "CENTRAL BODY";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getEngineLayoutName(PixelShipGenerator::EngineLayoutType type)
+    std::string getEngineLayoutName(SpectralShipGen::EngineLayoutType type)
     {
         switch (type)
         {
-        case PixelShipGenerator::EngineLayoutType::CENTRAL: return "CENTRAL";
-        case PixelShipGenerator::EngineLayoutType::TWIN: return "TWIN";
-        case PixelShipGenerator::EngineLayoutType::QUAD: return "QUAD";
-        case PixelShipGenerator::EngineLayoutType::CENTRAL_AUXILIARY: return "CENTRAL + AUX";
-        case PixelShipGenerator::EngineLayoutType::WIDE_BANK: return "WIDE BANK";
-        case PixelShipGenerator::EngineLayoutType::ENGINE_LAYOUT_TYPE_END: return "NONE";
+        case SpectralShipGen::EngineLayoutType::CENTRAL: return "CENTRAL";
+        case SpectralShipGen::EngineLayoutType::TWIN: return "TWIN";
+        case SpectralShipGen::EngineLayoutType::QUAD: return "QUAD";
+        case SpectralShipGen::EngineLayoutType::CENTRAL_AUXILIARY: return "CENTRAL + AUX";
+        case SpectralShipGen::EngineLayoutType::WIDE_BANK: return "WIDE BANK";
+        case SpectralShipGen::EngineLayoutType::ENGINE_LAYOUT_TYPE_END: return "NONE";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getDebugStageName(PixelShipGenerator::ShipGenerationDebugStageType type)
+    std::string getDebugStageName(SpectralShipGen::ShipGenerationDebugStageType type)
     {
         switch (type)
         {
-        case PixelShipGenerator::ShipGenerationDebugStageType::BASE_HULL: return "BASE HULL";
-        case PixelShipGenerator::ShipGenerationDebugStageType::CLEANED_BASE_HULL: return "CLEANED BASE";
-        case PixelShipGenerator::ShipGenerationDebugStageType::AFTER_ADDITIVE_MODIFIERS: return "AFTER ADDITIVE";
-        case PixelShipGenerator::ShipGenerationDebugStageType::AFTER_SUBTRACTIVE_MODIFIERS: return "AFTER SUBTRACTIVE";
-        case PixelShipGenerator::ShipGenerationDebugStageType::FINAL_HULL: return "FINAL HULL";
+        case SpectralShipGen::ShipGenerationDebugStageType::BASE_HULL: return "BASE HULL";
+        case SpectralShipGen::ShipGenerationDebugStageType::CLEANED_BASE_HULL: return "CLEANED BASE";
+        case SpectralShipGen::ShipGenerationDebugStageType::AFTER_ADDITIVE_MODIFIERS: return "AFTER ADDITIVE";
+        case SpectralShipGen::ShipGenerationDebugStageType::AFTER_SUBTRACTIVE_MODIFIERS: return "AFTER SUBTRACTIVE";
+        case SpectralShipGen::ShipGenerationDebugStageType::FINAL_HULL: return "FINAL HULL";
         default: return "UNKNOWN";
         }
     }
 
-    Bounds calculateMaskBounds(const PixelShipGenerator::PixelMask& mask)
+    Bounds calculateMaskBounds(const SpectralShipGen::PixelMask& mask)
     {
         Bounds bounds;
         bounds.MinX = mask.getWidth();
@@ -262,7 +262,7 @@ namespace
         return bounds;
     }
 
-    Bounds calculateImageBounds(const PixelShipGenerator::Image& image, uint32_t width, uint32_t height)
+    Bounds calculateImageBounds(const SpectralShipGen::Image& image, uint32_t width, uint32_t height)
     {
         Bounds bounds;
         bounds.MinX = width;
@@ -308,48 +308,48 @@ namespace
         return enabled ? "ON" : "OFF";
     }
 
-    std::string getAnimationTypeDisplayName(PixelShipGenerator::ShipAnimationType type)
+    std::string getAnimationTypeDisplayName(SpectralShipGen::ShipAnimationType type)
     {
         switch (type)
         {
-        case PixelShipGenerator::ShipAnimationType::IDLE: return "IDLE";
-        case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
-        case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
-        case PixelShipGenerator::ShipAnimationType::MOVE_UP: return "MOVE UP";
-        case PixelShipGenerator::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
-        case PixelShipGenerator::ShipAnimationType::FIRE: return "FIRE";
+        case SpectralShipGen::ShipAnimationType::IDLE: return "IDLE";
+        case SpectralShipGen::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
+        case SpectralShipGen::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
+        case SpectralShipGen::ShipAnimationType::MOVE_UP: return "MOVE UP";
+        case SpectralShipGen::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
+        case SpectralShipGen::ShipAnimationType::FIRE: return "FIRE";
         default: return "UNSUPPORTED";
         }
     }
 
-    std::string getMovementPhaseDisplayName(PixelShipGenerator::ShipMovementAnimationPhase phase)
+    std::string getMovementPhaseDisplayName(SpectralShipGen::ShipMovementAnimationPhase phase)
     {
         switch (phase)
         {
-        case PixelShipGenerator::ShipMovementAnimationPhase::ENTER: return "ENTER";
-        case PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN: return "SUSTAIN";
-        case PixelShipGenerator::ShipMovementAnimationPhase::EXIT: return "EXIT";
+        case SpectralShipGen::ShipMovementAnimationPhase::ENTER: return "ENTER";
+        case SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN: return "SUSTAIN";
+        case SpectralShipGen::ShipMovementAnimationPhase::EXIT: return "EXIT";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getFiringPhaseDisplayName(PixelShipGenerator::ShipFiringAnimationPhase phase)
+    std::string getFiringPhaseDisplayName(SpectralShipGen::ShipFiringAnimationPhase phase)
     {
         switch (phase)
         {
-        case PixelShipGenerator::ShipFiringAnimationPhase::REST: return "REST";
-        case PixelShipGenerator::ShipFiringAnimationPhase::PRE_FIRE: return "PRE-FIRE";
-        case PixelShipGenerator::ShipFiringAnimationPhase::RECOIL: return "RECOIL";
-        case PixelShipGenerator::ShipFiringAnimationPhase::RECOVERY: return "RECOVERY";
+        case SpectralShipGen::ShipFiringAnimationPhase::REST: return "REST";
+        case SpectralShipGen::ShipFiringAnimationPhase::PRE_FIRE: return "PRE-FIRE";
+        case SpectralShipGen::ShipFiringAnimationPhase::RECOIL: return "RECOIL";
+        case SpectralShipGen::ShipFiringAnimationPhase::RECOVERY: return "RECOVERY";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getCurrentFiringPhaseDisplayName(const PixelShipGenerator::ShipFiringAnimation& animation, uint32_t frameIndex)
+    std::string getCurrentFiringPhaseDisplayName(const SpectralShipGen::ShipFiringAnimation& animation, uint32_t frameIndex)
     {
         if (animation.NormalizedSampleTimes.empty()) { return "REST"; }
         const uint32_t index = std::min(frameIndex, static_cast<uint32_t>(animation.NormalizedSampleTimes.size() - 1u));
-        return getFiringPhaseDisplayName(PixelShipGenerator::getFiringAnimationPhase(animation.NormalizedSampleTimes[index]));
+        return getFiringPhaseDisplayName(SpectralShipGen::getFiringAnimationPhase(animation.NormalizedSampleTimes[index]));
     }
 
     std::string getSameDifferent(bool same)
@@ -357,7 +357,7 @@ namespace
         return same ? "SAME" : "DIFFERENT";
     }
 
-    uint32_t calculateComparisonScale(const PixelShipGeneratorPreview::PreviewGenerationRecipe& pinned, const PixelShipGeneratorPreview::PreviewGenerationRecipe& current, uint32_t availableWidth, uint32_t availableHeight)
+    uint32_t calculateComparisonScale(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& pinned, const SpectralShipGenStudioPreview::PreviewGenerationRecipe& current, uint32_t availableWidth, uint32_t availableHeight)
     {
         const uint32_t maximumWidth = std::max(pinned.Dimensions.Width, current.Dimensions.Width);
         const uint32_t maximumHeight = std::max(pinned.Dimensions.Height, current.Dimensions.Height);
@@ -370,7 +370,7 @@ namespace
         return std::max(1u, std::min(availableWidth / maximumWidth, availableHeight / maximumHeight));
     }
 
-    std::string getChangedRecipeComponents(const PixelShipGeneratorPreview::PreviewGenerationRecipe& pinned, const PixelShipGeneratorPreview::PreviewGenerationRecipe& current)
+    std::string getChangedRecipeComponents(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& pinned, const SpectralShipGenStudioPreview::PreviewGenerationRecipe& current)
     {
         std::vector<std::string> changed;
         if (pinned.Seeds.Structure != current.Seeds.Structure) { changed.push_back("STRUCTURE"); }
@@ -402,7 +402,7 @@ namespace
         return stream.str();
     }
 
-    std::string colorToHex(const PixelShipGenerator::Color& color)
+    std::string colorToHex(const SpectralShipGen::Color& color)
     {
         std::ostringstream stream;
         stream << '#' << std::uppercase << std::hex << std::setfill('0') << std::setw(2) << static_cast<uint32_t>(color.R) << std::setw(2) << static_cast<uint32_t>(color.G) << std::setw(2) << static_cast<uint32_t>(color.B) << std::setw(2) << static_cast<uint32_t>(color.A);
@@ -422,7 +422,7 @@ namespace
         y += LargeTextLineHeight;
     }
 
-    void drawDiagnosticLegendEntry(sf::RenderTarget& target, const std::string& label, const PixelShipGenerator::Color& color, float x, float& y)
+    void drawDiagnosticLegendEntry(sf::RenderTarget& target, const std::string& label, const SpectralShipGen::Color& color, float x, float& y)
     {
         sf::RectangleShape swatch(sf::Vector2f(12.0f, 10.0f));
         swatch.setPosition(x, y);
@@ -435,7 +435,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     void PreviewRenderer::render(sf::RenderWindow& window, const PreviewRenderData& data) const
     {
@@ -812,7 +812,7 @@ namespace PixelShipGeneratorPreview
         if (validationSection.Expanded)
         {
             float y = validationSection.HeaderBounds.Top + validationSection.HeaderBounds.Height + 6.0f;
-            const auto drawIssue = [&](const PixelShipGenerator::ValidationIssue& issue, const sf::Color& color)
+            const auto drawIssue = [&](const SpectralShipGen::ValidationIssue& issue, const sf::Color& color)
                 {
                     if (y > viewport.Top + viewport.Height) { return; }
                     if (y + 24.0f >= viewport.Top)
@@ -1021,37 +1021,37 @@ namespace PixelShipGeneratorPreview
         drawLabelValue(window, "SEED", studio.CandidateValid ? std::to_string(studio.CandidateRerollSeed) : "-", columnWidth + 20.0f, rightY);
 
         std::string selectedText;
-        PixelShipGenerator::GenerationDomain firstSelected = PixelShipGenerator::GenerationDomain::GENERATION_DOMAIN_END;
+        SpectralShipGen::GenerationDomain firstSelected = SpectralShipGen::GenerationDomain::GENERATION_DOMAIN_END;
         for (std::size_t index = 0u; index < studio.SelectedDomains.size(); ++index)
         {
             if (!studio.SelectedDomains[index]) { continue; }
-            const PixelShipGenerator::GenerationDomain domain = static_cast<PixelShipGenerator::GenerationDomain>(index);
-            if (firstSelected == PixelShipGenerator::GenerationDomain::GENERATION_DOMAIN_END) { firstSelected = domain; }
+            const SpectralShipGen::GenerationDomain domain = static_cast<SpectralShipGen::GenerationDomain>(index);
+            if (firstSelected == SpectralShipGen::GenerationDomain::GENERATION_DOMAIN_END) { firstSelected = domain; }
             if (!selectedText.empty()) { selectedText += ", "; }
-            selectedText += PixelShipGenerator::getGenerationDomainName(domain);
+            selectedText += SpectralShipGen::getGenerationDomainName(domain);
         }
         if (selectedText.empty()) { selectedText = "NONE"; }
 
         drawDebugText(window, "SELECTED = REROLLED; UNSELECTED DOMAIN SEEDS ARE PRESERVED.", 20.0f, 575.0f, sf::Color(165, 205, 175), SmallTextScale);
         drawDebugText(window, wrapDebugText("SELECTED: " + selectedText, 102u), 20.0f, 591.0f, sf::Color(220, 223, 232), SmallTextScale);
 
-        if (firstSelected != PixelShipGenerator::GenerationDomain::GENERATION_DOMAIN_END)
+        if (firstSelected != SpectralShipGen::GenerationDomain::GENERATION_DOMAIN_END)
         {
-            drawDebugText(window, wrapDebugText(std::string("DEPENDENCY: ") + PixelShipGenerator::getGenerationDomainDependencyDescription(firstSelected), 102u), 20.0f, 611.0f, sf::Color(170, 175, 190), SmallTextScale);
+            drawDebugText(window, wrapDebugText(std::string("DEPENDENCY: ") + SpectralShipGen::getGenerationDomainDependencyDescription(firstSelected), 102u), 20.0f, 611.0f, sf::Color(170, 175, 190), SmallTextScale);
         }
 
         if (studio.CandidateValid)
         {
-            const PixelShipGenerator::GenerationDomainSeeds baseSeeds = PixelShipGenerator::resolveGenerationDomainSeeds(baseRecipe.Seeds, baseRecipe.DomainSeedOverrides, baseRecipe.RandomStreamMode);
-            const PixelShipGenerator::GenerationDomainSeeds candidateSeeds = PixelShipGenerator::resolveGenerationDomainSeeds(candidateRecipe.Seeds, candidateRecipe.DomainSeedOverrides, candidateRecipe.RandomStreamMode);
+            const SpectralShipGen::GenerationDomainSeeds baseSeeds = SpectralShipGen::resolveGenerationDomainSeeds(baseRecipe.Seeds, baseRecipe.DomainSeedOverrides, baseRecipe.RandomStreamMode);
+            const SpectralShipGen::GenerationDomainSeeds candidateSeeds = SpectralShipGen::resolveGenerationDomainSeeds(candidateRecipe.Seeds, candidateRecipe.DomainSeedOverrides, candidateRecipe.RandomStreamMode);
             std::string seedText = "DOMAIN SEEDS:";
             uint32_t shown = 0u;
             for (std::size_t index = 0u; index < studio.SelectedDomains.size() && shown < 3u; ++index)
             {
                 if (!studio.SelectedDomains[index]) { continue; }
-                const PixelShipGenerator::GenerationDomain domain = static_cast<PixelShipGenerator::GenerationDomain>(index);
+                const SpectralShipGen::GenerationDomain domain = static_cast<SpectralShipGen::GenerationDomain>(index);
                 seedText += " ";
-                seedText += PixelShipGenerator::getGenerationDomainName(domain);
+                seedText += SpectralShipGen::getGenerationDomainName(domain);
                 seedText += " ";
                 seedText += std::to_string(baseSeeds.Values[index]);
                 seedText += "->";
@@ -1171,7 +1171,7 @@ namespace PixelShipGeneratorPreview
         const float panelY = static_cast<float>(NativePreviewPanelY);
         drawPanel(window, panelX, panelY, static_cast<float>(NativePreviewPanelWidth), static_cast<float>(NativePreviewPanelHeight), sf::Color(30, 31, 35, 248), sf::Color(92, 96, 106));
 
-        const PixelShipGenerator::ShipDimensions dimensions = data.Recipe->Dimensions;
+        const SpectralShipGen::ShipDimensions dimensions = data.Recipe->Dimensions;
         const std::string dimensionLabel = "NATIVE: " + std::to_string(dimensions.Width) + "x" + std::to_string(dimensions.Height);
         drawDebugText(window, dimensionLabel, panelX + 12.0f, panelY + 10.0f, sf::Color(224, 226, 232), TextScale);
 
@@ -1230,7 +1230,7 @@ namespace PixelShipGeneratorPreview
         if (data.Mode == PreviewMode::CALIBRATION && data.CalibrationSession != nullptr)
         {
             const CalibrationGroupStatistics statistics = calculateCalibrationGroupStatistics(*data.CalibrationSession, data.CalibrationGroup, data.CalibrationFilter);
-            const std::vector<uint32_t> suggested = calculateSuggestedGroupWeights(*data.CalibrationSession, data.Recipe != nullptr ? data.Recipe->Style : PixelShipGenerator::ShipStyle::FIGHTER, data.CalibrationGroup, data.CalibrationFilter);
+            const std::vector<uint32_t> suggested = calculateSuggestedGroupWeights(*data.CalibrationSession, data.Recipe != nullptr ? data.Recipe->Style : SpectralShipGen::ShipStyle::FIGHTER, data.CalibrationGroup, data.CalibrationFilter);
             drawLabelValue(window, "GROUP", getCalibrationGroupName(data.CalibrationGroup), x, y);
             drawLabelValue(window, "EVIDENCE", getCalibrationEvidenceName(statistics.Evidence), x, y);
             drawLabelValue(window, "USEFUL", std::to_string(statistics.UsefulComparisonCount), x, y);
@@ -1240,12 +1240,12 @@ namespace PixelShipGeneratorPreview
 
             y += 4.0f;
             drawSectionHeader(window, "PREFERENCE", x, y);
-            const uint32_t optionCount = PixelShipGenerator::getGenerationWeightOptionCount(data.CalibrationGroup);
-            const PixelShipGenerator::ShipStyle style = data.Recipe != nullptr ? data.Recipe->Style : PixelShipGenerator::ShipStyle::FIGHTER;
+            const uint32_t optionCount = SpectralShipGen::getGenerationWeightOptionCount(data.CalibrationGroup);
+            const SpectralShipGen::ShipStyle style = data.Recipe != nullptr ? data.Recipe->Style : SpectralShipGen::ShipStyle::FIGHTER;
             for (uint32_t index = 0u; index < optionCount && index < statistics.Options.size(); ++index)
             {
                 const CalibrationOptionStatistics& option = statistics.Options[index];
-                const uint32_t current = PixelShipGenerator::getGenerationTuningWeight(data.CalibrationSession->TunedProfile, style, data.CalibrationGroup, index);
+                const uint32_t current = SpectralShipGen::getGenerationTuningWeight(data.CalibrationSession->TunedProfile, style, data.CalibrationGroup, index);
                 const uint32_t proposed = index < suggested.size() ? suggested[index] : current;
                 drawDebugText(window, getCalibrationOptionName(data.CalibrationGroup, index), x, y, sf::Color(215, 220, 230), SmallTextScale);
                 y += 12.0f;
@@ -1257,13 +1257,13 @@ namespace PixelShipGeneratorPreview
             {
                 y += 4.0f;
                 drawSectionHeader(window, "OBJECTIVE A/B", x, y);
-                const auto drawObjective = [&](const char* label, const PixelShipGenerator::ShipGenerationDebugInfo& info)
+                const auto drawObjective = [&](const char* label, const SpectralShipGen::ShipGenerationDebugInfo& info)
                     {
                         drawDebugText(window, std::string(label) + " ENG " + std::to_string(info.EngineCount) + " FEAT " + std::to_string(info.MajorFeatureCount) + " GUN " + std::to_string(info.WeaponCount) + " ATT " + std::to_string(info.AttachmentPlacedGroupCount), x, y, sf::Color(180, 185, 195), SmallTextScale);
                         y += 14.0f;
                     };
-                const PixelShipGenerator::ShipGenerationDebugInfo& left = data.CalibrationPair->DisplayAOnLeft ? data.CalibrationPair->DebugA : data.CalibrationPair->DebugB;
-                const PixelShipGenerator::ShipGenerationDebugInfo& right = data.CalibrationPair->DisplayAOnLeft ? data.CalibrationPair->DebugB : data.CalibrationPair->DebugA;
+                const SpectralShipGen::ShipGenerationDebugInfo& left = data.CalibrationPair->DisplayAOnLeft ? data.CalibrationPair->DebugA : data.CalibrationPair->DebugB;
+                const SpectralShipGen::ShipGenerationDebugInfo& right = data.CalibrationPair->DisplayAOnLeft ? data.CalibrationPair->DebugB : data.CalibrationPair->DebugA;
                 drawObjective("A", left);
                 drawObjective("B", right);
             }
@@ -1317,14 +1317,14 @@ namespace PixelShipGeneratorPreview
             {
                 const PreviewThumbnailItem& item = grid.Items[grid.SelectedIndex];
                 const PreviewGenerationRecipe& favoriteRecipe = item.Recipe;
-                const std::string structuralSource = favoriteRecipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
-                const std::string factionSource = favoriteRecipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
+                const std::string structuralSource = favoriteRecipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
+                const std::string factionSource = favoriteRecipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
                 std::string paletteSource = "UNKNOWN";
                 switch (favoriteRecipe.PaletteConfiguration.Mode)
                 {
-                case PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED: paletteSource = "FACTION GENERATED"; break;
-                case PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED: paletteSource = "EXPLICIT GENERATED"; break;
-                case PixelShipGenerator::ShipPaletteSourceMode::FIXED: paletteSource = "FIXED"; break;
+                case SpectralShipGen::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED: paletteSource = "FACTION GENERATED"; break;
+                case SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED: paletteSource = "EXPLICIT GENERATED"; break;
+                case SpectralShipGen::ShipPaletteSourceMode::FIXED: paletteSource = "FIXED"; break;
                 default: break;
                 }
                 drawLabelValue(window, "STATUS", item.Valid ? "AVAILABLE" : "UNAVAILABLE", x, y);
@@ -1375,7 +1375,7 @@ namespace PixelShipGeneratorPreview
             y += 16.0f;
         }
 
-        if (data.SelectedAnimationType == PixelShipGenerator::ShipAnimationType::IDLE && data.IdleAnimation != nullptr && data.IdleAnimationSettings != nullptr && !data.IdleAnimation->Frames.empty())
+        if (data.SelectedAnimationType == SpectralShipGen::ShipAnimationType::IDLE && data.IdleAnimation != nullptr && data.IdleAnimationSettings != nullptr && !data.IdleAnimation->Frames.empty())
         {
             y += 4.0f;
             drawSectionHeader(window, "IDLE ANIMATION", x, y);
@@ -1383,7 +1383,7 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "SEED", std::to_string(data.IdleAnimation->Seed), x, y);
             drawLabelValue(window, "DURATION", std::to_string(data.IdleAnimation->DurationMilliseconds) + " ms", x, y);
             drawLabelValue(window, "FRAMES", std::to_string(data.IdleAnimation->Sampling.ActualFrameCount), x, y);
-            drawLabelValue(window, "SAMPLING", data.IdleAnimation->Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
+            drawLabelValue(window, "SAMPLING", data.IdleAnimation->Sampling.Mode == SpectralShipGen::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
             drawLabelValue(window, "FRAME LIMITS", std::to_string(data.IdleAnimation->Sampling.MinimumFrameCount) + "-" + std::to_string(data.IdleAnimation->Sampling.MaximumFrameCount), x, y);
             drawLabelValue(window, "FRAME TIME", getMillisecondsString(data.IdleAnimation->FrameDurationMilliseconds), x, y);
             drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(data.IdleAnimation->Frames.size()), x, y);
@@ -1397,7 +1397,7 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "HOVER", getOnOff(data.IdleAnimationSettings->HoverOffset), x, y);
             drawLabelValue(window, "DETAIL FX", getOnOff(data.IdleAnimationSettings->SmallDetailVariation), x, y);
         }
-        else if (data.SelectedAnimationType == PixelShipGenerator::ShipAnimationType::FIRE && data.FiringAnimation != nullptr && data.FiringAnimationSettings != nullptr && !data.FiringAnimation->Frames.empty())
+        else if (data.SelectedAnimationType == SpectralShipGen::ShipAnimationType::FIRE && data.FiringAnimation != nullptr && data.FiringAnimationSettings != nullptr && !data.FiringAnimation->Frames.empty())
         {
             y += 4.0f;
             drawSectionHeader(window, "FIRING ANIMATION", x, y);
@@ -1408,7 +1408,7 @@ namespace PixelShipGeneratorPreview
             drawLabelValue(window, "GROUP", std::to_string(data.FiringAnimation->Diagnostics.TargetSymmetryGroup), x, y);
             drawLabelValue(window, "DURATION", std::to_string(data.FiringAnimation->DurationMilliseconds) + " ms", x, y);
             drawLabelValue(window, "FRAMES", std::to_string(data.FiringAnimation->Sampling.ActualFrameCount), x, y);
-            drawLabelValue(window, "SAMPLING", data.FiringAnimation->Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
+            drawLabelValue(window, "SAMPLING", data.FiringAnimation->Sampling.Mode == SpectralShipGen::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
             drawLabelValue(window, "FRAME TIME", getMillisecondsString(data.FiringAnimation->FrameDurationMilliseconds), x, y);
             drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(data.FiringAnimation->Frames.size()), x, y);
             drawLabelValue(window, "WEAPONS", std::to_string(data.FiringAnimation->Diagnostics.ActiveWeaponCount), x, y);
@@ -1423,7 +1423,7 @@ namespace PixelShipGeneratorPreview
         }
         else if (data.MovementAnimation != nullptr && data.MovementAnimationSettings != nullptr && data.MovementAnimation->Type == data.SelectedAnimationType)
         {
-            const PixelShipGenerator::ShipMovementAnimationClip& clip = PixelShipGenerator::getMovementAnimationClip(*data.MovementAnimation, data.MovementPhase);
+            const SpectralShipGen::ShipMovementAnimationClip& clip = SpectralShipGen::getMovementAnimationClip(*data.MovementAnimation, data.MovementPhase);
             if (!clip.Frames.empty())
             {
                 y += 4.0f;
@@ -1434,7 +1434,7 @@ namespace PixelShipGeneratorPreview
                 drawLabelValue(window, "SEED", std::to_string(data.MovementAnimation->Seed), x, y);
                 drawLabelValue(window, "DURATION", std::to_string(clip.DurationMilliseconds) + " ms", x, y);
                 drawLabelValue(window, "FRAMES", std::to_string(clip.Sampling.ActualFrameCount), x, y);
-                drawLabelValue(window, "SAMPLING", clip.Sampling.Mode == PixelShipGenerator::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
+                drawLabelValue(window, "SAMPLING", clip.Sampling.Mode == SpectralShipGen::AnimationSamplingMode::ADAPTIVE ? "ADAPTIVE" : "EXACT", x, y);
                 drawLabelValue(window, "FRAME LIMITS", std::to_string(clip.Sampling.MinimumFrameCount) + "-" + std::to_string(clip.Sampling.MaximumFrameCount), x, y);
                 drawLabelValue(window, "FRAME TIME", getMillisecondsString(clip.FrameDurationMilliseconds), x, y);
                 drawLabelValue(window, "FRAME", std::to_string(data.AnimationFrameIndex + 1u) + "/" + std::to_string(clip.Frames.size()), x, y);
@@ -1483,26 +1483,26 @@ namespace PixelShipGeneratorPreview
             return;
         }
 
-        const PixelShipGenerator::GeneratedShip& ship = *data.Ship;
-        const PixelShipGenerator::ShipGenerationDebugInfo& debug = *data.GenerationDebugInfo;
+        const SpectralShipGen::GeneratedShip& ship = *data.Ship;
+        const SpectralShipGen::ShipGenerationDebugInfo& debug = *data.GenerationDebugInfo;
         const PreviewGenerationRecipe& recipe = *data.Recipe;
-        const auto sourceName = [](PixelShipGenerator::ShipGenerationRecipeProfileSource source)
+        const auto sourceName = [](SpectralShipGen::ShipGenerationRecipeProfileSource source)
         {
-            return source == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
+            return source == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET ? "BUILT-IN" : "CUSTOM";
         };
-        const auto paletteSourceName = [](PixelShipGenerator::ShipPaletteSourceMode mode)
+        const auto paletteSourceName = [](SpectralShipGen::ShipPaletteSourceMode mode)
         {
             switch (mode)
             {
-            case PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED: return "FACTION GENERATED";
-            case PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED: return "EXPLICIT GENERATED";
-            case PixelShipGenerator::ShipPaletteSourceMode::FIXED: return "FIXED";
+            case SpectralShipGen::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED: return "FACTION GENERATED";
+            case SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED: return "EXPLICIT GENERATED";
+            case SpectralShipGen::ShipPaletteSourceMode::FIXED: return "FIXED";
             default: return "UNKNOWN";
             }
         };
-        const auto randomModeName = [](PixelShipGenerator::GenerationRandomStreamMode mode)
+        const auto randomModeName = [](SpectralShipGen::GenerationRandomStreamMode mode)
         {
-            return mode == PixelShipGenerator::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS ? "DOMAIN SUBSTREAMS" : "LEGACY TOP-LEVEL";
+            return mode == SpectralShipGen::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS ? "DOMAIN SUBSTREAMS" : "LEGACY TOP-LEVEL";
         };
 
         drawSectionHeader(window, "CONFIGURATION", x, y);
@@ -1616,8 +1616,8 @@ namespace PixelShipGeneratorPreview
         y += 4.0f;
         drawSectionHeader(window, "GENERATION DECISIONS", x, y);
         drawLabelValue(window, "HULL ATTEMPTS", std::to_string(debug.HullGenerationAttemptCount), x, y);
-        drawLabelValue(window, "PRIMARY ANCHOR", PixelShipGenerator::getShipVisualAnchorTypeName(debug.PrimaryVisualAnchor), x, y);
-        drawLabelValue(window, "ANCHOR REGION", PixelShipGenerator::getGenerationSpatialRegionName(debug.VisualAnchorTargetRegion), x, y);
+        drawLabelValue(window, "PRIMARY ANCHOR", SpectralShipGen::getShipVisualAnchorTypeName(debug.PrimaryVisualAnchor), x, y);
+        drawLabelValue(window, "ANCHOR REGION", SpectralShipGen::getGenerationSpatialRegionName(debug.VisualAnchorTargetRegion), x, y);
         drawLabelValue(window, "COMPLEXITY", std::to_string(debug.ComplexityConsumedBudget) + "/" + std::to_string(debug.ComplexityInitialBudget), x, y);
         drawLabelValue(window, "SPATIAL REJECT", std::to_string(debug.SpatialOverloadRejectionCount), x, y);
         drawLabelValue(window, "HULL LAYERS", std::to_string(debug.HullLayerCount), x, y);
@@ -1629,11 +1629,11 @@ namespace PixelShipGeneratorPreview
 
         y += 4.0f;
         drawSectionHeader(window, "DOMAIN SEEDS", x, y);
-        for (std::size_t index = 0u; index < PixelShipGenerator::GenerationDomainCount; ++index)
+        for (std::size_t index = 0u; index < SpectralShipGen::GenerationDomainCount; ++index)
         {
-            const auto domain = static_cast<PixelShipGenerator::GenerationDomain>(index);
+            const auto domain = static_cast<SpectralShipGen::GenerationDomain>(index);
             const bool overridden = recipe.DomainSeedOverrides.Values[index].has_value();
-            const std::string label = std::string(overridden ? "*" : " ") + PixelShipGenerator::getGenerationDomainName(domain);
+            const std::string label = std::string(overridden ? "*" : " ") + SpectralShipGen::getGenerationDomainName(domain);
             const std::string value = std::to_string(ship.DomainSeeds.Values[index]);
             drawDebugText(window, fitDebugTextToWidth(label, 128.0f, SmallTextScale), x, y, overridden ? sf::Color(240, 205, 105) : sf::Color(180, 185, 195), SmallTextScale);
             drawDebugText(window, value, x + 130.0f, y, sf::Color(145, 205, 235), SmallTextScale);
@@ -1710,8 +1710,8 @@ namespace PixelShipGeneratorPreview
         }
 
         drawPanel(window, OverlayMargin, OverlayMargin, static_cast<float>(PreviewContentWidth) - OverlayMargin * 2.0f, static_cast<float>(PreviewWindowHeight) - OverlayMargin * 2.0f, sf::Color(8, 9, 12, 248), sf::Color(120, 125, 145));
-        const PixelShipGenerator::GeneratedShip& ship = *data.Ship;
-        const PixelShipGenerator::ShipGenerationDebugInfo& debug = *data.GenerationDebugInfo;
+        const SpectralShipGen::GeneratedShip& ship = *data.Ship;
+        const SpectralShipGen::ShipGenerationDebugInfo& debug = *data.GenerationDebugInfo;
         const float leftX = OverlayMargin + 16.0f;
         const float rightX = OverlayMargin + 430.0f;
         float leftY = OverlayMargin + 14.0f;
@@ -1727,7 +1727,7 @@ namespace PixelShipGeneratorPreview
         drawLabelValue(window, "HULL BOUNDS", getBoundsString(hullBounds), leftX, leftY);
         drawLabelValue(window, "COCKPIT", getBoundsString(cockpitBounds), leftX, leftY);
         drawLabelValue(window, "WING", getWingShapeName(debug.WingShape), leftX, leftY);
-        if (debug.WingShape != PixelShipGenerator::WingShapeType::NONE)
+        if (debug.WingShape != SpectralShipGen::WingShapeType::NONE)
         {
             drawLabelValue(window, "WING SPAN / ROOT", std::to_string(debug.WingMaximumSpan) + " / " + std::to_string(debug.WingRootThickness) + " PX", leftX, leftY);
         }
@@ -1739,16 +1739,16 @@ namespace PixelShipGeneratorPreview
 
         leftY += 6.0f;
         drawSectionHeader(window, "VISUAL HIERARCHY", leftX, leftY);
-        drawLabelValue(window, "PRIMARY", PixelShipGenerator::getShipVisualAnchorTypeName(debug.PrimaryVisualAnchor), leftX, leftY);
-        drawLabelValue(window, "SECONDARY", PixelShipGenerator::getShipVisualAnchorTypeName(debug.SecondaryVisualAnchor), leftX, leftY);
-        drawLabelValue(window, "REGION", PixelShipGenerator::getGenerationSpatialRegionName(debug.VisualAnchorTargetRegion), leftX, leftY);
+        drawLabelValue(window, "PRIMARY", SpectralShipGen::getShipVisualAnchorTypeName(debug.PrimaryVisualAnchor), leftX, leftY);
+        drawLabelValue(window, "SECONDARY", SpectralShipGen::getShipVisualAnchorTypeName(debug.SecondaryVisualAnchor), leftX, leftY);
+        drawLabelValue(window, "REGION", SpectralShipGen::getGenerationSpatialRegionName(debug.VisualAnchorTargetRegion), leftX, leftY);
         drawLabelValue(window, "RESERVED COST", std::to_string(debug.VisualHierarchyReservedComplexity), leftX, leftY);
         drawLabelValue(window, "FALLBACK", debug.VisualHierarchyFallbackOccurred ? "YES" : "NO", leftX, leftY);
 
         leftY += 6.0f;
         drawSectionHeader(window, "GENERATION / BUDGET", leftX, leftY);
         drawLabelValue(window, "HULL ATTEMPTS", std::to_string(debug.HullGenerationAttemptCount), leftX, leftY);
-        drawLabelValue(window, "LAST HULL RETRY", PixelShipGenerator::getSilhouetteValidationFailureReasonName(debug.LastSilhouetteValidationFailure), leftX, leftY);
+        drawLabelValue(window, "LAST HULL RETRY", SpectralShipGen::getSilhouetteValidationFailureReasonName(debug.LastSilhouetteValidationFailure), leftX, leftY);
         drawLabelValue(window, "COMPLEXITY", std::to_string(debug.ComplexityConsumedBudget) + "/" + std::to_string(debug.ComplexityInitialBudget), leftX, leftY);
         drawLabelValue(window, "UNUSED", std::to_string(debug.ComplexityUnusedBudget), leftX, leftY);
         drawLabelValue(window, "SPATIAL REJECTS", std::to_string(debug.SpatialOverloadRejectionCount), leftX, leftY);
@@ -1757,9 +1757,9 @@ namespace PixelShipGeneratorPreview
         drawLabelValue(window, "MATERIAL ZONES", std::to_string(debug.MaterialZoneCount), rightX, rightY);
         drawLabelValue(window, "MATERIAL PX", std::to_string(debug.MaterialSecondaryHullPixelCount) + " SECONDARY / " + std::to_string(debug.MaterialMechanicalPixelCount) + " MECH", rightX, rightY);
         drawLabelValue(window, "LIVERY", std::to_string(debug.LiveryMarkingCount) + " MARKS / " + std::to_string(debug.LiveryCoveragePermille / 10u) + "." + std::to_string(debug.LiveryCoveragePermille % 10u) + "%", rightX, rightY);
-        drawLabelValue(window, "PRIMARY MOTIF", PixelShipGenerator::getShipDetailMotifTypeName(debug.PrimaryDetailMotif), rightX, rightY);
-        drawLabelValue(window, "SECONDARY MOTIF", PixelShipGenerator::getShipDetailMotifTypeName(debug.SecondaryDetailMotif), rightX, rightY);
-        drawLabelValue(window, "MOTIF REGION", PixelShipGenerator::getGenerationSpatialRegionName(debug.PrimaryDetailMotifRegion), rightX, rightY);
+        drawLabelValue(window, "PRIMARY MOTIF", SpectralShipGen::getShipDetailMotifTypeName(debug.PrimaryDetailMotif), rightX, rightY);
+        drawLabelValue(window, "SECONDARY MOTIF", SpectralShipGen::getShipDetailMotifTypeName(debug.SecondaryDetailMotif), rightX, rightY);
+        drawLabelValue(window, "MOTIF REGION", SpectralShipGen::getGenerationSpatialRegionName(debug.PrimaryDetailMotifRegion), rightX, rightY);
         const std::string macroState = !debug.MacroAsymmetryPlanned ? "OFF" : debug.MacroAsymmetryFulfilled ? "FULFILLED" : debug.MacroAsymmetryRejected ? "REJECTED" : "PLANNED";
         drawLabelValue(window, "MACRO ASYM", macroState, rightX, rightY);
 
@@ -1772,7 +1772,7 @@ namespace PixelShipGeneratorPreview
         const std::size_t weaponDetailCount = std::min<std::size_t>(debug.WeaponUnits.size(), 4u);
         for (std::size_t index = 0u; index < weaponDetailCount; ++index)
         {
-            const PixelShipGenerator::WeaponUnitDebugInfo& weapon = debug.WeaponUnits[index];
+            const SpectralShipGen::WeaponUnitDebugInfo& weapon = debug.WeaponUnits[index];
             const std::string weaponFlags = std::string(weapon.MovableBarrel ? " MOV" : "") + (weapon.Emissive ? " EM" : "");
             drawDebugText(window, "W" + std::to_string(index + 1u) + " " + getWeaponTypeName(weapon.Type) + " / " + getWeaponRegionName(weapon.Region) + " G" + std::to_string(weapon.SymmetryGroup) + weaponFlags, rightX, rightY, sf::Color(220, 222, 228), SmallTextScale);
             rightY += 14.0f;
@@ -1801,8 +1801,8 @@ namespace PixelShipGeneratorPreview
         }
 
         drawPanel(window, OverlayMargin, OverlayMargin, static_cast<float>(PreviewContentWidth) - OverlayMargin * 2.0f, static_cast<float>(PreviewWindowHeight) - OverlayMargin * 2.0f, sf::Color(8, 9, 12, 248), sf::Color(120, 125, 145));
-        const PixelShipGenerator::ShipPalette& palette = data.Ship->Palette;
-        const std::array<std::pair<const char*, PixelShipGenerator::Color>, 25u> entries = { {
+        const SpectralShipGen::ShipPalette& palette = data.Ship->Palette;
+        const std::array<std::pair<const char*, SpectralShipGen::Color>, 25u> entries = { {
             { "TRANSPARENT", palette.Transparent }, { "OUTLINE", palette.Outline }, { "HULL DEEP SHADOW", palette.HullDeepShadow }, { "HULL SHADOW", palette.HullShadow }, { "HULL BASE", palette.HullBase }, { "HULL SECONDARY", palette.HullSecondary }, { "HULL HIGHLIGHT", palette.HullHighlight }, { "HULL EDGE", palette.HullEdgeHighlight }, { "ACCENT DARK", palette.HullAccentDark }, { "ACCENT BASE", palette.HullAccent }, { "ACCENT HIGHLIGHT", palette.HullAccentHighlight }, { "COCKPIT DARK", palette.CockpitDark }, { "COCKPIT BASE", palette.CockpitBase }, { "COCKPIT HIGHLIGHT", palette.CockpitHighlight }, { "COCKPIT GLINT", palette.CockpitGlint }, { "ENGINE DARK", palette.EngineDark }, { "ENGINE BASE", palette.EngineBase }, { "ENGINE HIGHLIGHT", palette.EngineHighlight }, { "ENGINE HOT CORE", palette.EngineHotCore }, { "EXHAUST BASE", palette.ExhaustBase }, { "EXHAUST HIGHLIGHT", palette.ExhaustHighlight }, { "EXHAUST HOT CORE", palette.ExhaustHotCore }, { "MECHANICAL DARK", palette.MechanicalDark }, { "MECHANICAL BASE", palette.MechanicalBase }, { "LIGHT BASE", palette.LightBase }
         } };
 

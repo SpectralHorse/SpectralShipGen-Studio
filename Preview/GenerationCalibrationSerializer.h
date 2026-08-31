@@ -5,7 +5,7 @@
 
 #include "GenerationCalibration.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct GenerationCalibrationSessionLoadResult
     {
@@ -19,5 +19,5 @@ namespace PixelShipGeneratorPreview
     bool saveGenerationCalibrationSession(const GenerationCalibrationSession& session, const std::filesystem::path& path, std::string& error);
     GenerationCalibrationSessionLoadResult loadGenerationCalibrationSession(const std::filesystem::path& path);
     bool exportGenerationCalibrationCsv(const GenerationCalibrationSession& session, const std::filesystem::path& path, std::string& error);
-    bool exportGenerationTuningProfile(const PixelShipGenerator::GenerationTuningProfile& profile, const std::filesystem::path& path, std::string& error);
+    bool exportGenerationTuningProfile(const SpectralShipGen::GenerationTuningProfile& profile, const std::filesystem::path& path, std::string& error);
 }

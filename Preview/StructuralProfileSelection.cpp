@@ -2,29 +2,29 @@
 
 #include <algorithm>
 
-#include <PixelShipGenerator/BuiltInPresetCatalog.h>
+#include <SpectralShipGen/BuiltInPresetCatalog.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     std::vector<StructuralProfileSelectionEntry> buildStructuralProfileSelection(const RuntimeCustomPresetWorkspace& workspace)
     {
         std::vector<StructuralProfileSelectionEntry> entries;
-        entries.reserve(PixelShipGenerator::getBuiltInStructuralPresetCatalog().size() + workspace.getStructuralPresets().size() + 1u);
-        for (const PixelShipGenerator::BuiltInStructuralPreset& preset : PixelShipGenerator::getBuiltInStructuralPresetCatalog())
+        entries.reserve(SpectralShipGen::getBuiltInStructuralPresetCatalog().size() + workspace.getStructuralPresets().size() + 1u);
+        for (const SpectralShipGen::BuiltInStructuralPreset& preset : SpectralShipGen::getBuiltInStructuralPresetCatalog())
         {
             entries.push_back({ StructuralProfileSelectionKind::BUILT_IN, preset.StableId, preset.Preset, 0u });
         }
         for (const RuntimeStructuralPreset& preset : workspace.getStructuralPresets())
         {
-            entries.push_back({ StructuralProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, PixelShipGenerator::ShipStyle::SHIP_STYLE_END, preset.Id });
+            entries.push_back({ StructuralProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, SpectralShipGen::ShipStyle::SHIP_STYLE_END, preset.Id });
         }
-        entries.push_back({ StructuralProfileSelectionKind::ADD_PROFILE, "+ ADD PROFILE", PixelShipGenerator::ShipStyle::SHIP_STYLE_END, 0u });
+        entries.push_back({ StructuralProfileSelectionKind::ADD_PROFILE, "+ ADD PROFILE", SpectralShipGen::ShipStyle::SHIP_STYLE_END, 0u });
         return entries;
     }
 
-    std::size_t findStructuralProfileSelectionIndex(const std::vector<StructuralProfileSelectionEntry>& entries, const PixelShipGenerator::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId)
+    std::size_t findStructuralProfileSelectionIndex(const std::vector<StructuralProfileSelectionEntry>& entries, const SpectralShipGen::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId)
     {
-        if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET)
+        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET)
         {
             const auto iterator = std::find_if(entries.begin(), entries.end(), [&](const StructuralProfileSelectionEntry& entry)
             {
@@ -45,7 +45,7 @@ namespace PixelShipGeneratorPreview
         {
             return entry.Kind == StructuralProfileSelectionKind::RUNTIME_CUSTOM;
         });
-        if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM && customIterator != entries.end())
+        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM && customIterator != entries.end())
         {
             return static_cast<std::size_t>(std::distance(entries.begin(), customIterator));
         }

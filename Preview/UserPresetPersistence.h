@@ -6,7 +6,7 @@
 
 #include "RuntimeCustomPresetWorkspace.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     inline constexpr uint32_t UserPresetLibraryFormatVersion = 2u;
     inline constexpr uint32_t UserPresetFileFormatVersion = 2u;

@@ -4,11 +4,11 @@
 #include <initializer_list>
 #include <utility>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     namespace
     {
-        using Profile = PixelShipGenerator::ShipGenerationProfile;
+        using Profile = SpectralShipGen::ShipGenerationProfile;
         constexpr uint32_t WeightMaximum = 10000u;
         constexpr int32_t MultiplierMaximum = 2000;
         constexpr int32_t CountMaximum = 64;
@@ -92,7 +92,7 @@ namespace PixelShipGeneratorPreview
         };
 
         const auto addRange = [](StructuralProfileEditorSection& section, const char* path, const char* label, int32_t minimum, int32_t maximum, int32_t step,
-            std::function<PixelShipGenerator::UIntRange(const Profile&)> read, std::function<void(Profile&, PixelShipGenerator::UIntRange)> write)
+            std::function<SpectralShipGen::UIntRange(const Profile&)> read, std::function<void(Profile&, SpectralShipGen::UIntRange)> write)
         {
             StructuralRangeFieldBinding field;
             field.Path = path;
@@ -146,7 +146,7 @@ namespace PixelShipGeneratorPreview
 #define ADD_RANGE(section, member, label, minimum, maximum, step) \
         addRange(section, #member, label, minimum, maximum, step, \
             [](const Profile& p) { return p.member; }, \
-            [](Profile& p, PixelShipGenerator::UIntRange value) { p.member = value; })
+            [](Profile& p, SpectralShipGen::UIntRange value) { p.member = value; })
 #define ADD_TOGGLE(section, member, label) \
         addToggle(section, #member, label, [](const Profile& p) { return p.member; }, [](Profile& p, bool value) { p.member = value; })
 #define ADD_CHOICE(section, member, label, options) \
@@ -397,7 +397,7 @@ namespace PixelShipGeneratorPreview
             for (StructuralIntegerFieldBinding& field : section.Integers) { field.Control.setValue(field.Read(profile)); }
             for (StructuralRangeFieldBinding& field : section.Ranges)
             {
-                const PixelShipGenerator::UIntRange value = field.Read(profile);
+                const SpectralShipGen::UIntRange value = field.Read(profile);
                 field.Control.setValues(static_cast<int32_t>(value.Min), static_cast<int32_t>(value.Max));
             }
             for (StructuralToggleFieldBinding& field : section.Toggles) { field.Control.Value = field.Read(profile); }

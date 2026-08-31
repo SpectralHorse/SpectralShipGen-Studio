@@ -10,11 +10,11 @@
 #include <string>
 #include <vector>
 
-#include <PixelShipGenerator/GeneratedShip.h>
-#include <PixelShipGenerator/ShipFactionType.h>
-#include <PixelShipGenerator/ShipGenerationDebugInfo.h>
-#include <PixelShipGenerator/ShipGenerationProfile.h>
-#include <PixelShipGenerator/ShipGenerator.h>
+#include <SpectralShipGen/GeneratedShip.h>
+#include <SpectralShipGen/ShipFactionType.h>
+#include <SpectralShipGen/ShipGenerationDebugInfo.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerator.h>
 
 #include "AttributeRerollStudio.h"
 #include "GenerationCalibration.h"
@@ -33,7 +33,7 @@
 #include "PreviewWorkspace.h"
 #include "PreviewWorkspaceNavigation.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     class ShipGeneratorPreviewApp
     {
@@ -59,7 +59,7 @@ namespace PixelShipGeneratorPreview
         void clearPinnedShip();
         bool buildGallery(uint64_t batchSeed);
         PreviewCommandPanelState createCommandPanelState() const;
-        PixelShipGenerator::Image createDiagnosticImage() const;
+        SpectralShipGen::Image createDiagnosticImage() const;
         void cycleAnimationType();
         void cycleAnimationBaseState();
         void cycleAnimationPlaybackSpeed();
@@ -119,9 +119,9 @@ namespace PixelShipGeneratorPreview
         void exitFavoritesMode();
         void generateFromMasterSeed();
         void generateNew();
-        bool generateShipFromRecipe(const PreviewGenerationRecipe& recipe, PixelShipGenerator::GeneratedShip& outShip, PixelShipGenerator::ShipGenerationDebugInfo* debugInfo = nullptr);
+        bool generateShipFromRecipe(const PreviewGenerationRecipe& recipe, SpectralShipGen::GeneratedShip& outShip, SpectralShipGen::ShipGenerationDebugInfo* debugInfo = nullptr);
         std::string getAnimationEffectDisplay() const;
-        const std::vector<PixelShipGenerator::Image>& getActiveAnimationFrames() const;
+        const std::vector<SpectralShipGen::Image>& getActiveAnimationFrames() const;
         uint64_t getActiveAnimationSeed() const;
         std::optional<PreviewCommand> getKeyboardCommand(sf::Keyboard::Key key, bool shift, bool control) const;
         bool hasCurrentShip() const;
@@ -178,7 +178,7 @@ namespace PixelShipGeneratorPreview
         void selectResolutionBookmark(uint32_t index);
         void setDisplayedAnimationFrame(uint32_t frameIndex);
         void setDisplayedStaticFrame();
-        void setFaction(PixelShipGenerator::ShipFactionType faction);
+        void setFaction(SpectralShipGen::ShipFactionType faction);
         void selectRuntimeFactionPreset(RuntimeCustomPresetId id);
         void selectFactionProfileEntry(const FactionProfileSelectionEntry& entry);
         std::string getCurrentFactionProfileDisplayName() const;
@@ -188,11 +188,11 @@ namespace PixelShipGeneratorPreview
         std::string getCurrentConfigurationBundleDisplayName() const;
         std::string getProfilesItemDisplayName() const;
         void applyRuntimeConfigurationBundle(RuntimeCustomPresetId id);
-        void setDimensions(const PixelShipGenerator::ShipDimensions& dimensions);
+        void setDimensions(const SpectralShipGen::ShipDimensions& dimensions);
         void setHeight(uint32_t height);
         void setResolution(uint32_t resolution);
         void setWidth(uint32_t width);
-        void setStyle(PixelShipGenerator::ShipStyle style);
+        void setStyle(SpectralShipGen::ShipStyle style);
         void selectRuntimeStructuralPreset(RuntimeCustomPresetId id);
         void selectStructuralProfileEntry(const StructuralProfileSelectionEntry& entry);
         std::string getCurrentStructuralProfileDisplayName() const;
@@ -216,7 +216,7 @@ namespace PixelShipGeneratorPreview
 
     private:
         sf::RenderWindow m_Window;
-        PixelShipGenerator::ShipGenerator m_Generator;
+        SpectralShipGen::ShipGenerator m_Generator;
         std::mt19937_64 m_SeedGenerator;
         PreviewRenderer m_Renderer;
         PreviewCommandPanel m_CommandPanel;
@@ -231,7 +231,7 @@ namespace PixelShipGeneratorPreview
         PreviewMode m_ConfigurationEditorReturnMode = PreviewMode::STATIC;
         std::optional<RuntimeCustomPresetId> m_SelectedStructuralPresetId;
         std::optional<RuntimeCustomPresetId> m_SelectedFactionPresetId;
-        std::optional<PixelShipGenerator::ShipFactionType> m_SelectedBuiltInPalettePreset;
+        std::optional<SpectralShipGen::ShipFactionType> m_SelectedBuiltInPalettePreset;
         std::optional<RuntimeCustomPresetId> m_SelectedPalettePresetId;
         std::optional<RuntimeCustomPresetId> m_SelectedConfigurationBundleId;
         std::optional<RuntimeCustomPresetId> m_ProfilesSelectedBundleId;
@@ -247,19 +247,19 @@ namespace PixelShipGeneratorPreview
         PreviewComparisonState m_Comparison;
         AttributeRerollStudioState m_RerollStudio;
         PreviewMode m_RerollStudioReturnMode = PreviewMode::STATIC;
-        PixelShipGenerator::GeneratedShip m_RerollCandidateShip;
-        PixelShipGenerator::ShipGenerationDebugInfo m_RerollCandidateDebugInfo;
+        SpectralShipGen::GeneratedShip m_RerollCandidateShip;
+        SpectralShipGen::ShipGenerationDebugInfo m_RerollCandidateDebugInfo;
         sf::Texture m_RerollCandidateTexture;
         GenerationCalibrationSession m_CalibrationSession;
         CalibrationCandidatePair m_CalibrationPair;
         CalibrationObjectiveBatch m_CalibrationObjectiveBatch;
-        PixelShipGenerator::GenerationWeightGroup m_CalibrationGroup = PixelShipGenerator::GenerationWeightGroup::ENGINE_LAYOUT;
+        SpectralShipGen::GenerationWeightGroup m_CalibrationGroup = SpectralShipGen::GenerationWeightGroup::ENGINE_LAYOUT;
         bool m_CalibrationShowValues = true;
         bool m_CalibrationContextFilterEnabled = false;
         bool m_AspectRatioLocked = true;
 
-        PixelShipGenerator::GeneratedShip m_GeneratedShip;
-        PixelShipGenerator::ShipGenerationDebugInfo m_GenerationDebugInfo;
+        SpectralShipGen::GeneratedShip m_GeneratedShip;
+        SpectralShipGen::ShipGenerationDebugInfo m_GenerationDebugInfo;
         sf::Clock m_AnimationClock;
 
         sf::Image m_PreviewImage;

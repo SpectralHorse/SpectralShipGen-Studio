@@ -2,29 +2,29 @@
 
 #include <algorithm>
 
-#include <PixelShipGenerator/BuiltInPresetCatalog.h>
+#include <SpectralShipGen/BuiltInPresetCatalog.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     std::vector<FactionProfileSelectionEntry> buildFactionProfileSelection(const RuntimeCustomPresetWorkspace& workspace)
     {
         std::vector<FactionProfileSelectionEntry> entries;
-        entries.reserve(PixelShipGenerator::getBuiltInFactionPresetCatalog().size() + workspace.getFactionPresets().size() + 1u);
-        for (const PixelShipGenerator::BuiltInFactionPreset& preset : PixelShipGenerator::getBuiltInFactionPresetCatalog())
+        entries.reserve(SpectralShipGen::getBuiltInFactionPresetCatalog().size() + workspace.getFactionPresets().size() + 1u);
+        for (const SpectralShipGen::BuiltInFactionPreset& preset : SpectralShipGen::getBuiltInFactionPresetCatalog())
         {
             entries.push_back({ FactionProfileSelectionKind::BUILT_IN, preset.StableId, preset.Preset, 0u });
         }
         for (const RuntimeFactionPreset& preset : workspace.getFactionPresets())
         {
-            entries.push_back({ FactionProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END, preset.Id });
+            entries.push_back({ FactionProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END, preset.Id });
         }
-        entries.push_back({ FactionProfileSelectionKind::ADD_FACTION, "+ ADD FACTION", PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END, 0u });
+        entries.push_back({ FactionProfileSelectionKind::ADD_FACTION, "+ ADD FACTION", SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END, 0u });
         return entries;
     }
 
-    std::size_t findFactionProfileSelectionIndex(const std::vector<FactionProfileSelectionEntry>& entries, const PixelShipGenerator::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId)
+    std::size_t findFactionProfileSelectionIndex(const std::vector<FactionProfileSelectionEntry>& entries, const SpectralShipGen::ShipGenerationRecipe& recipe, std::optional<RuntimeCustomPresetId> activeCustomPresetId)
     {
-        if (recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET)
+        if (recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET)
         {
             const auto iterator = std::find_if(entries.begin(), entries.end(), [&](const FactionProfileSelectionEntry& entry)
             {
@@ -45,7 +45,7 @@ namespace PixelShipGeneratorPreview
         {
             return entry.Kind == FactionProfileSelectionKind::RUNTIME_CUSTOM;
         });
-        if (recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM && customIterator != entries.end())
+        if (recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM && customIterator != entries.end())
         {
             return static_cast<std::size_t>(std::distance(entries.begin(), customIterator));
         }

@@ -4,9 +4,9 @@
 #include <stdexcept>
 #include <utility>
 
-#include <PixelShipGenerator/Diagnostics/DiagnosticsResultSerializer.h>
+#include <SpectralShipGen/Diagnostics/DiagnosticsResultSerializer.h>
 
-namespace PixelShipGeneratorDiagnosticsApp
+namespace SpectralShipGenStudioDiagnosticsApp
 {
     const char* getDiagnosticsAppRunStateName(DiagnosticsAppRunState state)
     {
@@ -22,7 +22,7 @@ namespace PixelShipGeneratorDiagnosticsApp
         }
     }
 
-    bool validateDiagnosticsConfiguration(const PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration& configuration, std::string& errorMessage)
+    bool validateDiagnosticsConfiguration(const SpectralShipGenDiagnostics::DiagnosticsRunConfiguration& configuration, std::string& errorMessage)
     {
         if (configuration.Dimensions.empty())
         {
@@ -44,7 +44,7 @@ namespace PixelShipGeneratorDiagnosticsApp
             errorMessage = "Samples per combination must be greater than zero.";
             return false;
         }
-        for (const PixelShipGenerator::ShipDimensions dimensions : configuration.Dimensions)
+        for (const SpectralShipGen::ShipDimensions dimensions : configuration.Dimensions)
         {
             if (dimensions.Width == 0u || dimensions.Height == 0u)
             {
@@ -62,7 +62,7 @@ namespace PixelShipGeneratorDiagnosticsApp
         wait();
     }
 
-    bool DiagnosticsAppController::start(const PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration& configuration, std::string& errorMessage)
+    bool DiagnosticsAppController::start(const SpectralShipGenDiagnostics::DiagnosticsRunConfiguration& configuration, std::string& errorMessage)
     {
         joinFinishedWorker();
         if (!validateDiagnosticsConfiguration(configuration, errorMessage))
@@ -159,7 +159,7 @@ namespace PixelShipGeneratorDiagnosticsApp
         return snapshot;
     }
 
-    std::shared_ptr<const PixelShipGeneratorDiagnostics::DiagnosticsResult> DiagnosticsAppController::getResult() const
+    std::shared_ptr<const SpectralShipGenDiagnostics::DiagnosticsResult> DiagnosticsAppController::getResult() const
     {
         std::lock_guard<std::mutex> lock(m_Mutex);
         return m_Result;
@@ -167,7 +167,7 @@ namespace PixelShipGeneratorDiagnosticsApp
 
     bool DiagnosticsAppController::exportCsv(const std::filesystem::path& path, std::string& errorMessage) const
     {
-        std::shared_ptr<const PixelShipGeneratorDiagnostics::DiagnosticsResult> result;
+        std::shared_ptr<const SpectralShipGenDiagnostics::DiagnosticsResult> result;
         {
             std::lock_guard<std::mutex> lock(m_Mutex);
             result = m_Result;
@@ -184,7 +184,7 @@ namespace PixelShipGeneratorDiagnosticsApp
             errorMessage = "Unable to open CSV output path: " + path.string();
             return false;
         }
-        PixelShipGeneratorDiagnostics::writeDiagnosticsResultCsv(stream, *result);
+        SpectralShipGenDiagnostics::writeDiagnosticsResultCsv(stream, *result);
         if (!stream.good())
         {
             errorMessage = "Failed while writing diagnostics CSV: " + path.string();
@@ -197,7 +197,7 @@ namespace PixelShipGeneratorDiagnosticsApp
 
     bool DiagnosticsAppController::saveRun(const std::filesystem::path& path, std::string& errorMessage) const
     {
-        std::shared_ptr<const PixelShipGeneratorDiagnostics::DiagnosticsResult> result;
+        std::shared_ptr<const SpectralShipGenDiagnostics::DiagnosticsResult> result;
         {
             std::lock_guard<std::mutex> lock(m_Mutex);
             result = m_Result;
@@ -207,7 +207,7 @@ namespace PixelShipGeneratorDiagnosticsApp
             errorMessage = "No completed or partial diagnostics result is available.";
             return false;
         }
-        return PixelShipGeneratorDiagnostics::saveDiagnosticsResultJson(path, *result, errorMessage);
+        return SpectralShipGenDiagnostics::saveDiagnosticsResultJson(path, *result, errorMessage);
     }
 
     bool DiagnosticsAppController::loadRun(const std::filesystem::path& path, std::string& errorMessage)
@@ -221,13 +221,13 @@ namespace PixelShipGeneratorDiagnosticsApp
                 return false;
             }
         }
-        PixelShipGeneratorDiagnostics::DiagnosticsResultLoadResult loaded = PixelShipGeneratorDiagnostics::loadDiagnosticsResultJson(path);
+        SpectralShipGenDiagnostics::DiagnosticsResultLoadResult loaded = SpectralShipGenDiagnostics::loadDiagnosticsResultJson(path);
         if (!loaded.Success)
         {
             errorMessage = loaded.Error;
             return false;
         }
-        auto result = std::make_shared<PixelShipGeneratorDiagnostics::DiagnosticsResult>(std::move(loaded.Result));
+        auto result = std::make_shared<SpectralShipGenDiagnostics::DiagnosticsResult>(std::move(loaded.Result));
         std::lock_guard<std::mutex> lock(m_Mutex);
         m_Result = std::move(result);
         m_Progress = {};
@@ -255,18 +255,18 @@ namespace PixelShipGeneratorDiagnosticsApp
         return m_State == DiagnosticsAppRunState::RUNNING || m_State == DiagnosticsAppRunState::CANCELLING;
     }
 
-    void DiagnosticsAppController::workerMain(PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration configuration)
+    void DiagnosticsAppController::workerMain(SpectralShipGenDiagnostics::DiagnosticsRunConfiguration configuration)
     {
         try
         {
-            PixelShipGeneratorDiagnostics::DiagnosticsRunner runner;
-            PixelShipGeneratorDiagnostics::DiagnosticsResult result = runner.run(
+            SpectralShipGenDiagnostics::DiagnosticsRunner runner;
+            SpectralShipGenDiagnostics::DiagnosticsResult result = runner.run(
                 configuration,
-                [this](const PixelShipGeneratorDiagnostics::DiagnosticsProgress& progress) { updateProgress(progress); },
+                [this](const SpectralShipGenDiagnostics::DiagnosticsProgress& progress) { updateProgress(progress); },
                 [this]() { return m_CancelRequested.load(std::memory_order_acquire); },
-                [this](const PixelShipGeneratorDiagnostics::DiagnosticsRawSampleResult& sample) { observeSample(sample); });
+                [this](const SpectralShipGenDiagnostics::DiagnosticsRawSampleResult& sample) { observeSample(sample); });
 
-            auto sharedResult = std::make_shared<PixelShipGeneratorDiagnostics::DiagnosticsResult>(std::move(result));
+            auto sharedResult = std::make_shared<SpectralShipGenDiagnostics::DiagnosticsResult>(std::move(result));
             std::lock_guard<std::mutex> lock(m_Mutex);
             m_Result = std::move(sharedResult);
             m_Progress.TotalWorkItems = m_Result->ScheduledWorkItems;
@@ -306,13 +306,13 @@ namespace PixelShipGeneratorDiagnosticsApp
         }
     }
 
-    void DiagnosticsAppController::updateProgress(const PixelShipGeneratorDiagnostics::DiagnosticsProgress& progress)
+    void DiagnosticsAppController::updateProgress(const SpectralShipGenDiagnostics::DiagnosticsProgress& progress)
     {
         std::lock_guard<std::mutex> lock(m_Mutex);
         m_Progress = progress;
     }
 
-    void DiagnosticsAppController::observeSample(const PixelShipGeneratorDiagnostics::DiagnosticsRawSampleResult& sample)
+    void DiagnosticsAppController::observeSample(const SpectralShipGenDiagnostics::DiagnosticsRawSampleResult& sample)
     {
         std::lock_guard<std::mutex> lock(m_Mutex);
         ++m_LiveSummary.SampleCount;

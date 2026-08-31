@@ -23,7 +23,7 @@ namespace
         return stream.str();
     }
 
-    double maximumValue(const std::vector<PixelShipGeneratorApplication::ChartSeries>& series)
+    double maximumValue(const std::vector<SpectralShipGenStudioApplication::ChartSeries>& series)
     {
         double maximum = 0.0;
         for (const auto& item : series) { for (const auto& value : item.Values) { maximum = std::max(maximum, value.Value); } }
@@ -40,13 +40,13 @@ namespace
         target.draw(shape);
     }
 
-    sf::Color seriesColor(std::size_t index, const PixelShipGeneratorApplication::ChartColors& colors)
+    sf::Color seriesColor(std::size_t index, const SpectralShipGenStudioApplication::ChartColors& colors)
     {
         return index == 0u ? colors.Primary : colors.Secondary;
     }
 }
 
-namespace PixelShipGeneratorApplication
+namespace SpectralShipGenStudioApplication
 {
     std::vector<ChartHitRegion> drawBarChart(sf::RenderTarget& target,
                                               const sf::FloatRect& bounds,

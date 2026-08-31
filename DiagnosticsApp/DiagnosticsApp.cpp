@@ -8,8 +8,8 @@
 #include <utility>
 
 #include "SFMLPixelText.h"
-#include <PixelShipGenerator/Diagnostics/DiagnosticsResultSerializer.h>
-#include <PixelShipGenerator/ShipGenerationPerformance.h>
+#include <SpectralShipGen/Diagnostics/DiagnosticsResultSerializer.h>
+#include <SpectralShipGen/ShipGenerationPerformance.h>
 
 namespace
 {
@@ -43,7 +43,7 @@ namespace
     float getPixelTextVisualWidth(const std::string& text, uint32_t scale)
     {
         if (text.empty()) { return 0.0f; }
-        return std::max(0.0f, PixelShipGeneratorApplication::getPixelTextWidth(text, scale) - static_cast<float>(scale));
+        return std::max(0.0f, SpectralShipGenStudioApplication::getPixelTextWidth(text, scale) - static_cast<float>(scale));
     }
 
     float getPixelTextHeight(uint32_t scale)
@@ -88,26 +88,26 @@ namespace
         target.draw(panel);
     }
 
-    PixelShipGeneratorApplication::ChartColors chartColors()
+    SpectralShipGenStudioApplication::ChartColors chartColors()
     {
         return { sf::Color(25u, 28u, 37u), PanelOutline, Text, Muted, Accent, SecondaryAccent, Highlight };
     }
 
-    PixelShipGeneratorApplication::ChartSeries toChartSeries(const PixelShipGeneratorDiagnostics::DiagnosticsChartSeries& source, const std::string& labelOverride = {})
+    SpectralShipGenStudioApplication::ChartSeries toChartSeries(const SpectralShipGenDiagnostics::DiagnosticsChartSeries& source, const std::string& labelOverride = {})
     {
-        PixelShipGeneratorApplication::ChartSeries result;
+        SpectralShipGenStudioApplication::ChartSeries result;
         result.Label = labelOverride.empty() ? source.Label : labelOverride;
         result.Values.reserve(source.Points.size());
         for (const auto& point : source.Points) { result.Values.push_back({ point.Label, point.Value }); }
         return result;
     }
 
-    std::pair<PixelShipGeneratorApplication::ChartSeries, PixelShipGeneratorApplication::ChartSeries> alignComparisonSeries(
-        const PixelShipGeneratorDiagnostics::DiagnosticsChartSeries& baseline,
-        const PixelShipGeneratorDiagnostics::DiagnosticsChartSeries& current)
+    std::pair<SpectralShipGenStudioApplication::ChartSeries, SpectralShipGenStudioApplication::ChartSeries> alignComparisonSeries(
+        const SpectralShipGenDiagnostics::DiagnosticsChartSeries& baseline,
+        const SpectralShipGenDiagnostics::DiagnosticsChartSeries& current)
     {
-        PixelShipGeneratorApplication::ChartSeries baselineSeries{ "BASELINE", {} };
-        PixelShipGeneratorApplication::ChartSeries currentSeries{ "CURRENT", {} };
+        SpectralShipGenStudioApplication::ChartSeries baselineSeries{ "BASELINE", {} };
+        SpectralShipGenStudioApplication::ChartSeries currentSeries{ "CURRENT", {} };
         for (const auto& currentPoint : current.Points)
         {
             const auto found = std::find_if(baseline.Points.begin(), baseline.Points.end(), [&](const auto& point) { return point.Label == currentPoint.Label; });
@@ -119,10 +119,10 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorDiagnosticsApp
+namespace SpectralShipGenStudioDiagnosticsApp
 {
     DiagnosticsApp::DiagnosticsApp(DiagnosticsAppLaunchOptions options)
-        : m_Window(sf::VideoMode(WindowWidth, WindowHeight), "Pixel Ship Generator Diagnostics", sf::Style::Titlebar | sf::Style::Close),
+        : m_Window(sf::VideoMode(WindowWidth, WindowHeight), "SpectralShipGen Studio Diagnostics", sf::Style::Titlebar | sf::Style::Close),
         m_Options(std::move(options)),
         m_DimensionSelected(m_Dimensions.size(), false)
     {
@@ -234,7 +234,7 @@ namespace PixelShipGeneratorDiagnosticsApp
         case UiActionType::CUSTOM_HEIGHT_INCREASE: m_CustomHeight = clampDimension(m_CustomHeight + 2u); break;
         case UiActionType::ADD_CUSTOM_DIMENSION:
         {
-            const PixelShipGenerator::ShipDimensions dimensions{ m_CustomWidth, m_CustomHeight };
+            const SpectralShipGen::ShipDimensions dimensions{ m_CustomWidth, m_CustomHeight };
             const auto found = std::find(m_Dimensions.begin(), m_Dimensions.end(), dimensions);
             if (found != m_Dimensions.end()) { m_DimensionSelected[static_cast<std::size_t>(std::distance(m_Dimensions.begin(), found))] = true; }
             else if (m_Dimensions.size() < 10u) { m_Dimensions.push_back(dimensions); m_DimensionSelected.push_back(true); }
@@ -293,11 +293,11 @@ namespace PixelShipGeneratorDiagnosticsApp
         m_Window.clear(Background);
         drawConfigurationPanel(snapshot);
         drawDashboardPanel(snapshot);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "PIXEL SHIP GENERATOR - DIAGNOSTICS", Margin, 8.0f, Highlight, TextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "PIXEL SHIP GENERATOR - DIAGNOSTICS", Margin, 8.0f, Highlight, TextScale);
         const std::string status = !m_LocalStatus.empty() ? m_LocalStatus : snapshot.StatusMessage;
         if (!status.empty())
         {
-            PixelShipGeneratorApplication::drawPixelText(m_Window, PixelShipGeneratorApplication::wrapPixelText(status, 160u), Margin, static_cast<float>(WindowHeight) - 36.0f, snapshot.State == DiagnosticsAppRunState::ERROR ? Negative : Muted, SmallTextScale);
+            SpectralShipGenStudioApplication::drawPixelText(m_Window, SpectralShipGenStudioApplication::wrapPixelText(status, 160u), Margin, static_cast<float>(WindowHeight) - 36.0f, snapshot.State == DiagnosticsAppRunState::ERROR ? Negative : Muted, SmallTextScale);
         }
         m_Window.display();
     }
@@ -412,7 +412,7 @@ namespace PixelShipGeneratorDiagnosticsApp
         drawSectionTitle("RUN CONFIGURATION", Margin + 14.0f, 50.0f);
         const bool editable = snapshot.State == DiagnosticsAppRunState::READY;
         float y = 90.0f;
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "DIMENSIONS", Margin + 14.0f, y - 16.0f, Accent, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "DIMENSIONS", Margin + 14.0f, y - 16.0f, Accent, SmallTextScale);
         for (std::size_t index = 0u; index < m_Dimensions.size(); ++index) { drawButton(m_Controls[index].Bounds, dimensionsName(m_Dimensions[index]), m_DimensionSelected[index], editable); }
         drawButton(m_Controls[m_Dimensions.size()].Bounds, "SELECT ALL", false, editable);
         drawButton(m_Controls[m_Dimensions.size() + 1u].Bounds, "CLEAR ALL", false, editable);
@@ -425,19 +425,19 @@ namespace PixelShipGeneratorDiagnosticsApp
         const float customValueY = getCenteredPixelTextY(widthDecreaseBounds, TextScale);
         const std::string customWidthText = std::to_string(m_CustomWidth);
         const std::string customHeightText = std::to_string(m_CustomHeight);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "CUSTOM W", Margin + 14.0f, customLabelY, Muted, SmallTextScale);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, customWidthText, getCenteredPixelTextXBetween(widthDecreaseBounds, widthIncreaseBounds, customWidthText, TextScale), customValueY, Text, TextScale);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "H", Margin + 248.0f, customLabelY, Muted, SmallTextScale);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, customHeightText, getCenteredPixelTextXBetween(heightDecreaseBounds, heightIncreaseBounds, customHeightText, TextScale), customValueY, Text, TextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "CUSTOM W", Margin + 14.0f, customLabelY, Muted, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, customWidthText, getCenteredPixelTextXBetween(widthDecreaseBounds, widthIncreaseBounds, customWidthText, TextScale), customValueY, Text, TextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "H", Margin + 248.0f, customLabelY, Muted, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, customHeightText, getCenteredPixelTextXBetween(heightDecreaseBounds, heightIncreaseBounds, customHeightText, TextScale), customValueY, Text, TextScale);
 
         std::size_t cursor = customControlsStart;
         for (std::size_t index = 0u; index < 5u; ++index) { drawButton(m_Controls[cursor + index].Bounds, index == 4u ? "ADD CUSTOM" : (index % 2u == 0u ? "-" : "+"), false, editable); }
         cursor += 5u;
         drawSectionTitle("STYLES", Margin + 14.0f, 238.0f);
-        for (std::size_t index = 0u; index < m_StyleSelected.size(); ++index) { drawButton(m_Controls[cursor++].Bounds, styleName(static_cast<PixelShipGenerator::ShipStyle>(index)), m_StyleSelected[index], editable); }
+        for (std::size_t index = 0u; index < m_StyleSelected.size(); ++index) { drawButton(m_Controls[cursor++].Bounds, styleName(static_cast<SpectralShipGen::ShipStyle>(index)), m_StyleSelected[index], editable); }
         drawButton(m_Controls[cursor++].Bounds, "SELECT ALL", false, editable); drawButton(m_Controls[cursor++].Bounds, "CLEAR ALL", false, editable);
         drawSectionTitle("FACTIONS", Margin + 14.0f, 374.0f);
-        for (std::size_t index = 0u; index < m_FactionSelected.size(); ++index) { drawButton(m_Controls[cursor++].Bounds, factionName(static_cast<PixelShipGenerator::ShipFactionType>(index)), m_FactionSelected[index], editable); }
+        for (std::size_t index = 0u; index < m_FactionSelected.size(); ++index) { drawButton(m_Controls[cursor++].Bounds, factionName(static_cast<SpectralShipGen::ShipFactionType>(index)), m_FactionSelected[index], editable); }
         drawButton(m_Controls[cursor++].Bounds, "SELECT ALL", false, editable); drawButton(m_Controls[cursor++].Bounds, "CLEAR ALL", false, editable);
         drawSectionTitle("SAMPLING", Margin + 14.0f, 510.0f);
         drawLabelValue("SAMPLES / COMBO", std::to_string(m_SamplesPerCombination), Margin + 14.0f, 570.0f, true);
@@ -493,10 +493,10 @@ namespace PixelShipGeneratorDiagnosticsApp
         for (std::size_t i = 0u; i < 8u; ++i) { drawButton(m_Controls[filterStart + i].Bounds, i % 2u == 0u ? "<" : ">", false, m_Controls[filterStart + i].Enabled); }
         const float left = RightX + 50.0f;
         const float right = RightX + RightWidth * 0.5f + 40.0f;
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "DIM: " + dimensionFilterName(), left, 118.0f, snapshot.HasResult ? Text : Muted, SmallTextScale);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "STYLE: " + styleFilterName(), right, 118.0f, snapshot.HasResult ? Text : Muted, SmallTextScale);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "FACTION: " + factionFilterName(), left, 149.0f, snapshot.HasResult ? Text : Muted, SmallTextScale);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "METRIC: " + std::string(PixelShipGeneratorDiagnostics::getDiagnosticsMetricName(m_SelectedMetric)), right, 149.0f, snapshot.HasResult ? Highlight : Muted, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "DIM: " + dimensionFilterName(), left, 118.0f, snapshot.HasResult ? Text : Muted, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "STYLE: " + styleFilterName(), right, 118.0f, snapshot.HasResult ? Text : Muted, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "FACTION: " + factionFilterName(), left, 149.0f, snapshot.HasResult ? Text : Muted, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "METRIC: " + std::string(SpectralShipGenDiagnostics::getDiagnosticsMetricName(m_SelectedMetric)), right, 149.0f, snapshot.HasResult ? Highlight : Muted, SmallTextScale);
     }
 
     void DiagnosticsApp::drawLiveDashboard(const DiagnosticsAppSnapshot& snapshot)
@@ -514,7 +514,7 @@ namespace PixelShipGeneratorDiagnosticsApp
             drawLabelValue("CURRENT", std::to_string(snapshot.Progress.CurrentWidth) + "X" + std::to_string(snapshot.Progress.CurrentHeight), RightX + 14.0f, y); y += RowHeight;
             drawLabelValue("STYLE", styleName(snapshot.Progress.CurrentStyle), RightX + 14.0f, y); y += RowHeight;
             drawLabelValue("FACTION", factionName(snapshot.Progress.CurrentFaction), RightX + 14.0f, y); y += RowHeight;
-            drawLabelValue("STAGE", snapshot.Progress.CurrentStage == PixelShipGenerator::ShipGenerationPerformanceStage::SHIP_GENERATION_PERFORMANCE_STAGE_END ? "SAMPLE COMPLETE" : PixelShipGenerator::getShipGenerationPerformanceStageName(snapshot.Progress.CurrentStage), RightX + 14.0f, y);
+            drawLabelValue("STAGE", snapshot.Progress.CurrentStage == SpectralShipGen::ShipGenerationPerformanceStage::SHIP_GENERATION_PERFORMANCE_STAGE_END ? "SAMPLE COMPLETE" : SpectralShipGen::getShipGenerationPerformanceStageName(snapshot.Progress.CurrentStage), RightX + 14.0f, y);
         }
         if (snapshot.CompletedSamples > 0u)
         {
@@ -526,11 +526,11 @@ namespace PixelShipGeneratorDiagnosticsApp
         }
         else if (snapshot.State == DiagnosticsAppRunState::READY)
         {
-            PixelShipGeneratorApplication::drawPixelText(m_Window, "START A RUN OR LOAD A SAVED .SHIPDIAG.JSON RESULT.", RightX + 14.0f, 260.0f, Muted, SmallTextScale);
+            SpectralShipGenStudioApplication::drawPixelText(m_Window, "START A RUN OR LOAD A SAVED .SHIPDIAG.JSON RESULT.", RightX + 14.0f, 260.0f, Muted, SmallTextScale);
         }
     }
 
-    void DiagnosticsApp::drawOverviewView(const PixelShipGeneratorDiagnostics::DiagnosticsResult& result, const DiagnosticsAppSnapshot& snapshot)
+    void DiagnosticsApp::drawOverviewView(const SpectralShipGenDiagnostics::DiagnosticsResult& result, const DiagnosticsAppSnapshot& snapshot)
     {
         const auto& summary = m_FilteredCache.Summary;
         float y = 198.0f;
@@ -551,42 +551,42 @@ namespace PixelShipGeneratorDiagnosticsApp
         drawLabelValue("COSTLIEST STAGE", m_ExpensiveStage ? m_ExpensiveStage->Label + " / " + formatDouble(m_ExpensiveStage->Value) + " MS" : "N/A", RightX + 14.0f, y, false, 190.0f);
     }
 
-    void DiagnosticsApp::drawPerformanceView(const PixelShipGeneratorDiagnostics::DiagnosticsResult&)
+    void DiagnosticsApp::drawPerformanceView(const SpectralShipGenDiagnostics::DiagnosticsResult&)
     {
-        const std::vector<PixelShipGeneratorApplication::ChartSeries> resolution = { toChartSeries(m_ResolutionSeries, "CURRENT") };
-        appendChartHits(0u, PixelShipGeneratorApplication::drawLineChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 245.0f }, "PERFORMANCE VS RESOLUTION", resolution, PixelShipGeneratorDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), chartColors(), m_SelectedChartSeries, m_SelectedChartValue));
+        const std::vector<SpectralShipGenStudioApplication::ChartSeries> resolution = { toChartSeries(m_ResolutionSeries, "CURRENT") };
+        appendChartHits(0u, SpectralShipGenStudioApplication::drawLineChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 245.0f }, "PERFORMANCE VS RESOLUTION", resolution, SpectralShipGenDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), chartColors(), m_SelectedChartSeries, m_SelectedChartValue));
 
-        const std::vector<PixelShipGeneratorApplication::ChartSeries> styles = { toChartSeries(m_StyleSeries, "STYLES") };
-        const std::vector<PixelShipGeneratorApplication::ChartSeries> factions = { toChartSeries(m_FactionSeries, "FACTIONS") };
+        const std::vector<SpectralShipGenStudioApplication::ChartSeries> styles = { toChartSeries(m_StyleSeries, "STYLES") };
+        const std::vector<SpectralShipGenStudioApplication::ChartSeries> factions = { toChartSeries(m_FactionSeries, "FACTIONS") };
         const float halfWidth = (RightWidth - 38.0f) * 0.5f;
-        appendChartHits(1u, PixelShipGeneratorApplication::drawBarChart(m_Window, { RightX + 14.0f, 448.0f, halfWidth, 190.0f }, "STYLE COMPARISON", styles, PixelShipGeneratorDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), chartColors(), m_SelectedChartSeries, m_SelectedChartValue, true));
-        appendChartHits(2u, PixelShipGeneratorApplication::drawBarChart(m_Window, { RightX + 24.0f + halfWidth, 448.0f, halfWidth, 190.0f }, "FACTION COMPARISON", factions, PixelShipGeneratorDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), chartColors(), m_SelectedChartSeries, m_SelectedChartValue, true));
+        appendChartHits(1u, SpectralShipGenStudioApplication::drawBarChart(m_Window, { RightX + 14.0f, 448.0f, halfWidth, 190.0f }, "STYLE COMPARISON", styles, SpectralShipGenDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), chartColors(), m_SelectedChartSeries, m_SelectedChartValue, true));
+        appendChartHits(2u, SpectralShipGenStudioApplication::drawBarChart(m_Window, { RightX + 24.0f + halfWidth, 448.0f, halfWidth, 190.0f }, "FACTION COMPARISON", factions, SpectralShipGenDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), chartColors(), m_SelectedChartSeries, m_SelectedChartValue, true));
 
-        PixelShipGeneratorDiagnostics::DiagnosticsChartSeries topStages = m_StageSeries;
+        SpectralShipGenDiagnostics::DiagnosticsChartSeries topStages = m_StageSeries;
         std::sort(topStages.Points.begin(), topStages.Points.end(), [](const auto& left, const auto& right) { return left.Value > right.Value; });
         if (topStages.Points.size() > 5u) { topStages.Points.resize(5u); }
-        PixelShipGeneratorApplication::drawBarChart(m_Window, { RightX + 14.0f, 651.0f, RightWidth - 28.0f, 142.0f }, "TOP STAGE MEAN TIME", { toChartSeries(topStages, "STAGES") }, "MS", chartColors(), std::numeric_limits<std::size_t>::max(), std::numeric_limits<std::size_t>::max(), true);
+        SpectralShipGenStudioApplication::drawBarChart(m_Window, { RightX + 14.0f, 651.0f, RightWidth - 28.0f, 142.0f }, "TOP STAGE MEAN TIME", { toChartSeries(topStages, "STAGES") }, "MS", chartColors(), std::numeric_limits<std::size_t>::max(), std::numeric_limits<std::size_t>::max(), true);
         drawSelectedChartDetail(806.0f);
     }
 
-    void DiagnosticsApp::drawRetriesView(const PixelShipGeneratorDiagnostics::DiagnosticsResult& result)
+    void DiagnosticsApp::drawRetriesView(const SpectralShipGenDiagnostics::DiagnosticsResult& result)
     {
         (void)result;
-        appendChartHits(0u, PixelShipGeneratorApplication::drawLineChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 270.0f }, "HULL RETRY RATE VS RESOLUTION", { toChartSeries(m_RetryResolutionSeries, "RETRY RATE") }, "%", chartColors(), m_SelectedChartSeries, m_SelectedChartValue));
-        appendChartHits(1u, PixelShipGeneratorApplication::drawBarChart(m_Window, { RightX + 14.0f, 475.0f, RightWidth - 28.0f, 300.0f }, "TASK-56 REJECTION REASONS", { toChartSeries(m_RejectionSeries, "COUNT") }, "COUNT", chartColors(), m_SelectedChartSeries, m_SelectedChartValue, true));
+        appendChartHits(0u, SpectralShipGenStudioApplication::drawLineChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 270.0f }, "HULL RETRY RATE VS RESOLUTION", { toChartSeries(m_RetryResolutionSeries, "RETRY RATE") }, "%", chartColors(), m_SelectedChartSeries, m_SelectedChartValue));
+        appendChartHits(1u, SpectralShipGenStudioApplication::drawBarChart(m_Window, { RightX + 14.0f, 475.0f, RightWidth - 28.0f, 300.0f }, "TASK-56 REJECTION REASONS", { toChartSeries(m_RejectionSeries, "COUNT") }, "COUNT", chartColors(), m_SelectedChartSeries, m_SelectedChartValue, true));
         const auto& summary = m_FilteredCache.Summary;
-        PixelShipGeneratorApplication::drawPixelText(m_Window, "NEG SPACE ATTEMPT " + formatDouble(summary.StructuralNegativeSpaceAttemptRatePercent) + "%   SUCCESS " + formatDouble(summary.StructuralNegativeSpaceSuccessRatePercent) + "%", RightX + 14.0f, 798.0f, Text, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "NEG SPACE ATTEMPT " + formatDouble(summary.StructuralNegativeSpaceAttemptRatePercent) + "%   SUCCESS " + formatDouble(summary.StructuralNegativeSpaceSuccessRatePercent) + "%", RightX + 14.0f, 798.0f, Text, SmallTextScale);
     }
 
-    void DiagnosticsApp::drawCompositionView(const PixelShipGeneratorDiagnostics::DiagnosticsResult& result)
+    void DiagnosticsApp::drawCompositionView(const SpectralShipGenDiagnostics::DiagnosticsResult& result)
     {
-        appendChartHits(0u, PixelShipGeneratorApplication::drawBarChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 285.0f }, "PRIMARY VISUAL ANCHOR FREQUENCY", { toChartSeries(m_AnchorSeries, "PRIMARY") }, "%", chartColors(), m_SelectedChartSeries, m_SelectedChartValue, false));
+        appendChartHits(0u, SpectralShipGenStudioApplication::drawBarChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 285.0f }, "PRIMARY VISUAL ANCHOR FREQUENCY", { toChartSeries(m_AnchorSeries, "PRIMARY") }, "%", chartColors(), m_SelectedChartSeries, m_SelectedChartValue, false));
         (void)result;
-        appendChartHits(1u, PixelShipGeneratorApplication::drawBarChart(m_Window, { RightX + 14.0f, 490.0f, RightWidth - 28.0f, 285.0f }, "MATERIAL ZONES BY STYLE", { toChartSeries(m_MaterialStyleSeries, "ZONES") }, "AVG", chartColors(), m_SelectedChartSeries, m_SelectedChartValue, false));
+        appendChartHits(1u, SpectralShipGenStudioApplication::drawBarChart(m_Window, { RightX + 14.0f, 490.0f, RightWidth - 28.0f, 285.0f }, "MATERIAL ZONES BY STYLE", { toChartSeries(m_MaterialStyleSeries, "ZONES") }, "AVG", chartColors(), m_SelectedChartSeries, m_SelectedChartValue, false));
         drawSelectedChartDetail(794.0f);
     }
 
-    void DiagnosticsApp::drawNumbersView(const PixelShipGeneratorDiagnostics::DiagnosticsResult&, const DiagnosticsAppSnapshot& snapshot)
+    void DiagnosticsApp::drawNumbersView(const SpectralShipGenDiagnostics::DiagnosticsResult&, const DiagnosticsAppSnapshot& snapshot)
     {
         const auto& summary = m_FilteredCache.Summary;
         float y = 198.0f;
@@ -599,7 +599,7 @@ namespace PixelShipGeneratorDiagnosticsApp
         drawLabelValue("GEN MAXIMUM", formatDouble(summary.GenerationTimeMilliseconds.Maximum) + " MS", RightX + 14.0f, y); y += 38.0f;
         drawLabelValue("HULL AVG ATTEMPTS", formatDouble(summary.HullAttempts.Mean), RightX + 14.0f, y); y += RowHeight;
         drawLabelValue("HULL RETRY RATE", formatDouble(summary.HullRetryRatePercent) + "%", RightX + 14.0f, y); y += RowHeight;
-        drawLabelValue("MOST COMMON REJECT", PixelShipGenerator::getSilhouetteValidationFailureReasonName(summary.MostCommonSilhouetteRejection), RightX + 14.0f, y); y += 38.0f;
+        drawLabelValue("MOST COMMON REJECT", SpectralShipGen::getSilhouetteValidationFailureReasonName(summary.MostCommonSilhouetteRejection), RightX + 14.0f, y); y += 38.0f;
         drawLabelValue("NEG SPACE ATTEMPT", formatDouble(summary.StructuralNegativeSpaceAttemptRatePercent) + "%", RightX + 14.0f, y); y += RowHeight;
         drawLabelValue("NEG SPACE SUCCESS", formatDouble(summary.StructuralNegativeSpaceSuccessRatePercent) + "%", RightX + 14.0f, y); y += 38.0f;
         drawLabelValue("MATERIAL ZONES AVG", formatDouble(summary.MaterialZoneCount.Mean), RightX + 14.0f, y); y += RowHeight;
@@ -613,29 +613,29 @@ namespace PixelShipGeneratorDiagnosticsApp
         drawLabelValue("COMPLEXITY USE", formatDouble(summary.ComplexityUtilizationPercent.Mean) + "%", RightX + 14.0f, y);
     }
 
-    void DiagnosticsApp::drawComparisonView(const PixelShipGeneratorDiagnostics::DiagnosticsResult& result)
+    void DiagnosticsApp::drawComparisonView(const SpectralShipGenDiagnostics::DiagnosticsResult& result)
     {
         if (!m_BaselineResult)
         {
             drawSectionTitle("COMPARISON", RightX + 14.0f, 198.0f);
-            PixelShipGeneratorApplication::drawPixelText(m_Window, "LOAD pixel_ship_generator_baseline.shipdiag.json USING LOAD BASELINE.", RightX + 14.0f, 250.0f, Muted, SmallTextScale);
+            SpectralShipGenStudioApplication::drawPixelText(m_Window, "LOAD spectral_ship_gen_baseline.shipdiag.json USING LOAD BASELINE.", RightX + 14.0f, 250.0f, Muted, SmallTextScale);
             return;
         }
         const auto aligned = alignComparisonSeries(m_BaselineResolutionSeries, m_ResolutionSeries);
-        appendChartHits(0u, PixelShipGeneratorApplication::drawLineChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 320.0f }, "BASELINE VS CURRENT / RESOLUTION", { aligned.first, aligned.second }, PixelShipGeneratorDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), chartColors(), m_SelectedChartSeries, m_SelectedChartValue));
+        appendChartHits(0u, SpectralShipGenStudioApplication::drawLineChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 320.0f }, "BASELINE VS CURRENT / RESOLUTION", { aligned.first, aligned.second }, SpectralShipGenDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), chartColors(), m_SelectedChartSeries, m_SelectedChartValue));
         (void)result;
         const auto& delta = m_ComparisonDelta;
         float y = 535.0f;
         drawSectionTitle("DELTA", RightX + 14.0f, y); y += 44.0f;
-        PixelShipGeneratorApplication::drawPixelText(m_Window, m_ComparisonCompatibility.Message, RightX + 14.0f, y, m_ComparisonCompatibility.HasComparableData ? Muted : Negative, SmallTextScale); y += 36.0f;
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, m_ComparisonCompatibility.Message, RightX + 14.0f, y, m_ComparisonCompatibility.HasComparableData ? Muted : Negative, SmallTextScale); y += 36.0f;
         if (!delta.Available)
         {
-            PixelShipGeneratorApplication::drawPixelText(m_Window, "NO MATCHING DATA FOR CURRENT FILTER.", RightX + 14.0f, y, Negative, SmallTextScale);
+            SpectralShipGenStudioApplication::drawPixelText(m_Window, "NO MATCHING DATA FOR CURRENT FILTER.", RightX + 14.0f, y, Negative, SmallTextScale);
             return;
         }
         drawLabelValue("BASELINE", formatMetric(delta.Baseline, m_SelectedMetric), RightX + 14.0f, y); y += RowHeight;
         drawLabelValue("CURRENT", formatMetric(delta.Current, m_SelectedMetric), RightX + 14.0f, y, true); y += RowHeight;
-        drawLabelValue("ABSOLUTE DELTA", signedDouble(delta.Absolute) + " " + PixelShipGeneratorDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), RightX + 14.0f, y); y += RowHeight;
+        drawLabelValue("ABSOLUTE DELTA", signedDouble(delta.Absolute) + " " + SpectralShipGenDiagnostics::getDiagnosticsMetricUnit(m_SelectedMetric), RightX + 14.0f, y); y += RowHeight;
         if (delta.PercentagePointMetric) { drawLabelValue("POINT DELTA", signedDouble(delta.PercentagePointDelta) + " PP", RightX + 14.0f, y); y += RowHeight; }
         drawLabelValue("RELATIVE DELTA", delta.RelativeAvailable ? signedDouble(delta.RelativePercent) + "%" : "N/A", RightX + 14.0f, y); y += RowHeight;
         drawLabelValue("MATCHED SAMPLES", std::to_string(delta.BaselineSamples) + " / " + std::to_string(delta.CurrentSamples), RightX + 14.0f, y);
@@ -645,10 +645,10 @@ namespace PixelShipGeneratorDiagnosticsApp
     {
         if (m_SelectedChartId == std::numeric_limits<uint32_t>::max())
         {
-            PixelShipGeneratorApplication::drawPixelText(m_Window, "CLICK A POINT OR BAR FOR EXACT VALUES.", RightX + 14.0f, y, Muted, SmallTextScale);
+            SpectralShipGenStudioApplication::drawPixelText(m_Window, "CLICK A POINT OR BAR FOR EXACT VALUES.", RightX + 14.0f, y, Muted, SmallTextScale);
             return;
         }
-        const PixelShipGeneratorDiagnostics::DiagnosticsChartSeries* series = nullptr;
+        const SpectralShipGenDiagnostics::DiagnosticsChartSeries* series = nullptr;
         if (m_DashboardView == DashboardView::PERFORMANCE)
         {
             if (m_SelectedChartId == 0u) { series = &m_ResolutionSeries; }
@@ -663,7 +663,7 @@ namespace PixelShipGeneratorDiagnosticsApp
         if (!series || m_SelectedChartValue >= series->Points.size()) { return; }
         const auto& point = series->Points[m_SelectedChartValue];
         const std::string value = (m_DashboardView == DashboardView::COMPOSITION && m_SelectedChartId == 0u) ? formatDouble(point.Value) + " %" : formatMetric(point.Value, series->Metric);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, point.Label + " = " + value + " / N=" + std::to_string(point.SampleCount), RightX + 14.0f, y, Highlight, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, point.Label + " = " + value + " / N=" + std::to_string(point.SampleCount), RightX + 14.0f, y, Highlight, SmallTextScale);
     }
 
     void DiagnosticsApp::drawButton(const sf::FloatRect& bounds, const std::string& label, bool active, bool enabled)
@@ -675,15 +675,15 @@ namespace PixelShipGeneratorDiagnosticsApp
         shape.setOutlineThickness(1.0f); shape.setOutlineColor(active ? Accent : PanelOutline); m_Window.draw(shape);
         const float textWidth = getPixelTextVisualWidth(label, SmallTextScale);
         const float textY = bounds.height >= 40.0f ? getCenteredPixelTextY(bounds, SmallTextScale) : bounds.top + 7.0f;
-        PixelShipGeneratorApplication::drawPixelText(m_Window, label, bounds.left + std::max(5.0f, (bounds.width - textWidth) * 0.5f), textY, enabled ? (active ? sf::Color::White : Text) : sf::Color(90u, 94u, 105u), SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, label, bounds.left + std::max(5.0f, (bounds.width - textWidth) * 0.5f), textY, enabled ? (active ? sf::Color::White : Text) : sf::Color(90u, 94u, 105u), SmallTextScale);
     }
 
-    void DiagnosticsApp::drawSectionTitle(const std::string& label, float x, float y) { PixelShipGeneratorApplication::drawPixelText(m_Window, label, x, y, Accent, TextScale); }
+    void DiagnosticsApp::drawSectionTitle(const std::string& label, float x, float y) { SpectralShipGenStudioApplication::drawPixelText(m_Window, label, x, y, Accent, TextScale); }
 
     void DiagnosticsApp::drawLabelValue(const std::string& label, const std::string& value, float x, float y, bool emphasize, float valueOffset)
     {
-        PixelShipGeneratorApplication::drawPixelText(m_Window, label, x, y, Muted, SmallTextScale);
-        PixelShipGeneratorApplication::drawPixelText(m_Window, value, x + valueOffset, y, emphasize ? Highlight : Text, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, label, x, y, Muted, SmallTextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, value, x + valueOffset, y, emphasize ? Highlight : Text, SmallTextScale);
     }
 
     void DiagnosticsApp::drawProgressBar(const DiagnosticsAppSnapshot& snapshot, float x, float y, float width, float height)
@@ -693,30 +693,30 @@ namespace PixelShipGeneratorDiagnosticsApp
         sf::RectangleShape fill(sf::Vector2f((width - 2.0f) * fraction, height - 2.0f)); fill.setPosition(x + 1.0f, y + 1.0f); fill.setFillColor(snapshot.State == DiagnosticsAppRunState::CANCELLING ? Highlight : (snapshot.State == DiagnosticsAppRunState::ERROR ? Negative : Accent)); m_Window.draw(fill);
     }
 
-    void DiagnosticsApp::appendChartHits(uint32_t chartId, const std::vector<PixelShipGeneratorApplication::ChartHitRegion>& hits)
+    void DiagnosticsApp::appendChartHits(uint32_t chartId, const std::vector<SpectralShipGenStudioApplication::ChartHitRegion>& hits)
     {
         for (const auto& hit : hits) { m_ChartHits.push_back({ hit.Bounds, chartId, hit.SeriesIndex, hit.ValueIndex }); }
     }
 
-    PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration DiagnosticsApp::createConfiguration() const
+    SpectralShipGenDiagnostics::DiagnosticsRunConfiguration DiagnosticsApp::createConfiguration() const
     {
-        PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration configuration;
+        SpectralShipGenDiagnostics::DiagnosticsRunConfiguration configuration;
         configuration.Dimensions.clear(); for (std::size_t index = 0u; index < m_Dimensions.size(); ++index) { if (m_DimensionSelected[index]) { configuration.Dimensions.push_back(m_Dimensions[index]); } }
-        configuration.Styles.clear(); for (std::size_t index = 0u; index < m_StyleSelected.size(); ++index) { if (m_StyleSelected[index]) { configuration.Styles.push_back(static_cast<PixelShipGenerator::ShipStyle>(index)); } }
-        configuration.Factions.clear(); for (std::size_t index = 0u; index < m_FactionSelected.size(); ++index) { if (m_FactionSelected[index]) { configuration.Factions.push_back(static_cast<PixelShipGenerator::ShipFactionType>(index)); } }
+        configuration.Styles.clear(); for (std::size_t index = 0u; index < m_StyleSelected.size(); ++index) { if (m_StyleSelected[index]) { configuration.Styles.push_back(static_cast<SpectralShipGen::ShipStyle>(index)); } }
+        configuration.Factions.clear(); for (std::size_t index = 0u; index < m_FactionSelected.size(); ++index) { if (m_FactionSelected[index]) { configuration.Factions.push_back(static_cast<SpectralShipGen::ShipFactionType>(index)); } }
         configuration.SamplesPerConfiguration = m_SamplesPerCombination;
         configuration.DiagnosticSeed = m_DiagnosticSeed;
         configuration.DetailedPerformanceInstrumentation = m_DetailedTiming;
-        configuration.DetailLevel = PixelShipGeneratorDiagnostics::DiagnosticsDetailLevel::RAW_SAMPLES_AND_SUMMARY;
-#ifdef PIXEL_SHIP_GENERATOR_BUILD_CONFIGURATION
-        configuration.BuildConfiguration = PIXEL_SHIP_GENERATOR_BUILD_CONFIGURATION;
+        configuration.DetailLevel = SpectralShipGenDiagnostics::DiagnosticsDetailLevel::RAW_SAMPLES_AND_SUMMARY;
+#ifdef SPECTRAL_SHIP_GEN_BUILD_CONFIGURATION
+        configuration.BuildConfiguration = SPECTRAL_SHIP_GEN_BUILD_CONFIGURATION;
 #endif
         return configuration;
     }
 
-    PixelShipGeneratorDiagnostics::DiagnosticsFilter DiagnosticsApp::currentFilter() const
+    SpectralShipGenDiagnostics::DiagnosticsFilter DiagnosticsApp::currentFilter() const
     {
-        PixelShipGeneratorDiagnostics::DiagnosticsFilter filter;
+        SpectralShipGenDiagnostics::DiagnosticsFilter filter;
         if (!m_AnalysisResult) { return filter; }
         if (m_FilterDimensionIndex >= 0 && static_cast<std::size_t>(m_FilterDimensionIndex) < m_AnalysisResult->Configuration.Dimensions.size()) { filter.Dimensions = m_AnalysisResult->Configuration.Dimensions[static_cast<std::size_t>(m_FilterDimensionIndex)]; }
         if (m_FilterStyleIndex >= 0 && static_cast<std::size_t>(m_FilterStyleIndex) < m_AnalysisResult->Configuration.Styles.size()) { filter.Style = m_AnalysisResult->Configuration.Styles[static_cast<std::size_t>(m_FilterStyleIndex)]; }
@@ -735,24 +735,24 @@ namespace PixelShipGeneratorDiagnosticsApp
         }
         if (!m_AnalysisDirty || !m_AnalysisResult) { return; }
         const auto filter = currentFilter();
-        m_FilteredCache = PixelShipGeneratorDiagnostics::filterDiagnosticsResult(*m_AnalysisResult, filter);
-        m_ResolutionSeries = PixelShipGeneratorDiagnostics::prepareResolutionSeries(*m_AnalysisResult, filter, m_SelectedMetric);
-        m_StyleSeries = PixelShipGeneratorDiagnostics::prepareStyleSeries(*m_AnalysisResult, filter, m_SelectedMetric);
-        m_FactionSeries = PixelShipGeneratorDiagnostics::prepareFactionSeries(*m_AnalysisResult, filter, m_SelectedMetric);
-        m_StageSeries = PixelShipGeneratorDiagnostics::prepareStageSeries(*m_AnalysisResult, filter);
-        m_RejectionSeries = PixelShipGeneratorDiagnostics::prepareSilhouetteRejectionSeries(*m_AnalysisResult, filter);
-        m_AnchorSeries = PixelShipGeneratorDiagnostics::prepareVisualAnchorSeries(*m_AnalysisResult, filter);
-        m_RetryResolutionSeries = PixelShipGeneratorDiagnostics::prepareResolutionSeries(*m_AnalysisResult, filter, PixelShipGeneratorDiagnostics::DiagnosticsMetric::HULL_RETRY_RATE_PERCENT);
-        m_MaterialStyleSeries = PixelShipGeneratorDiagnostics::prepareStyleSeries(*m_AnalysisResult, filter, PixelShipGeneratorDiagnostics::DiagnosticsMetric::MATERIAL_ZONE_AVERAGE);
-        m_ExpensiveDimension = PixelShipGeneratorDiagnostics::findMostExpensiveDimension(*m_AnalysisResult, filter);
-        m_SlowestStyle = PixelShipGeneratorDiagnostics::findSlowestStyle(*m_AnalysisResult, filter);
-        m_SlowestFaction = PixelShipGeneratorDiagnostics::findSlowestFaction(*m_AnalysisResult, filter);
-        m_ExpensiveStage = PixelShipGeneratorDiagnostics::findMostExpensiveStage(*m_AnalysisResult, filter);
+        m_FilteredCache = SpectralShipGenDiagnostics::filterDiagnosticsResult(*m_AnalysisResult, filter);
+        m_ResolutionSeries = SpectralShipGenDiagnostics::prepareResolutionSeries(*m_AnalysisResult, filter, m_SelectedMetric);
+        m_StyleSeries = SpectralShipGenDiagnostics::prepareStyleSeries(*m_AnalysisResult, filter, m_SelectedMetric);
+        m_FactionSeries = SpectralShipGenDiagnostics::prepareFactionSeries(*m_AnalysisResult, filter, m_SelectedMetric);
+        m_StageSeries = SpectralShipGenDiagnostics::prepareStageSeries(*m_AnalysisResult, filter);
+        m_RejectionSeries = SpectralShipGenDiagnostics::prepareSilhouetteRejectionSeries(*m_AnalysisResult, filter);
+        m_AnchorSeries = SpectralShipGenDiagnostics::prepareVisualAnchorSeries(*m_AnalysisResult, filter);
+        m_RetryResolutionSeries = SpectralShipGenDiagnostics::prepareResolutionSeries(*m_AnalysisResult, filter, SpectralShipGenDiagnostics::DiagnosticsMetric::HULL_RETRY_RATE_PERCENT);
+        m_MaterialStyleSeries = SpectralShipGenDiagnostics::prepareStyleSeries(*m_AnalysisResult, filter, SpectralShipGenDiagnostics::DiagnosticsMetric::MATERIAL_ZONE_AVERAGE);
+        m_ExpensiveDimension = SpectralShipGenDiagnostics::findMostExpensiveDimension(*m_AnalysisResult, filter);
+        m_SlowestStyle = SpectralShipGenDiagnostics::findSlowestStyle(*m_AnalysisResult, filter);
+        m_SlowestFaction = SpectralShipGenDiagnostics::findSlowestFaction(*m_AnalysisResult, filter);
+        m_ExpensiveStage = SpectralShipGenDiagnostics::findMostExpensiveStage(*m_AnalysisResult, filter);
         if (m_BaselineResult)
         {
-            m_BaselineResolutionSeries = PixelShipGeneratorDiagnostics::prepareResolutionSeries(*m_BaselineResult, filter, m_SelectedMetric);
-            m_ComparisonCompatibility = PixelShipGeneratorDiagnostics::evaluateDiagnosticsCompatibility(*m_BaselineResult, *m_AnalysisResult);
-            m_ComparisonDelta = PixelShipGeneratorDiagnostics::compareDiagnosticsMetric(*m_BaselineResult, *m_AnalysisResult, filter, m_SelectedMetric);
+            m_BaselineResolutionSeries = SpectralShipGenDiagnostics::prepareResolutionSeries(*m_BaselineResult, filter, m_SelectedMetric);
+            m_ComparisonCompatibility = SpectralShipGenDiagnostics::evaluateDiagnosticsCompatibility(*m_BaselineResult, *m_AnalysisResult);
+            m_ComparisonDelta = SpectralShipGenDiagnostics::compareDiagnosticsMetric(*m_BaselineResult, *m_AnalysisResult, filter, m_SelectedMetric);
         }
         else { m_BaselineResolutionSeries = {}; m_ComparisonCompatibility = {}; m_ComparisonDelta = {}; }
         m_SelectedChartId = std::numeric_limits<uint32_t>::max();
@@ -786,8 +786,8 @@ namespace PixelShipGeneratorDiagnosticsApp
 
     void DiagnosticsApp::cycleMetric(int direction)
     {
-        const int count = static_cast<int>(PixelShipGeneratorDiagnostics::DiagnosticsMetric::COMPLEXITY_UTILIZATION_PERCENT) + 1;
-        int value = static_cast<int>(m_SelectedMetric); value = (value + direction + count) % count; m_SelectedMetric = static_cast<PixelShipGeneratorDiagnostics::DiagnosticsMetric>(value); markAnalysisDirty();
+        const int count = static_cast<int>(SpectralShipGenDiagnostics::DiagnosticsMetric::COMPLEXITY_UTILIZATION_PERCENT) + 1;
+        int value = static_cast<int>(m_SelectedMetric); value = (value + direction + count) % count; m_SelectedMetric = static_cast<SpectralShipGenDiagnostics::DiagnosticsMetric>(value); markAnalysisDirty();
     }
 
     std::string DiagnosticsApp::dimensionFilterName() const
@@ -846,7 +846,7 @@ namespace PixelShipGeneratorDiagnosticsApp
 
     void DiagnosticsApp::exportCsv()
     {
-        const std::filesystem::path outputPath = "pixel_ship_generator_diagnostics.csv";
+        const std::filesystem::path outputPath = "spectral_ship_gen_diagnostics.csv";
         std::string error;
         if (m_Controller.exportCsv(outputPath, error)) { m_LocalStatus = "Exported full CSV: " + outputPath.string(); }
         else { m_LocalStatus = error; }
@@ -854,7 +854,7 @@ namespace PixelShipGeneratorDiagnosticsApp
 
     void DiagnosticsApp::saveRun()
     {
-        const std::filesystem::path outputPath = "pixel_ship_generator_diagnostics.shipdiag.json";
+        const std::filesystem::path outputPath = "spectral_ship_gen_diagnostics.shipdiag.json";
         std::string error;
         if (m_Controller.saveRun(outputPath, error)) { m_LocalStatus = "Saved diagnostics run: " + outputPath.string(); }
         else { m_LocalStatus = error; }
@@ -862,7 +862,7 @@ namespace PixelShipGeneratorDiagnosticsApp
 
     void DiagnosticsApp::loadRun()
     {
-        const std::filesystem::path inputPath = "pixel_ship_generator_diagnostics.shipdiag.json";
+        const std::filesystem::path inputPath = "spectral_ship_gen_diagnostics.shipdiag.json";
         std::string error;
         if (m_Controller.loadRun(inputPath, error)) { m_LocalStatus = "Loaded diagnostics run: " + inputPath.string(); m_DashboardView = DashboardView::OVERVIEW; markAnalysisDirty(); }
         else { m_LocalStatus = error; }
@@ -870,10 +870,10 @@ namespace PixelShipGeneratorDiagnosticsApp
 
     void DiagnosticsApp::loadBaseline()
     {
-        const std::filesystem::path inputPath = "pixel_ship_generator_baseline.shipdiag.json";
-        auto loaded = PixelShipGeneratorDiagnostics::loadDiagnosticsResultJson(inputPath);
+        const std::filesystem::path inputPath = "spectral_ship_gen_baseline.shipdiag.json";
+        auto loaded = SpectralShipGenDiagnostics::loadDiagnosticsResultJson(inputPath);
         if (!loaded.Success) { m_LocalStatus = loaded.Error; return; }
-        m_BaselineResult = std::make_shared<PixelShipGeneratorDiagnostics::DiagnosticsResult>(std::move(loaded.Result));
+        m_BaselineResult = std::make_shared<SpectralShipGenDiagnostics::DiagnosticsResult>(std::move(loaded.Result));
         m_LocalStatus = "Loaded comparison baseline: " + inputPath.string();
         m_DashboardView = DashboardView::COMPARISON;
         markAnalysisDirty();
@@ -888,8 +888,8 @@ namespace PixelShipGeneratorDiagnosticsApp
     void DiagnosticsApp::configureAutomatedSmoke()
     {
         std::fill(m_DimensionSelected.begin(), m_DimensionSelected.end(), false); m_DimensionSelected[5u] = true;
-        m_StyleSelected.fill(false); m_StyleSelected[static_cast<std::size_t>(PixelShipGenerator::ShipStyle::FIGHTER)] = true; m_StyleSelected[static_cast<std::size_t>(PixelShipGenerator::ShipStyle::INDUSTRIAL)] = true;
-        m_FactionSelected.fill(false); m_FactionSelected[static_cast<std::size_t>(PixelShipGenerator::ShipFactionType::MILITARY)] = true; m_FactionSelected[static_cast<std::size_t>(PixelShipGenerator::ShipFactionType::CORPORATE)] = true;
+        m_StyleSelected.fill(false); m_StyleSelected[static_cast<std::size_t>(SpectralShipGen::ShipStyle::FIGHTER)] = true; m_StyleSelected[static_cast<std::size_t>(SpectralShipGen::ShipStyle::INDUSTRIAL)] = true;
+        m_FactionSelected.fill(false); m_FactionSelected[static_cast<std::size_t>(SpectralShipGen::ShipFactionType::MILITARY)] = true; m_FactionSelected[static_cast<std::size_t>(SpectralShipGen::ShipFactionType::CORPORATE)] = true;
         m_SamplesPerCombination = m_Options.CancelSmoke ? 250u : 12u; m_DetailedTiming = true;
     }
 
@@ -906,35 +906,35 @@ namespace PixelShipGeneratorDiagnosticsApp
         }
     }
 
-    std::string DiagnosticsApp::styleName(PixelShipGenerator::ShipStyle style)
+    std::string DiagnosticsApp::styleName(SpectralShipGen::ShipStyle style)
     {
         switch (style)
         {
-        case PixelShipGenerator::ShipStyle::SLEEK: return "SLEEK";
-        case PixelShipGenerator::ShipStyle::FIGHTER: return "FIGHTER";
-        case PixelShipGenerator::ShipStyle::HEAVY: return "HEAVY";
-        case PixelShipGenerator::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
-        case PixelShipGenerator::ShipStyle::SPEARHEAD: return "SPEARHEAD";
-        case PixelShipGenerator::ShipStyle::DELTA: return "DELTA";
+        case SpectralShipGen::ShipStyle::SLEEK: return "SLEEK";
+        case SpectralShipGen::ShipStyle::FIGHTER: return "FIGHTER";
+        case SpectralShipGen::ShipStyle::HEAVY: return "HEAVY";
+        case SpectralShipGen::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
+        case SpectralShipGen::ShipStyle::SPEARHEAD: return "SPEARHEAD";
+        case SpectralShipGen::ShipStyle::DELTA: return "DELTA";
         default: return "UNKNOWN";
         }
     }
 
-    std::string DiagnosticsApp::factionName(PixelShipGenerator::ShipFactionType faction)
+    std::string DiagnosticsApp::factionName(SpectralShipGen::ShipFactionType faction)
     {
         switch (faction)
         {
-        case PixelShipGenerator::ShipFactionType::FRONTIER: return "FRONTIER";
-        case PixelShipGenerator::ShipFactionType::MILITARY: return "MILITARY";
-        case PixelShipGenerator::ShipFactionType::ASCENDANT: return "ASCENDANT";
-        case PixelShipGenerator::ShipFactionType::XENO: return "XENO";
-        case PixelShipGenerator::ShipFactionType::CORPORATE: return "CORPORATE";
-        case PixelShipGenerator::ShipFactionType::RELIC: return "RELIC";
+        case SpectralShipGen::ShipFactionType::FRONTIER: return "FRONTIER";
+        case SpectralShipGen::ShipFactionType::MILITARY: return "MILITARY";
+        case SpectralShipGen::ShipFactionType::ASCENDANT: return "ASCENDANT";
+        case SpectralShipGen::ShipFactionType::XENO: return "XENO";
+        case SpectralShipGen::ShipFactionType::CORPORATE: return "CORPORATE";
+        case SpectralShipGen::ShipFactionType::RELIC: return "RELIC";
         default: return "UNKNOWN";
         }
     }
 
-    std::string DiagnosticsApp::dimensionsName(PixelShipGenerator::ShipDimensions dimensions) { return std::to_string(dimensions.Width) + "X" + std::to_string(dimensions.Height); }
+    std::string DiagnosticsApp::dimensionsName(SpectralShipGen::ShipDimensions dimensions) { return std::to_string(dimensions.Width) + "X" + std::to_string(dimensions.Height); }
 
     std::string DiagnosticsApp::formatDuration(uint64_t nanoseconds, bool available)
     {
@@ -944,9 +944,9 @@ namespace PixelShipGeneratorDiagnosticsApp
         else { stream << std::setfill('0') << std::setw(2) << minutes << ':' << std::setw(2) << seconds; } return stream.str();
     }
 
-    std::string DiagnosticsApp::formatMetric(double value, PixelShipGeneratorDiagnostics::DiagnosticsMetric metric)
+    std::string DiagnosticsApp::formatMetric(double value, SpectralShipGenDiagnostics::DiagnosticsMetric metric)
     {
-        const std::string unit = PixelShipGeneratorDiagnostics::getDiagnosticsMetricUnit(metric);
+        const std::string unit = SpectralShipGenDiagnostics::getDiagnosticsMetricUnit(metric);
         return formatDouble(value) + (unit[0] == '\0' ? "" : " " + unit);
     }
 

@@ -9,8 +9,8 @@
 
 namespace
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     std::size_t skipWhitespace(const std::string& text, std::size_t position)
     {
@@ -247,7 +247,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     std::string serializeGenerationCalibrationSession(const GenerationCalibrationSession& session)
     {
@@ -339,7 +339,7 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    bool exportGenerationTuningProfile(const PixelShipGenerator::GenerationTuningProfile& profile, const std::filesystem::path& path, std::string& error)
+    bool exportGenerationTuningProfile(const SpectralShipGen::GenerationTuningProfile& profile, const std::filesystem::path& path, std::string& error)
     {
         std::ofstream stream(path, std::ios::binary);
         if (!stream) { error = "Failed to open tuning profile for writing: " + path.string(); return false; }

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     const char* getProfilesSectionName(ProfilesSection section)
     {

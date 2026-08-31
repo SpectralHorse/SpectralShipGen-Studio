@@ -8,10 +8,10 @@
 #include "PreviewPreferences.h"
 #include "PreviewResolution.h"
 
-int PixelShipGeneratorTests::runPreviewPreferencesRegression()
+int SpectralShipGenStudioTests::runPreviewPreferencesRegression()
 {
-    using namespace PixelShipGeneratorPreview;
-    using PixelShipGenerator::ShipDimensions;
+    using namespace SpectralShipGenStudioPreview;
+    using SpectralShipGen::ShipDimensions;
     bool success = true;
 
     PreviewPreferences preferences;
@@ -79,7 +79,7 @@ int PixelShipGeneratorTests::runPreviewPreferencesRegression()
         std::cerr << "Preview dimension snapping is incorrect.\n";
     }
 
-    const std::filesystem::path path = std::filesystem::temp_directory_path() / "pixel_ship_generator_preview_preferences_regression.json";
+    const std::filesystem::path path = std::filesystem::temp_directory_path() / "spectral_ship_gen_preview_preferences_regression.json";
     std::string error;
     if (!savePreviewPreferences(preferences, path, error))
     {

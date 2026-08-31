@@ -12,7 +12,7 @@
 
 namespace
 {
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGenStudioPreview;
 
     std::size_t skipWhitespace(const std::string& text, std::size_t position)
     {
@@ -163,7 +163,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     std::string serializePreviewFavorites(const std::vector<PreviewGenerationRecipe>& favorites)
     {

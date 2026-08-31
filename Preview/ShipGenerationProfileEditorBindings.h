@@ -7,50 +7,50 @@
 #include <string_view>
 #include <vector>
 
-#include <PixelShipGenerator/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
 
 #include "ConfigurationEditorControls.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct StructuralIntegerFieldBinding
     {
         std::string Path;
         ConfigurationIntegerControl Control;
-        std::function<int32_t(const PixelShipGenerator::ShipGenerationProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipGenerationProfile&, int32_t)> Write;
+        std::function<int32_t(const SpectralShipGen::ShipGenerationProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipGenerationProfile&, int32_t)> Write;
     };
 
     struct StructuralRangeFieldBinding
     {
         std::string Path;
         ConfigurationRangeControl Control;
-        std::function<PixelShipGenerator::UIntRange(const PixelShipGenerator::ShipGenerationProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipGenerationProfile&, PixelShipGenerator::UIntRange)> Write;
+        std::function<SpectralShipGen::UIntRange(const SpectralShipGen::ShipGenerationProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipGenerationProfile&, SpectralShipGen::UIntRange)> Write;
     };
 
     struct StructuralToggleFieldBinding
     {
         std::string Path;
         ConfigurationToggleControl Control;
-        std::function<bool(const PixelShipGenerator::ShipGenerationProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipGenerationProfile&, bool)> Write;
+        std::function<bool(const SpectralShipGen::ShipGenerationProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipGenerationProfile&, bool)> Write;
     };
 
     struct StructuralChoiceFieldBinding
     {
         std::string Path;
         ConfigurationChoiceControl Control;
-        std::function<uint32_t(const PixelShipGenerator::ShipGenerationProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipGenerationProfile&, uint32_t)> Write;
+        std::function<uint32_t(const SpectralShipGen::ShipGenerationProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipGenerationProfile&, uint32_t)> Write;
     };
 
     struct StructuralWeightGroupBinding
     {
         std::string Path;
         ConfigurationWeightGroupControl Control;
-        std::function<std::array<uint32_t, ConfigurationWeightGroupControl::MaximumRows>(const PixelShipGenerator::ShipGenerationProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipGenerationProfile&, const std::array<uint32_t, ConfigurationWeightGroupControl::MaximumRows>&)> Write;
+        std::function<std::array<uint32_t, ConfigurationWeightGroupControl::MaximumRows>(const SpectralShipGen::ShipGenerationProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipGenerationProfile&, const std::array<uint32_t, ConfigurationWeightGroupControl::MaximumRows>&)> Write;
     };
 
     struct StructuralProfileEditorSection
@@ -73,9 +73,9 @@ namespace PixelShipGeneratorPreview
     public:
         ShipGenerationProfileEditorBindings();
 
-        void load(const PixelShipGenerator::ShipGenerationProfile& profile);
-        void write(PixelShipGenerator::ShipGenerationProfile& profile) const;
-        bool equivalent(const PixelShipGenerator::ShipGenerationProfile& first, const PixelShipGenerator::ShipGenerationProfile& second) const;
+        void load(const SpectralShipGen::ShipGenerationProfile& profile);
+        void write(SpectralShipGen::ShipGenerationProfile& profile) const;
+        bool equivalent(const SpectralShipGen::ShipGenerationProfile& first, const SpectralShipGen::ShipGenerationProfile& second) const;
 
         std::vector<StructuralProfileEditorSection>& getSections();
         const std::vector<StructuralProfileEditorSection>& getSections() const;

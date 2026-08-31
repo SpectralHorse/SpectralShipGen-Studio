@@ -6,12 +6,12 @@
 #include <string>
 #include <vector>
 
-#include <PixelShipGenerator/ShipFactionType.h>
-#include <PixelShipGenerator/ShipGenerationRecipe.h>
+#include <SpectralShipGen/ShipFactionType.h>
+#include <SpectralShipGen/ShipGenerationRecipe.h>
 
 #include "RuntimeCustomPresetWorkspace.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     enum class PaletteProfileSelectionKind : uint32_t
     {
@@ -25,13 +25,13 @@ namespace PixelShipGeneratorPreview
     {
         PaletteProfileSelectionKind Kind = PaletteProfileSelectionKind::FACTION_DEFAULT;
         std::string Label;
-        PixelShipGenerator::ShipFactionType PalettePreset = PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END;
+        SpectralShipGen::ShipFactionType PalettePreset = SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END;
         RuntimeCustomPresetId CustomPresetId = 0u;
     };
 
     std::vector<PaletteProfileSelectionEntry> buildPaletteProfileSelection(const RuntimeCustomPresetWorkspace& workspace);
     std::size_t findPaletteProfileSelectionIndex(const std::vector<PaletteProfileSelectionEntry>& entries,
-        const PixelShipGenerator::ShipGenerationRecipe& recipe,
-        std::optional<PixelShipGenerator::ShipFactionType> activeBuiltInPalette,
+        const SpectralShipGen::ShipGenerationRecipe& recipe,
+        std::optional<SpectralShipGen::ShipFactionType> activeBuiltInPalette,
         std::optional<RuntimeCustomPresetId> activeCustomPresetId);
 }

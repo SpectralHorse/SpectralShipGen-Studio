@@ -7,18 +7,18 @@
 #include <cstdint>
 #include <vector>
 
-#include <PixelShipGenerator/Color.h>
-#include <PixelShipGenerator/GeneratedShip.h>
-#include <PixelShipGenerator/ShipFactionType.h>
-#include <PixelShipGenerator/ShipGenerationProfile.h>
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <SpectralShipGen/Color.h>
+#include <SpectralShipGen/GeneratedShip.h>
+#include <SpectralShipGen/ShipFactionType.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
 
 #include "PreviewGenerationRecipe.h"
 #include "PreviewInspection.h"
 #include "PreviewWorkspace.h"
 #include "PreviewResolution.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     inline constexpr uint32_t PreviewWindowWidth = 1640u;
     inline constexpr uint32_t PreviewWindowHeight = 1000u;
@@ -38,21 +38,21 @@ namespace PixelShipGeneratorPreview
     inline constexpr uint32_t PreviewCommandPanelX = PreviewContentWidth + PreviewStatePanelWidth;
     inline constexpr float PreviewThumbnailCellPadding = 8.0f;
 
-    inline constexpr std::array<PixelShipGenerator::ShipStyle, static_cast<std::size_t>(PixelShipGenerator::ShipStyle::SHIP_STYLE_END)> SupportedPreviewStyles = {
-        PixelShipGenerator::ShipStyle::SLEEK,
-        PixelShipGenerator::ShipStyle::FIGHTER,
-        PixelShipGenerator::ShipStyle::HEAVY,
-        PixelShipGenerator::ShipStyle::INDUSTRIAL,
-        PixelShipGenerator::ShipStyle::SPEARHEAD,
-        PixelShipGenerator::ShipStyle::DELTA
+    inline constexpr std::array<SpectralShipGen::ShipStyle, static_cast<std::size_t>(SpectralShipGen::ShipStyle::SHIP_STYLE_END)> SupportedPreviewStyles = {
+        SpectralShipGen::ShipStyle::SLEEK,
+        SpectralShipGen::ShipStyle::FIGHTER,
+        SpectralShipGen::ShipStyle::HEAVY,
+        SpectralShipGen::ShipStyle::INDUSTRIAL,
+        SpectralShipGen::ShipStyle::SPEARHEAD,
+        SpectralShipGen::ShipStyle::DELTA
     };
-    inline constexpr std::array<PixelShipGenerator::ShipFactionType, static_cast<std::size_t>(PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END)> SupportedPreviewFactions = {
-        PixelShipGenerator::ShipFactionType::FRONTIER,
-        PixelShipGenerator::ShipFactionType::MILITARY,
-        PixelShipGenerator::ShipFactionType::ASCENDANT,
-        PixelShipGenerator::ShipFactionType::XENO,
-        PixelShipGenerator::ShipFactionType::CORPORATE,
-        PixelShipGenerator::ShipFactionType::RELIC
+    inline constexpr std::array<SpectralShipGen::ShipFactionType, static_cast<std::size_t>(SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END)> SupportedPreviewFactions = {
+        SpectralShipGen::ShipFactionType::FRONTIER,
+        SpectralShipGen::ShipFactionType::MILITARY,
+        SpectralShipGen::ShipFactionType::ASCENDANT,
+        SpectralShipGen::ShipFactionType::XENO,
+        SpectralShipGen::ShipFactionType::CORPORATE,
+        SpectralShipGen::ShipFactionType::RELIC
     };
 
     struct PreviewThumbnailItem
@@ -96,7 +96,7 @@ namespace PixelShipGeneratorPreview
     struct PinnedShipReference
     {
         PreviewGenerationRecipe Recipe;
-        PixelShipGenerator::GeneratedShip Ship;
+        SpectralShipGen::GeneratedShip Ship;
         bool Valid = false;
     };
 

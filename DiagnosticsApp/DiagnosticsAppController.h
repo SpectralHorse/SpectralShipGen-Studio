@@ -8,9 +8,9 @@
 #include <string>
 #include <thread>
 
-#include <PixelShipGenerator/Diagnostics/DiagnosticsRunner.h>
+#include <SpectralShipGen/Diagnostics/DiagnosticsRunner.h>
 
-namespace PixelShipGeneratorDiagnosticsApp
+namespace SpectralShipGenStudioDiagnosticsApp
 {
     enum class DiagnosticsAppRunState : uint32_t
     {
@@ -35,9 +35,9 @@ namespace PixelShipGeneratorDiagnosticsApp
     struct DiagnosticsAppSnapshot
     {
         DiagnosticsAppRunState State = DiagnosticsAppRunState::READY;
-        PixelShipGeneratorDiagnostics::DiagnosticsProgress Progress;
+        SpectralShipGenDiagnostics::DiagnosticsProgress Progress;
         DiagnosticsAppLiveSummary LiveSummary;
-        PixelShipGeneratorDiagnostics::DiagnosticsAggregateSummary FinalSummary;
+        SpectralShipGenDiagnostics::DiagnosticsAggregateSummary FinalSummary;
         uint64_t CompletedSamples = 0u;
         uint64_t ScheduledSamples = 0u;
         bool HasResult = false;
@@ -48,7 +48,7 @@ namespace PixelShipGeneratorDiagnosticsApp
     };
 
     const char* getDiagnosticsAppRunStateName(DiagnosticsAppRunState state);
-    bool validateDiagnosticsConfiguration(const PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration& configuration, std::string& errorMessage);
+    bool validateDiagnosticsConfiguration(const SpectralShipGenDiagnostics::DiagnosticsRunConfiguration& configuration, std::string& errorMessage);
 
     class DiagnosticsAppController
     {
@@ -59,22 +59,22 @@ namespace PixelShipGeneratorDiagnosticsApp
         DiagnosticsAppController(const DiagnosticsAppController&) = delete;
         DiagnosticsAppController& operator=(const DiagnosticsAppController&) = delete;
 
-        bool start(const PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration& configuration, std::string& errorMessage);
+        bool start(const SpectralShipGenDiagnostics::DiagnosticsRunConfiguration& configuration, std::string& errorMessage);
         void requestCancel();
         void wait();
         void reset();
 
         DiagnosticsAppSnapshot getSnapshot() const;
-        std::shared_ptr<const PixelShipGeneratorDiagnostics::DiagnosticsResult> getResult() const;
+        std::shared_ptr<const SpectralShipGenDiagnostics::DiagnosticsResult> getResult() const;
         bool exportCsv(const std::filesystem::path& path, std::string& errorMessage) const;
         bool saveRun(const std::filesystem::path& path, std::string& errorMessage) const;
         bool loadRun(const std::filesystem::path& path, std::string& errorMessage);
         bool hasActiveWorker() const;
 
     private:
-        void workerMain(PixelShipGeneratorDiagnostics::DiagnosticsRunConfiguration configuration);
-        void updateProgress(const PixelShipGeneratorDiagnostics::DiagnosticsProgress& progress);
-        void observeSample(const PixelShipGeneratorDiagnostics::DiagnosticsRawSampleResult& sample);
+        void workerMain(SpectralShipGenDiagnostics::DiagnosticsRunConfiguration configuration);
+        void updateProgress(const SpectralShipGenDiagnostics::DiagnosticsProgress& progress);
+        void observeSample(const SpectralShipGenDiagnostics::DiagnosticsRawSampleResult& sample);
         void joinFinishedWorker();
 
     private:
@@ -82,9 +82,9 @@ namespace PixelShipGeneratorDiagnosticsApp
         std::thread m_Worker;
         std::atomic<bool> m_CancelRequested = false;
         DiagnosticsAppRunState m_State = DiagnosticsAppRunState::READY;
-        PixelShipGeneratorDiagnostics::DiagnosticsProgress m_Progress;
+        SpectralShipGenDiagnostics::DiagnosticsProgress m_Progress;
         DiagnosticsAppLiveSummary m_LiveSummary;
-        std::shared_ptr<PixelShipGeneratorDiagnostics::DiagnosticsResult> m_Result;
+        std::shared_ptr<SpectralShipGenDiagnostics::DiagnosticsResult> m_Result;
         std::string m_ErrorMessage;
         std::string m_StatusMessage;
         double m_TotalGenerationMilliseconds = 0.0;

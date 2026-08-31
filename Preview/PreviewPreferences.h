@@ -5,15 +5,15 @@
 #include <string>
 #include <vector>
 
-#include <PixelShipGenerator/ShipDimensions.h>
+#include <SpectralShipGen/ShipDimensions.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     inline constexpr uint32_t PreviewPreferencesFormatVersion = 2u;
 
     struct PreviewPreferences
     {
-        std::vector<PixelShipGenerator::ShipDimensions> ResolutionBookmarks;
+        std::vector<SpectralShipGen::ShipDimensions> ResolutionBookmarks;
     };
 
     struct PreviewPreferencesLoadResult

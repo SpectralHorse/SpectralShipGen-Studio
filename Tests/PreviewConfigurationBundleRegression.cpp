@@ -12,14 +12,14 @@
 #include "PreviewWorkspace.h"
 #include "RuntimeCustomPresetWorkspace.h"
 #include "ShipGenerationRecipeSerializer.h"
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
-#include <PixelShipGenerator/ShipGenerator.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipGenerator.h>
 #include "UserPresetPersistence.h"
 
 namespace
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     bool imagesEqual(const Image& first, const Image& second)
     {
@@ -56,13 +56,13 @@ namespace
     }
 }
 
-int PixelShipGeneratorTests::runPreviewConfigurationBundleRegression()
+int SpectralShipGenStudioTests::runPreviewConfigurationBundleRegression()
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     bool success = true;
-    const std::filesystem::path directory = std::filesystem::temp_directory_path() / "pixel_ship_generator_configuration_bundle_regression";
+    const std::filesystem::path directory = std::filesystem::temp_directory_path() / "spectral_ship_gen_configuration_bundle_regression";
     const std::filesystem::path libraryPath = directory / "user_presets.json";
     const std::filesystem::path bundlePath = directory / "heavy_naval_test.shipgenbundle.json";
     const std::filesystem::path favoritePath = directory / "favorites.json";

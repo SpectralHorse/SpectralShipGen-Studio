@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct ConfigurationEditorRect
     {

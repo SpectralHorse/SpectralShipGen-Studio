@@ -2,13 +2,13 @@
 
 #include <SFML/Graphics/Image.hpp>
 
-#include <PixelShipGenerator/Image.h>
+#include <SpectralShipGen/Image.h>
 
-namespace PixelShipGenerator
+namespace SpectralShipGen
 {
     class SFMLImageAdapter
     {
     public:
         static sf::Image createSFMLImage(const Image& image);
     };
-} // namespace PixelShipGenerator
+} // namespace SpectralShipGen

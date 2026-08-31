@@ -12,14 +12,14 @@
 #include "PreviewFavoritesPersistence.h"
 #include "PreviewGenerationRecipe.h"
 #include "PreviewPagination.h"
-#include <PixelShipGenerator/ShipFactionProfile.h>
-#include <PixelShipGenerator/ShipGenerationProfile.h>
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipFactionProfile.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
 
 namespace
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     int fail(const char* message)
     {
@@ -38,10 +38,10 @@ namespace
     }
 }
 
-int PixelShipGeneratorTests::runPreviewUiQolRegression()
+int SpectralShipGenStudioTests::runPreviewUiQolRegression()
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     if (std::string(getPreviewCommandCompactLabel(PreviewCommandType::INSPECTION_PREVIOUS_GROUP)) != "<" ||
         std::string(getPreviewCommandCompactLabel(PreviewCommandType::INSPECTION_NEXT_GROUP)) != ">" ||
@@ -85,7 +85,7 @@ int PixelShipGeneratorTests::runPreviewUiQolRegression()
     {
         return fail("deleting the final item on the final Favorites page did not collapse page count correctly");
     }
-    const std::filesystem::path favoritesDirectory = std::filesystem::temp_directory_path() / "pixel_ship_generator_task100_favorites";
+    const std::filesystem::path favoritesDirectory = std::filesystem::temp_directory_path() / "spectral_ship_gen_task100_favorites";
     const std::filesystem::path favoritesPath = favoritesDirectory / "favorites.json";
     std::error_code filesystemError;
     std::filesystem::remove_all(favoritesDirectory, filesystemError);

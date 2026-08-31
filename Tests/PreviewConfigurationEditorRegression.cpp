@@ -11,14 +11,14 @@
 #include "RuntimeCustomPresetWorkspace.h"
 #include "StructuralProfileSelection.h"
 
-#include <PixelShipGenerator/ShipFactionProfile.h>
-#include <PixelShipGenerator/ShipGenerationProfile.h>
-#include <PixelShipGenerator/ShipGenerationProfileValidation.h>
-#include <PixelShipGenerator/ShipGenerationSettings.h>
-#include <PixelShipGenerator/ShipGenerator.h>
-#include <PixelShipGenerator/ShipPaletteConfiguration.h>
+#include <SpectralShipGen/ShipFactionProfile.h>
+#include <SpectralShipGen/ShipGenerationProfile.h>
+#include <SpectralShipGen/ShipGenerationProfileValidation.h>
+#include <SpectralShipGen/ShipGenerationSettings.h>
+#include <SpectralShipGen/ShipGenerator.h>
+#include <SpectralShipGen/ShipPaletteConfiguration.h>
 
-namespace PixelShipGeneratorTests
+namespace SpectralShipGenStudioTests
 {
     namespace
     {
@@ -28,7 +28,7 @@ namespace PixelShipGeneratorTests
             return 1;
         }
 
-        bool clickEditorAction(PixelShipGeneratorPreview::PreviewConfigurationEditor& editor, PixelShipGeneratorPreview::ConfigurationEditorAction action, PixelShipGeneratorPreview::ConfigurationEditorEvent& outEvent)
+        bool clickEditorAction(SpectralShipGenStudioPreview::PreviewConfigurationEditor& editor, SpectralShipGenStudioPreview::ConfigurationEditorAction action, SpectralShipGenStudioPreview::ConfigurationEditorEvent& outEvent)
         {
             for (const auto& button : editor.getActionButtons())
             {
@@ -43,13 +43,13 @@ namespace PixelShipGeneratorTests
             return false;
         }
 
-        bool hasValidationError(const PixelShipGenerator::ValidationResult& result, const std::string& field)
+        bool hasValidationError(const SpectralShipGen::ValidationResult& result, const std::string& field)
         {
-            for (const PixelShipGenerator::ValidationIssue& issue : result.Errors) { if (issue.Field == field) { return true; } }
+            for (const SpectralShipGen::ValidationIssue& issue : result.Errors) { if (issue.Field == field) { return true; } }
             return false;
         }
 
-        bool imagesEqual(const PixelShipGenerator::Image& first, const PixelShipGenerator::Image& second)
+        bool imagesEqual(const SpectralShipGen::Image& first, const SpectralShipGen::Image& second)
         {
             return first.getWidth() == second.getWidth() && first.getHeight() == second.getHeight() && first.getPixels() == second.getPixels();
         }
@@ -57,8 +57,8 @@ namespace PixelShipGeneratorTests
 
     int runPreviewConfigurationEditorRegression()
     {
-        using namespace PixelShipGeneratorPreview;
-        using namespace PixelShipGenerator;
+        using namespace SpectralShipGenStudioPreview;
+        using namespace SpectralShipGen;
 
         ConfigurationIntegerControl probability;
         probability.configure("CHANCE", ConfigurationNumericSemantic::PROBABILITY, 0, 100, 5, 50);

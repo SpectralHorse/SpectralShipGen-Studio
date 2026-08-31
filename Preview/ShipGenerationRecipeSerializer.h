@@ -1,18 +1,18 @@
 #pragma once
 
-#include <PixelShipGenerator/ShipGenerationRecipeSerializer.h>
+#include <SpectralShipGen/ShipGenerationRecipeSerializer.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
-    using PixelShipGenerator::ShipGenerationRecipeFormatVersion;
-    using PixelShipGenerator::ShipGenerationRecipeDocument;
-    using PixelShipGenerator::ShipGenerationRecipeLoadResult;
-    using PixelShipGenerator::shipStyleToRecipeString;
-    using PixelShipGenerator::shipFactionToRecipeString;
-    using PixelShipGenerator::shipStyleFromRecipeString;
-    using PixelShipGenerator::shipFactionFromRecipeString;
-    using PixelShipGenerator::serializeShipGenerationRecipe;
-    using PixelShipGenerator::deserializeShipGenerationRecipe;
-    using PixelShipGenerator::saveShipGenerationRecipe;
-    using PixelShipGenerator::loadShipGenerationRecipe;
+    using SpectralShipGen::ShipGenerationRecipeFormatVersion;
+    using SpectralShipGen::ShipGenerationRecipeDocument;
+    using SpectralShipGen::ShipGenerationRecipeLoadResult;
+    using SpectralShipGen::shipStyleToRecipeString;
+    using SpectralShipGen::shipFactionToRecipeString;
+    using SpectralShipGen::shipStyleFromRecipeString;
+    using SpectralShipGen::shipFactionFromRecipeString;
+    using SpectralShipGen::serializeShipGenerationRecipe;
+    using SpectralShipGen::deserializeShipGenerationRecipe;
+    using SpectralShipGen::saveShipGenerationRecipe;
+    using SpectralShipGen::loadShipGenerationRecipe;
 }

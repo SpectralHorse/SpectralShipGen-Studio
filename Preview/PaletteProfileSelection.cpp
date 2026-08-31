@@ -2,33 +2,33 @@
 
 #include <algorithm>
 
-#include <PixelShipGenerator/BuiltInPresetCatalog.h>
+#include <SpectralShipGen/BuiltInPresetCatalog.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     std::vector<PaletteProfileSelectionEntry> buildPaletteProfileSelection(const RuntimeCustomPresetWorkspace& workspace)
     {
         std::vector<PaletteProfileSelectionEntry> entries;
-        entries.reserve(1u + PixelShipGenerator::getBuiltInPalettePresetCatalog().size() + workspace.getPalettePresets().size() + 1u);
-        entries.push_back({ PaletteProfileSelectionKind::FACTION_DEFAULT, "FACTION DEFAULT", PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END, 0u });
-        for (const PixelShipGenerator::BuiltInPalettePreset& preset : PixelShipGenerator::getBuiltInPalettePresetCatalog())
+        entries.reserve(1u + SpectralShipGen::getBuiltInPalettePresetCatalog().size() + workspace.getPalettePresets().size() + 1u);
+        entries.push_back({ PaletteProfileSelectionKind::FACTION_DEFAULT, "FACTION DEFAULT", SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END, 0u });
+        for (const SpectralShipGen::BuiltInPalettePreset& preset : SpectralShipGen::getBuiltInPalettePresetCatalog())
         {
             entries.push_back({ PaletteProfileSelectionKind::BUILT_IN_GENERATED, preset.StableId, preset.FactionPreset, 0u });
         }
         for (const RuntimePalettePreset& preset : workspace.getPalettePresets())
         {
-            entries.push_back({ PaletteProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END, preset.Id });
+            entries.push_back({ PaletteProfileSelectionKind::RUNTIME_CUSTOM, preset.Name, SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END, preset.Id });
         }
-        entries.push_back({ PaletteProfileSelectionKind::ADD_PALETTE, "+ ADD PALETTE", PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END, 0u });
+        entries.push_back({ PaletteProfileSelectionKind::ADD_PALETTE, "+ ADD PALETTE", SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END, 0u });
         return entries;
     }
 
     std::size_t findPaletteProfileSelectionIndex(const std::vector<PaletteProfileSelectionEntry>& entries,
-        const PixelShipGenerator::ShipGenerationRecipe& recipe,
-        std::optional<PixelShipGenerator::ShipFactionType> activeBuiltInPalette,
+        const SpectralShipGen::ShipGenerationRecipe& recipe,
+        std::optional<SpectralShipGen::ShipFactionType> activeBuiltInPalette,
         std::optional<RuntimeCustomPresetId> activeCustomPresetId)
     {
-        if (recipe.PaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED)
+        if (recipe.PaletteConfiguration.Mode == SpectralShipGen::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED)
         {
             const auto iterator = std::find_if(entries.begin(), entries.end(), [](const PaletteProfileSelectionEntry& entry)
                 {

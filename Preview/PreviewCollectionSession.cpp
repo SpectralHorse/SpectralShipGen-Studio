@@ -4,7 +4,7 @@
 #include <iterator>
 #include <utility>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     PreviewCollectionSession::PreviewCollectionSession(const PreviewGenerationRecipe& initialRecipe, std::size_t maximumHistorySize)
         : m_MaximumHistorySize(std::max<std::size_t>(1u, maximumHistorySize))
@@ -160,7 +160,7 @@ namespace PixelShipGeneratorPreview
     uint64_t PreviewCollectionSession::getGalleryBatchSeed() const { return m_GalleryBatchSeed; }
     const PreviewGenerationRecipe& PreviewCollectionSession::getGalleryTemplateRecipe() const { return m_GalleryTemplateRecipe; }
 
-    bool PreviewCollectionSession::addResolutionBookmark(const PixelShipGenerator::ShipDimensions& dimensions)
+    bool PreviewCollectionSession::addResolutionBookmark(const SpectralShipGen::ShipDimensions& dimensions)
     {
         if (!isSelectablePreviewDimensions(dimensions) || m_ResolutionBookmarks.size() >= MaximumResolutionBookmarks) { return false; }
         const auto iterator = std::lower_bound(m_ResolutionBookmarks.begin(), m_ResolutionBookmarks.end(), dimensions, dimensionsLess);
@@ -169,7 +169,7 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    bool PreviewCollectionSession::removeResolutionBookmark(const PixelShipGenerator::ShipDimensions& dimensions)
+    bool PreviewCollectionSession::removeResolutionBookmark(const SpectralShipGen::ShipDimensions& dimensions)
     {
         const auto iterator = std::lower_bound(m_ResolutionBookmarks.begin(), m_ResolutionBookmarks.end(), dimensions, dimensionsLess);
         if (iterator == m_ResolutionBookmarks.end() || *iterator != dimensions) { return false; }
@@ -177,29 +177,29 @@ namespace PixelShipGeneratorPreview
         return true;
     }
 
-    bool PreviewCollectionSession::hasResolutionBookmark(const PixelShipGenerator::ShipDimensions& dimensions) const
+    bool PreviewCollectionSession::hasResolutionBookmark(const SpectralShipGen::ShipDimensions& dimensions) const
     {
         const auto iterator = std::lower_bound(m_ResolutionBookmarks.begin(), m_ResolutionBookmarks.end(), dimensions, dimensionsLess);
         return iterator != m_ResolutionBookmarks.end() && *iterator == dimensions;
     }
 
-    const PixelShipGenerator::ShipDimensions* PreviewCollectionSession::getResolutionBookmark(std::size_t index) const
+    const SpectralShipGen::ShipDimensions* PreviewCollectionSession::getResolutionBookmark(std::size_t index) const
     {
         return index < m_ResolutionBookmarks.size() ? &m_ResolutionBookmarks[index] : nullptr;
     }
 
-    const std::vector<PixelShipGenerator::ShipDimensions>& PreviewCollectionSession::getResolutionBookmarks() const { return m_ResolutionBookmarks; }
+    const std::vector<SpectralShipGen::ShipDimensions>& PreviewCollectionSession::getResolutionBookmarks() const { return m_ResolutionBookmarks; }
 
-    void PreviewCollectionSession::setResolutionBookmarks(std::vector<PixelShipGenerator::ShipDimensions> bookmarks)
+    void PreviewCollectionSession::setResolutionBookmarks(std::vector<SpectralShipGen::ShipDimensions> bookmarks)
     {
-        bookmarks.erase(std::remove_if(bookmarks.begin(), bookmarks.end(), [](const PixelShipGenerator::ShipDimensions& dimensions) { return !isSelectablePreviewDimensions(dimensions); }), bookmarks.end());
+        bookmarks.erase(std::remove_if(bookmarks.begin(), bookmarks.end(), [](const SpectralShipGen::ShipDimensions& dimensions) { return !isSelectablePreviewDimensions(dimensions); }), bookmarks.end());
         std::sort(bookmarks.begin(), bookmarks.end(), dimensionsLess);
         bookmarks.erase(std::unique(bookmarks.begin(), bookmarks.end()), bookmarks.end());
         if (bookmarks.size() > MaximumResolutionBookmarks) { bookmarks.resize(MaximumResolutionBookmarks); }
         m_ResolutionBookmarks = std::move(bookmarks);
     }
 
-    bool PreviewCollectionSession::dimensionsLess(const PixelShipGenerator::ShipDimensions& first, const PixelShipGenerator::ShipDimensions& second)
+    bool PreviewCollectionSession::dimensionsLess(const SpectralShipGen::ShipDimensions& first, const SpectralShipGen::ShipDimensions& second)
     {
         if (first.Width != second.Width) { return first.Width < second.Width; }
         return first.Height < second.Height;

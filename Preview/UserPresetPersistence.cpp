@@ -5,16 +5,16 @@
 #include <sstream>
 #include <utility>
 
-#include <PixelShipGenerator/ShipFactionProfileValidation.h>
-#include <PixelShipGenerator/ShipGenerationProfileValidation.h>
-#include <PixelShipGenerator/Serialization/ShipGenerationRecipeJson.h>
-#include <PixelShipGenerator/Serialization/ShipGenerationRecipeProfileSerialization.h>
-#include <PixelShipGenerator/ShipPaletteGenerationProfileValidation.h>
+#include <SpectralShipGen/ShipFactionProfileValidation.h>
+#include <SpectralShipGen/ShipGenerationProfileValidation.h>
+#include <SpectralShipGen/Serialization/ShipGenerationRecipeJson.h>
+#include <SpectralShipGen/Serialization/ShipGenerationRecipeProfileSerialization.h>
+#include <SpectralShipGen/ShipPaletteGenerationProfileValidation.h>
 
 namespace
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
     using RecipeJson::Type;
     using RecipeJson::Value;
 
@@ -420,7 +420,7 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     const char* getUserPresetCategoryId(UserPresetCategory category)
     {

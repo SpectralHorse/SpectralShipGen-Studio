@@ -11,7 +11,7 @@
 #include <utility>
 
 #include "SFMLImageAdapter.h"
-#include <PixelShipGenerator/BuiltInPresetCatalog.h>
+#include <SpectralShipGen/BuiltInPresetCatalog.h>
 #include "GenerationCalibration.h"
 #include "GenerationCalibrationSerializer.h"
 #include "PreviewCommand.h"
@@ -20,18 +20,18 @@
 #include "UserPresetPersistence.h"
 #include "ShipGenerationRecipeSerializer.h"
 #include "PreviewThumbnailGrid.h"
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
-#include <PixelShipGenerator/ShipGenerationSettings.h>
-#include <PixelShipGenerator/ShipSpritesheetUtils.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipGenerationSettings.h>
+#include <SpectralShipGen/ShipSpritesheetUtils.h>
 
 namespace
 {
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGenStudioPreview;
 
     constexpr uint32_t GalleryCandidateMaximumAttempts = 16u;
-    const std::filesystem::path PreviewPreferencesPath = "pixel_ship_generator_preview_preferences.json";
-    const std::filesystem::path PreviewFavoritesPath = "pixel_ship_generator_preview_favorites.json";
-    const std::filesystem::path UserPresetLibraryPath = "pixel_ship_generator_preview_user_presets.json";
+    const std::filesystem::path PreviewPreferencesPath = "spectral_ship_gen_preview_preferences.json";
+    const std::filesystem::path PreviewFavoritesPath = "spectral_ship_gen_preview_favorites.json";
+    const std::filesystem::path UserPresetLibraryPath = "spectral_ship_gen_preview_user_presets.json";
     const std::filesystem::path CalibrationSessionPath = "generation_calibration_session.json";
     const std::filesystem::path CalibrationReportPath = "generation_calibration_report.csv";
     const std::filesystem::path CalibrationTuningProfilePath = "generation_tuning_profile.json";
@@ -57,21 +57,21 @@ namespace
         return std::max(1u, std::min(horizontalScale, verticalScale));
     }
 
-    PixelShipGeneratorPreview::PreviewGenerationRecipe createGalleryCandidateRecipe(const PixelShipGeneratorPreview::PreviewGenerationRecipe& templateRecipe, uint64_t masterSeed)
+    SpectralShipGenStudioPreview::PreviewGenerationRecipe createGalleryCandidateRecipe(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& templateRecipe, uint64_t masterSeed)
     {
-        PixelShipGeneratorPreview::PreviewGenerationRecipe recipe = templateRecipe;
-        recipe.Seeds = PixelShipGenerator::deriveShipGenerationSeeds(masterSeed);
+        SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe = templateRecipe;
+        recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(masterSeed);
         recipe.DomainSeedOverrides.clearAll();
-        recipe.RandomStreamMode = PixelShipGenerator::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS;
+        recipe.RandomStreamMode = SpectralShipGen::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS;
         return recipe;
     }
 
-    PixelShipGeneratorPreview::PreviewGenerationRecipe createRecipeFromMasterSeed(uint64_t masterSeed, const PixelShipGeneratorPreview::PreviewGenerationRecipe& currentRecipe)
+    SpectralShipGenStudioPreview::PreviewGenerationRecipe createRecipeFromMasterSeed(uint64_t masterSeed, const SpectralShipGenStudioPreview::PreviewGenerationRecipe& currentRecipe)
     {
-        PixelShipGeneratorPreview::PreviewGenerationRecipe recipe = currentRecipe;
-        recipe.Seeds = PixelShipGenerator::deriveShipGenerationSeeds(masterSeed);
+        SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe = currentRecipe;
+        recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(masterSeed);
         recipe.DomainSeedOverrides.clearAll();
-        recipe.RandomStreamMode = PixelShipGenerator::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS;
+        recipe.RandomStreamMode = SpectralShipGen::GenerationRandomStreamMode::DOMAIN_SUBSTREAMS;
         return recipe;
     }
 
@@ -86,36 +86,36 @@ namespace
     {
         const uint64_t indexValue = static_cast<uint64_t>(candidateIndex) * 0x9E3779B97F4A7C15ull;
         const uint64_t attemptValue = static_cast<uint64_t>(attempt) * 0xBF58476D1CE4E5B9ull;
-        return PixelShipGenerator::mixGenerationSeed64(batchSeed ^ 0xA24BAED4963EE407ull ^ indexValue ^ attemptValue);
+        return SpectralShipGen::mixGenerationSeed64(batchSeed ^ 0xA24BAED4963EE407ull ^ indexValue ^ attemptValue);
     }
 
 
-    std::string getFactionName(PixelShipGenerator::ShipFactionType faction)
+    std::string getFactionName(SpectralShipGen::ShipFactionType faction)
     {
         switch (faction)
         {
-        case PixelShipGenerator::ShipFactionType::FRONTIER: return "frontier";
-        case PixelShipGenerator::ShipFactionType::MILITARY: return "military";
-        case PixelShipGenerator::ShipFactionType::ASCENDANT: return "ascendant";
-        case PixelShipGenerator::ShipFactionType::XENO: return "xeno";
-        case PixelShipGenerator::ShipFactionType::CORPORATE: return "corporate";
-        case PixelShipGenerator::ShipFactionType::RELIC: return "relic";
-        case PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END: return "custom";
+        case SpectralShipGen::ShipFactionType::FRONTIER: return "frontier";
+        case SpectralShipGen::ShipFactionType::MILITARY: return "military";
+        case SpectralShipGen::ShipFactionType::ASCENDANT: return "ascendant";
+        case SpectralShipGen::ShipFactionType::XENO: return "xeno";
+        case SpectralShipGen::ShipFactionType::CORPORATE: return "corporate";
+        case SpectralShipGen::ShipFactionType::RELIC: return "relic";
+        case SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END: return "custom";
         default: return "unknown";
         }
     }
 
-    std::string getFactionDisplayName(PixelShipGenerator::ShipFactionType faction)
+    std::string getFactionDisplayName(SpectralShipGen::ShipFactionType faction)
     {
         switch (faction)
         {
-        case PixelShipGenerator::ShipFactionType::FRONTIER: return "FRONTIER";
-        case PixelShipGenerator::ShipFactionType::MILITARY: return "MILITARY";
-        case PixelShipGenerator::ShipFactionType::ASCENDANT: return "ASCENDANT";
-        case PixelShipGenerator::ShipFactionType::XENO: return "XENO";
-        case PixelShipGenerator::ShipFactionType::CORPORATE: return "CORPORATE";
-        case PixelShipGenerator::ShipFactionType::RELIC: return "RELIC";
-        case PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END: return "CUSTOM";
+        case SpectralShipGen::ShipFactionType::FRONTIER: return "FRONTIER";
+        case SpectralShipGen::ShipFactionType::MILITARY: return "MILITARY";
+        case SpectralShipGen::ShipFactionType::ASCENDANT: return "ASCENDANT";
+        case SpectralShipGen::ShipFactionType::XENO: return "XENO";
+        case SpectralShipGen::ShipFactionType::CORPORATE: return "CORPORATE";
+        case SpectralShipGen::ShipFactionType::RELIC: return "RELIC";
+        case SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
@@ -125,7 +125,7 @@ namespace
         return locked ? "LOCK" : "OPEN";
     }
 
-    std::string getResolutionString(const PixelShipGeneratorPreview::PreviewGenerationRecipe& recipe)
+    std::string getResolutionString(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
     {
         if (recipe.Dimensions.Width == recipe.Dimensions.Height)
         {
@@ -135,31 +135,31 @@ namespace
         return std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height);
     }
 
-    std::string getStyleName(PixelShipGenerator::ShipStyle style)
+    std::string getStyleName(SpectralShipGen::ShipStyle style)
     {
         switch (style)
         {
-        case PixelShipGenerator::ShipStyle::SLEEK: return "SLEEK";
-        case PixelShipGenerator::ShipStyle::FIGHTER: return "FIGHTER";
-        case PixelShipGenerator::ShipStyle::HEAVY: return "HEAVY";
-        case PixelShipGenerator::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
-        case PixelShipGenerator::ShipStyle::SPEARHEAD: return "SPEARHEAD";
-        case PixelShipGenerator::ShipStyle::DELTA: return "DELTA";
-        case PixelShipGenerator::ShipStyle::SHIP_STYLE_END: return "CUSTOM";
+        case SpectralShipGen::ShipStyle::SLEEK: return "SLEEK";
+        case SpectralShipGen::ShipStyle::FIGHTER: return "FIGHTER";
+        case SpectralShipGen::ShipStyle::HEAVY: return "HEAVY";
+        case SpectralShipGen::ShipStyle::INDUSTRIAL: return "INDUSTRIAL";
+        case SpectralShipGen::ShipStyle::SPEARHEAD: return "SPEARHEAD";
+        case SpectralShipGen::ShipStyle::DELTA: return "DELTA";
+        case SpectralShipGen::ShipStyle::SHIP_STYLE_END: return "CUSTOM";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getAnimationTypeDisplayName(PixelShipGenerator::ShipAnimationType type)
+    std::string getAnimationTypeDisplayName(SpectralShipGen::ShipAnimationType type)
     {
         switch (type)
         {
-        case PixelShipGenerator::ShipAnimationType::IDLE: return "IDLE";
-        case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
-        case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
-        case PixelShipGenerator::ShipAnimationType::MOVE_UP: return "MOVE UP";
-        case PixelShipGenerator::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
-        case PixelShipGenerator::ShipAnimationType::FIRE: return "FIRE";
+        case SpectralShipGen::ShipAnimationType::IDLE: return "IDLE";
+        case SpectralShipGen::ShipAnimationType::MOVE_LEFT: return "MOVE LEFT";
+        case SpectralShipGen::ShipAnimationType::MOVE_RIGHT: return "MOVE RIGHT";
+        case SpectralShipGen::ShipAnimationType::MOVE_UP: return "MOVE UP";
+        case SpectralShipGen::ShipAnimationType::MOVE_DOWN: return "MOVE DOWN";
+        case SpectralShipGen::ShipAnimationType::FIRE: return "FIRE";
         default: return "UNSUPPORTED";
         }
     }
@@ -173,56 +173,56 @@ namespace
         return "4x";
     }
 
-    std::string getAnimationTypeFileToken(PixelShipGenerator::ShipAnimationType type)
+    std::string getAnimationTypeFileToken(SpectralShipGen::ShipAnimationType type)
     {
         switch (type)
         {
-        case PixelShipGenerator::ShipAnimationType::IDLE: return "idle";
-        case PixelShipGenerator::ShipAnimationType::MOVE_LEFT: return "move_left";
-        case PixelShipGenerator::ShipAnimationType::MOVE_RIGHT: return "move_right";
-        case PixelShipGenerator::ShipAnimationType::MOVE_UP: return "move_up";
-        case PixelShipGenerator::ShipAnimationType::MOVE_DOWN: return "move_down";
-        case PixelShipGenerator::ShipAnimationType::FIRE: return "fire";
+        case SpectralShipGen::ShipAnimationType::IDLE: return "idle";
+        case SpectralShipGen::ShipAnimationType::MOVE_LEFT: return "move_left";
+        case SpectralShipGen::ShipAnimationType::MOVE_RIGHT: return "move_right";
+        case SpectralShipGen::ShipAnimationType::MOVE_UP: return "move_up";
+        case SpectralShipGen::ShipAnimationType::MOVE_DOWN: return "move_down";
+        case SpectralShipGen::ShipAnimationType::FIRE: return "fire";
         default: return "animation";
         }
     }
 
-    std::string getMovementPhaseDisplayName(PixelShipGenerator::ShipMovementAnimationPhase phase)
+    std::string getMovementPhaseDisplayName(SpectralShipGen::ShipMovementAnimationPhase phase)
     {
         switch (phase)
         {
-        case PixelShipGenerator::ShipMovementAnimationPhase::ENTER: return "ENTER";
-        case PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN: return "SUSTAIN";
-        case PixelShipGenerator::ShipMovementAnimationPhase::EXIT: return "EXIT";
+        case SpectralShipGen::ShipMovementAnimationPhase::ENTER: return "ENTER";
+        case SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN: return "SUSTAIN";
+        case SpectralShipGen::ShipMovementAnimationPhase::EXIT: return "EXIT";
         default: return "UNKNOWN";
         }
     }
 
-    std::string getMovementPhaseFileToken(PixelShipGenerator::ShipMovementAnimationPhase phase)
+    std::string getMovementPhaseFileToken(SpectralShipGen::ShipMovementAnimationPhase phase)
     {
         switch (phase)
         {
-        case PixelShipGenerator::ShipMovementAnimationPhase::ENTER: return "enter";
-        case PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN: return "sustain";
-        case PixelShipGenerator::ShipMovementAnimationPhase::EXIT: return "exit";
+        case SpectralShipGen::ShipMovementAnimationPhase::ENTER: return "enter";
+        case SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN: return "sustain";
+        case SpectralShipGen::ShipMovementAnimationPhase::EXIT: return "exit";
         default: return "phase";
         }
     }
 
-    std::string getWeaponTypeDisplayName(PixelShipGenerator::ShipWeaponType type)
+    std::string getWeaponTypeDisplayName(SpectralShipGen::ShipWeaponType type)
     {
         switch (type)
         {
-        case PixelShipGenerator::ShipWeaponType::SINGLE_CANNON: return "SINGLE CANNON";
-        case PixelShipGenerator::ShipWeaponType::TWIN_CANNON: return "TWIN CANNON";
-        case PixelShipGenerator::ShipWeaponType::COMPACT_TURRET: return "COMPACT TURRET";
-        case PixelShipGenerator::ShipWeaponType::RAIL_WEAPON: return "RAIL WEAPON";
-        case PixelShipGenerator::ShipWeaponType::WEAPON_POD: return "WEAPON POD";
+        case SpectralShipGen::ShipWeaponType::SINGLE_CANNON: return "SINGLE CANNON";
+        case SpectralShipGen::ShipWeaponType::TWIN_CANNON: return "TWIN CANNON";
+        case SpectralShipGen::ShipWeaponType::COMPACT_TURRET: return "COMPACT TURRET";
+        case SpectralShipGen::ShipWeaponType::RAIL_WEAPON: return "RAIL WEAPON";
+        case SpectralShipGen::ShipWeaponType::WEAPON_POD: return "WEAPON POD";
         default: return "WEAPON";
         }
     }
 
-    std::string getSaveBaseName(const PixelShipGeneratorPreview::PreviewGenerationRecipe& recipe)
+    std::string getSaveBaseName(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
     {
         return "ship_" + getResolutionString(recipe) + "_" + getStyleName(recipe.Style) + "_" + getFactionName(recipe.Faction) + "_seed_" + std::to_string(recipe.Seeds.Master);
     }
@@ -280,9 +280,9 @@ namespace
         return frameIndex + 1u < 10u ? "0" + std::to_string(frameIndex + 1u) : std::to_string(frameIndex + 1u);
     }
 
-    bool saveCoreImage(const PixelShipGenerator::Image& image, const std::filesystem::path& path)
+    bool saveCoreImage(const SpectralShipGen::Image& image, const std::filesystem::path& path)
     {
-        const sf::Image sfmlImage = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(image);
+        const sf::Image sfmlImage = SpectralShipGen::SFMLImageAdapter::createSFMLImage(image);
 
         if (sfmlImage.saveToFile(path.string()))
         {
@@ -335,9 +335,9 @@ namespace
         }
     }
 
-    bool isSupportedPreviewRecipeResolution(const PixelShipGeneratorPreview::PreviewGenerationRecipe& recipe)
+    bool isSupportedPreviewRecipeResolution(const SpectralShipGenStudioPreview::PreviewGenerationRecipe& recipe)
     {
-        return PixelShipGeneratorPreview::isSelectablePreviewDimensions(recipe.Dimensions);
+        return SpectralShipGenStudioPreview::isSelectablePreviewDimensions(recipe.Dimensions);
     }
 
     bool readSeedFromConsole(uint64_t& seed)
@@ -380,16 +380,16 @@ namespace
     }
 }
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     ShipGeneratorPreviewApp::ShipGeneratorPreviewApp(std::string startupRecipePath)
-        : m_Window(sf::VideoMode(PreviewWindowWidth, PreviewWindowHeight), "Pixel Ship Generator", sf::Style::Titlebar | sf::Style::Close), m_SeedGenerator(createSeedGenerator()), m_StartupRecipePath(std::move(startupRecipePath))
+        : m_Window(sf::VideoMode(PreviewWindowWidth, PreviewWindowHeight), "SpectralShipGen Studio", sf::Style::Titlebar | sf::Style::Close), m_SeedGenerator(createSeedGenerator()), m_StartupRecipePath(std::move(startupRecipePath))
     {
         m_Window.setVerticalSyncEnabled(true);
         m_Window.setKeyRepeatEnabled(false);
 
         PreviewGenerationRecipe initialRecipe;
-        initialRecipe.Seeds = PixelShipGenerator::deriveShipGenerationSeeds(m_SeedGenerator());
+        initialRecipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(m_SeedGenerator());
         m_Collections = PreviewCollectionSession(initialRecipe);
         m_CalibrationSession = createGenerationCalibrationSession(m_SeedGenerator());
         loadPreviewAppPreferences();
@@ -443,7 +443,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::addResolutionBookmark()
     {
-        const PixelShipGenerator::ShipDimensions dimensions = getCurrentRecipe().Dimensions;
+        const SpectralShipGen::ShipDimensions dimensions = getCurrentRecipe().Dimensions;
         if (!m_Collections.addResolutionBookmark(dimensions)) { return; }
         savePreviewAppPreferences();
         setStatusMessage("Resolution bookmark added: " + std::to_string(dimensions.Width) + "x" + std::to_string(dimensions.Height));
@@ -591,10 +591,10 @@ namespace PixelShipGeneratorPreview
             {
                 const uint64_t masterSeed = deriveGalleryCandidateMasterSeed(batchSeed, index, attempt);
                 const PreviewGenerationRecipe recipe = createGalleryCandidateRecipe(m_GalleryState.TemplateRecipe, masterSeed);
-                PixelShipGenerator::GeneratedShip ship;
+                SpectralShipGen::GeneratedShip ship;
 
                 if (!generateShipFromRecipe(recipe, ship)) { continue; }
-                const sf::Image candidateImage = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(ship.FinalImage);
+                const sf::Image candidateImage = SpectralShipGen::SFMLImageAdapter::createSFMLImage(ship.FinalImage);
                 if (!candidate.Texture.loadFromImage(candidateImage)) { continue; }
 
                 candidate.Texture.setSmooth(false);
@@ -618,7 +618,7 @@ namespace PixelShipGeneratorPreview
     }
 
 
-    PixelShipGenerator::Image ShipGeneratorPreviewApp::createDiagnosticImage() const
+    SpectralShipGen::Image ShipGeneratorPreviewApp::createDiagnosticImage() const
     {
         return createPreviewInspectionImage(
             m_GeneratedShip,
@@ -787,7 +787,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::enterAnimationPlayback()
     {
-        const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+        const std::vector<SpectralShipGen::Image>& frames = getActiveAnimationFrames();
         if (frames.empty()) { return; }
 
         m_PreviewMode = PreviewMode::ANIMATION;
@@ -857,9 +857,9 @@ namespace PixelShipGeneratorPreview
         if (!m_RerollStudio.Active || !hasSelectedAttributeRerollDomains(m_RerollStudio)) { return false; }
 
         const AttributeRerollStudioState previousState = m_RerollStudio;
-        const PreviewGenerationRecipe candidateRecipe = PixelShipGeneratorPreview::generateAttributeRerollCandidate(m_RerollStudio, m_SeedGenerator());
-        PixelShipGenerator::GeneratedShip candidateShip;
-        PixelShipGenerator::ShipGenerationDebugInfo candidateDebugInfo;
+        const PreviewGenerationRecipe candidateRecipe = SpectralShipGenStudioPreview::generateAttributeRerollCandidate(m_RerollStudio, m_SeedGenerator());
+        SpectralShipGen::GeneratedShip candidateShip;
+        SpectralShipGen::ShipGenerationDebugInfo candidateDebugInfo;
         if (!generateShipFromRecipe(candidateRecipe, candidateShip, &candidateDebugInfo))
         {
             m_RerollStudio = previousState;
@@ -867,7 +867,7 @@ namespace PixelShipGeneratorPreview
             return false;
         }
 
-        const sf::Image image = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(candidateShip.FinalImage);
+        const sf::Image image = SpectralShipGen::SFMLImageAdapter::createSFMLImage(candidateShip.FinalImage);
         sf::Texture candidateTexture;
         if (!candidateTexture.loadFromImage(image))
         {
@@ -906,12 +906,12 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::changeCalibrationGroup(int32_t delta)
     {
-        const uint32_t count = static_cast<uint32_t>(PixelShipGenerator::GenerationWeightGroup::GENERATION_WEIGHT_GROUP_END);
+        const uint32_t count = static_cast<uint32_t>(SpectralShipGen::GenerationWeightGroup::GENERATION_WEIGHT_GROUP_END);
         if (count == 0u) { return; }
         int32_t value = static_cast<int32_t>(m_CalibrationGroup) + delta;
         while (value < 0) { value += static_cast<int32_t>(count); }
         while (value >= static_cast<int32_t>(count)) { value -= static_cast<int32_t>(count); }
-        m_CalibrationGroup = static_cast<PixelShipGenerator::GenerationWeightGroup>(value);
+        m_CalibrationGroup = static_cast<SpectralShipGen::GenerationWeightGroup>(value);
         generateCalibrationPair();
     }
 
@@ -924,8 +924,8 @@ namespace PixelShipGeneratorPreview
             return false;
         }
 
-        const sf::Image imageA = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(m_CalibrationPair.ShipA.FinalImage);
-        const sf::Image imageB = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(m_CalibrationPair.ShipB.FinalImage);
+        const sf::Image imageA = SpectralShipGen::SFMLImageAdapter::createSFMLImage(m_CalibrationPair.ShipA.FinalImage);
+        const sf::Image imageB = SpectralShipGen::SFMLImageAdapter::createSFMLImage(m_CalibrationPair.ShipB.FinalImage);
         if (!m_CalibrationTextureA.loadFromImage(imageA) || !m_CalibrationTextureB.loadFromImage(imageB))
         {
             m_CalibrationPair.Valid = false;
@@ -962,8 +962,8 @@ namespace PixelShipGeneratorPreview
     {
         const uint32_t optionIndex = encodedValue >> 16u;
         const uint32_t value = encodedValue & 0xFFFFu;
-        if (optionIndex >= PixelShipGenerator::getGenerationWeightOptionCount(m_CalibrationGroup)) { return; }
-        PixelShipGenerator::setGenerationTuningWeight(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, optionIndex, value);
+        if (optionIndex >= SpectralShipGen::getGenerationWeightOptionCount(m_CalibrationGroup)) { return; }
+        SpectralShipGen::setGenerationTuningWeight(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, optionIndex, value);
         setStatusMessage("Temporary tuning updated. Generate a new pair to evaluate it.");
     }
 
@@ -1001,13 +1001,13 @@ namespace PixelShipGeneratorPreview
     void ShipGeneratorPreviewApp::exportCalibrationTuningProfile()
     {
         std::string error;
-        if (PixelShipGeneratorPreview::exportGenerationTuningProfile(m_CalibrationSession.TunedProfile, CalibrationTuningProfilePath, error)) { setStatusMessage("Tuning profile exported: " + CalibrationTuningProfilePath.string()); }
+        if (SpectralShipGenStudioPreview::exportGenerationTuningProfile(m_CalibrationSession.TunedProfile, CalibrationTuningProfilePath, error)) { setStatusMessage("Tuning profile exported: " + CalibrationTuningProfilePath.string()); }
         else { setStatusMessage("Tuning export failed: " + error); }
     }
 
     void ShipGeneratorPreviewApp::enterFrameInspection()
     {
-        const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+        const std::vector<SpectralShipGen::Image>& frames = getActiveAnimationFrames();
         if (frames.empty()) { return; }
 
         m_PreviewMode = PreviewMode::FRAME_INSPECTION;
@@ -1020,10 +1020,10 @@ namespace PixelShipGeneratorPreview
         if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
 
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        PixelShipGenerator::ShipGenerationProfile profile;
+        SpectralShipGen::ShipGenerationProfile profile;
         std::string name;
         m_ConfigurationEditorTargetPresetId.reset();
-        if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
+        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
         {
             if (m_SelectedStructuralPresetId.has_value())
             {
@@ -1043,7 +1043,7 @@ namespace PixelShipGeneratorPreview
         }
         else
         {
-            profile = PixelShipGenerator::getShipGenerationProfile(recipe.Style);
+            profile = SpectralShipGen::getShipGenerationProfile(recipe.Style);
             name = getStyleName(recipe.Style) + " Copy";
         }
 
@@ -1062,7 +1062,7 @@ namespace PixelShipGeneratorPreview
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditorTargetPresetId.reset();
         m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
-        m_ConfigurationEditor.openStructuralProfile("Custom Profile", PixelShipGenerator::ShipGenerationProfile{});
+        m_ConfigurationEditor.openStructuralProfile("Custom Profile", SpectralShipGen::ShipGenerationProfile{});
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
         setDisplayedStaticFrame();
         updateWindowTitle();
@@ -1073,10 +1073,10 @@ namespace PixelShipGeneratorPreview
         if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
 
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        PixelShipGenerator::ShipFactionProfile profile;
+        SpectralShipGen::ShipFactionProfile profile;
         std::string name;
         m_ConfigurationEditorTargetFactionPresetId.reset();
-        if (recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
+        if (recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM)
         {
             if (m_SelectedFactionPresetId.has_value())
             {
@@ -1096,7 +1096,7 @@ namespace PixelShipGeneratorPreview
         }
         else
         {
-            profile = PixelShipGenerator::getShipFactionProfile(recipe.Faction);
+            profile = SpectralShipGen::getShipFactionProfile(recipe.Faction);
             name = getFactionDisplayName(recipe.Faction) + " Copy";
         }
 
@@ -1115,7 +1115,7 @@ namespace PixelShipGeneratorPreview
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditorTargetFactionPresetId.reset();
         m_ConfigurationEditor.setPanelBounds({ static_cast<float>(PreviewContentWidth), static_cast<float>(PreviewWorkspaceNavigationHeight), static_cast<float>(PreviewWindowWidth - PreviewContentWidth), static_cast<float>(PreviewWindowHeight - PreviewWorkspaceNavigationHeight) });
-        m_ConfigurationEditor.openFactionProfile("Custom Faction", PixelShipGenerator::ShipFactionProfile{});
+        m_ConfigurationEditor.openFactionProfile("Custom Faction", SpectralShipGen::ShipFactionProfile{});
         m_PreviewMode = PreviewMode::CONFIGURATION_EDITOR;
         setDisplayedStaticFrame();
         updateWindowTitle();
@@ -1126,7 +1126,7 @@ namespace PixelShipGeneratorPreview
         if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
 
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        PixelShipGenerator::ShipPaletteConfiguration configuration = recipe.PaletteConfiguration;
+        SpectralShipGen::ShipPaletteConfiguration configuration = recipe.PaletteConfiguration;
         std::string name = getCurrentPaletteDisplayName();
         m_ConfigurationEditorTargetPalettePresetId.reset();
 
@@ -1142,25 +1142,25 @@ namespace PixelShipGeneratorPreview
         }
         else if (m_SelectedBuiltInPalettePreset.has_value())
         {
-            configuration.Mode = PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
-            configuration.Generated = PixelShipGenerator::getBuiltInPalettePresetProfile(*m_SelectedBuiltInPalettePreset);
-            name = std::string(PixelShipGenerator::getBuiltInPalettePresetId(*m_SelectedBuiltInPalettePreset)) + " Palette Copy";
+            configuration.Mode = SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+            configuration.Generated = SpectralShipGen::getBuiltInPalettePresetProfile(*m_SelectedBuiltInPalettePreset);
+            name = std::string(SpectralShipGen::getBuiltInPalettePresetId(*m_SelectedBuiltInPalettePreset)) + " Palette Copy";
         }
-        else if (configuration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED)
+        else if (configuration.Mode == SpectralShipGen::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED)
         {
-            configuration.Mode = PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
-            configuration.Generated = recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
-                ? PixelShipGenerator::getShipPaletteGenerationProfile(recipe.Faction)
-                : PixelShipGenerator::getShipPaletteGenerationProfile(recipe.FactionProfile);
+            configuration.Mode = SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+            configuration.Generated = recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
+                ? SpectralShipGen::getShipPaletteGenerationProfile(recipe.Faction)
+                : SpectralShipGen::getShipPaletteGenerationProfile(recipe.FactionProfile);
             name = "Faction Palette Copy";
         }
 
-        if (configuration.Mode != PixelShipGenerator::ShipPaletteSourceMode::FIXED) { configuration.Fixed = m_GeneratedShip.Palette; }
-        if (configuration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FIXED)
+        if (configuration.Mode != SpectralShipGen::ShipPaletteSourceMode::FIXED) { configuration.Fixed = m_GeneratedShip.Palette; }
+        if (configuration.Mode == SpectralShipGen::ShipPaletteSourceMode::FIXED)
         {
-            configuration.Generated = recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
-                ? PixelShipGenerator::getShipPaletteGenerationProfile(recipe.Faction)
-                : PixelShipGenerator::getShipPaletteGenerationProfile(recipe.FactionProfile);
+            configuration.Generated = recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
+                ? SpectralShipGen::getShipPaletteGenerationProfile(recipe.Faction)
+                : SpectralShipGen::getShipPaletteGenerationProfile(recipe.FactionProfile);
         }
 
         m_ConfigurationEditorReturnMode = m_PreviewMode;
@@ -1176,11 +1176,11 @@ namespace PixelShipGeneratorPreview
     {
         if (m_PreviewMode == PreviewMode::GALLERY || m_PreviewMode == PreviewMode::FAVORITES || m_PreviewMode == PreviewMode::REROLL_STUDIO || m_PreviewMode == PreviewMode::CALIBRATION || m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { return; }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        PixelShipGenerator::ShipPaletteConfiguration configuration;
-        configuration.Mode = PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
-        configuration.Generated = recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
-            ? PixelShipGenerator::getShipPaletteGenerationProfile(recipe.Faction)
-            : PixelShipGenerator::getShipPaletteGenerationProfile(recipe.FactionProfile);
+        SpectralShipGen::ShipPaletteConfiguration configuration;
+        configuration.Mode = SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+        configuration.Generated = recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET
+            ? SpectralShipGen::getShipPaletteGenerationProfile(recipe.Faction)
+            : SpectralShipGen::getShipPaletteGenerationProfile(recipe.FactionProfile);
         configuration.Fixed = m_GeneratedShip.Palette;
         m_ConfigurationEditorReturnMode = m_PreviewMode;
         m_ConfigurationEditorTargetPalettePresetId.reset();
@@ -1256,8 +1256,8 @@ namespace PixelShipGeneratorPreview
                 else { id = m_CustomPresetWorkspace.addFaction(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftFactionProfile()); }
                 const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
                 const bool persisted = saveUserPresetLibraryState();
-                recipe.FactionSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-                recipe.Faction = PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END;
+                recipe.FactionSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+                recipe.Faction = SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END;
                 recipe.FactionProfile = m_ConfigurationEditor.getDraftFactionProfile();
                 m_SelectedFactionPresetId = id;
                 m_ConfigurationEditorTargetFactionPresetId.reset();
@@ -1289,8 +1289,8 @@ namespace PixelShipGeneratorPreview
                 else { id = m_CustomPresetWorkspace.addStructural(m_ConfigurationEditor.getName(), m_ConfigurationEditor.getDraftProfile()); }
                 const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
                 const bool persisted = saveUserPresetLibraryState();
-                recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-                recipe.Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
+                recipe.StructuralSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+                recipe.Style = SpectralShipGen::ShipStyle::SHIP_STYLE_END;
                 recipe.StructuralProfile = m_ConfigurationEditor.getDraftProfile();
                 m_SelectedStructuralPresetId = id;
                 m_ConfigurationEditorTargetPresetId.reset();
@@ -1470,7 +1470,7 @@ namespace PixelShipGeneratorPreview
         if (!readUserPresetPathFromConsole(path)) { return; }
 
         const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
-        const UserPresetImportResult imported = PixelShipGeneratorPreview::importUserPreset(m_CustomPresetWorkspace, userPresetCategory(kind), path);
+        const UserPresetImportResult imported = SpectralShipGenStudioPreview::importUserPreset(m_CustomPresetWorkspace, userPresetCategory(kind), path);
         if (!imported.Success)
         {
             std::cerr << imported.Error << '\n';
@@ -1619,7 +1619,7 @@ namespace PixelShipGeneratorPreview
         if (m_PreviewMode == PreviewMode::CALIBRATION)
         {
             const CalibrationGroupStatistics statistics = calculateCalibrationGroupStatistics(m_CalibrationSession, m_CalibrationGroup, getCalibrationContextFilter());
-            m_Window.setTitle("Pixel Ship Generator | Calibration Lab | " + std::string(getCalibrationGroupName(m_CalibrationGroup)) + " | " + getCalibrationEvidenceName(statistics.Evidence) + " | " + std::to_string(statistics.UsefulComparisonCount) + " comparisons");
+            m_Window.setTitle("SpectralShipGen Studio | Calibration Lab | " + std::string(getCalibrationGroupName(m_CalibrationGroup)) + " | " + getCalibrationEvidenceName(statistics.Evidence) + " | " + std::to_string(statistics.UsefulComparisonCount) + " comparisons");
             return;
         }
 
@@ -1682,7 +1682,7 @@ namespace PixelShipGeneratorPreview
             return false;
         }
 
-        PixelShipGenerator::GeneratedShip candidateShip;
+        SpectralShipGen::GeneratedShip candidateShip;
         if (!generateShipFromRecipe(document.Recipe, candidateShip, nullptr))
         {
             setStatusMessage("Recipe parsed correctly, but ship generation failed.");
@@ -1693,7 +1693,7 @@ namespace PixelShipGeneratorPreview
         {
             try
             {
-                const PixelShipGenerator::ShipIdleAnimation candidateAnimation = PixelShipGenerator::ShipIdleAnimator{}.generate(candidateShip, *document.AnimationSettings);
+                const SpectralShipGen::ShipIdleAnimation candidateAnimation = SpectralShipGen::ShipIdleAnimator{}.generate(candidateShip, *document.AnimationSettings);
                 if (candidateAnimation.Frames.empty())
                 {
                     setStatusMessage("Recipe animation settings produced no frames.");
@@ -1748,7 +1748,7 @@ namespace PixelShipGeneratorPreview
         appendHistoryEntry(newRecipe);
     }
 
-    bool ShipGeneratorPreviewApp::generateShipFromRecipe(const PreviewGenerationRecipe& recipe, PixelShipGenerator::GeneratedShip& outShip, PixelShipGenerator::ShipGenerationDebugInfo* debugInfo)
+    bool ShipGeneratorPreviewApp::generateShipFromRecipe(const PreviewGenerationRecipe& recipe, SpectralShipGen::GeneratedShip& outShip, SpectralShipGen::ShipGenerationDebugInfo* debugInfo)
     {
         try
         {
@@ -1804,7 +1804,7 @@ namespace PixelShipGeneratorPreview
         const uint32_t favoritePageCount = getPreviewThumbnailPageCount(m_FavoritesState.Grid);
         state.FavoritesPageValue = favoritePageCount == 0u ? "0 / 0" : std::to_string(getPreviewThumbnailCurrentPage(m_FavoritesState.Grid) + 1u) + " / " + std::to_string(favoritePageCount);
         state.AnimationTypeValue = getAnimationTypeDisplayName(m_AnimationSession.getSelectedAnimationType());
-        state.AnimationBaseStateValue = m_AnimationSession.getRuntimeMovementType() == PixelShipGenerator::ShipAnimationType::IDLE ? "NEUTRAL" : getAnimationTypeDisplayName(m_AnimationSession.getRuntimeMovementType());
+        state.AnimationBaseStateValue = m_AnimationSession.getRuntimeMovementType() == SpectralShipGen::ShipAnimationType::IDLE ? "NEUTRAL" : getAnimationTypeDisplayName(m_AnimationSession.getRuntimeMovementType());
         state.AnimationPhaseValue = m_AnimationSession.getSemanticPhaseDisplay();
         state.AnimationPlaybackSpeedValue = getPlaybackSpeedDisplay(m_AnimationSession.getPlaybackSpeed());
         state.AnimationTimelineValue = static_cast<uint32_t>(std::lround(std::clamp(m_AnimationSession.getActiveNormalizedTime(), 0.0, 1.0) * 1000.0));
@@ -1821,18 +1821,18 @@ namespace PixelShipGeneratorPreview
             const CalibrationGroupStatistics statistics = calculateCalibrationGroupStatistics(m_CalibrationSession, m_CalibrationGroup, filter);
             state.CalibrationEvidenceValue = std::string(getCalibrationEvidenceName(statistics.Evidence)) + " / " + std::to_string(statistics.UsefulComparisonCount);
             const std::vector<uint32_t> suggested = calculateSuggestedGroupWeights(m_CalibrationSession, getCurrentRecipe().Style, m_CalibrationGroup, filter);
-            const uint32_t optionCount = PixelShipGenerator::getGenerationWeightOptionCount(m_CalibrationGroup);
-            const bool binary = PixelShipGenerator::getGenerationWeightGroupKind(m_CalibrationGroup) == PixelShipGenerator::GenerationWeightGroupKind::BINARY_PROBABILITY;
+            const uint32_t optionCount = SpectralShipGen::getGenerationWeightOptionCount(m_CalibrationGroup);
+            const bool binary = SpectralShipGen::getGenerationWeightGroupKind(m_CalibrationGroup) == SpectralShipGen::GenerationWeightGroupKind::BINARY_PROBABILITY;
             for (uint32_t index = 0u; index < state.CalibrationWeightRows.size(); ++index)
             {
                 PreviewCalibrationWeightRowState& row = state.CalibrationWeightRows[index];
                 row.Valid = index < optionCount;
                 if (!row.Valid) { continue; }
                 row.Label = getCalibrationOptionName(m_CalibrationGroup, index);
-                row.CurrentWeight = PixelShipGenerator::getGenerationTuningWeight(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, index);
-                row.DefaultWeight = PixelShipGenerator::getGenerationTuningWeight(m_CalibrationSession.DefaultProfile, getCurrentRecipe().Style, m_CalibrationGroup, index);
+                row.CurrentWeight = SpectralShipGen::getGenerationTuningWeight(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, index);
+                row.DefaultWeight = SpectralShipGen::getGenerationTuningWeight(m_CalibrationSession.DefaultProfile, getCurrentRecipe().Style, m_CalibrationGroup, index);
                 row.SuggestedWeight = index < suggested.size() ? suggested[index] : row.CurrentWeight;
-                row.ProbabilityPercent = static_cast<uint32_t>(std::lround(PixelShipGenerator::getGenerationTuningNormalizedProbability(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, index) * 100.0));
+                row.ProbabilityPercent = static_cast<uint32_t>(std::lround(SpectralShipGen::getGenerationTuningNormalizedProbability(m_CalibrationSession.TunedProfile, getCurrentRecipe().Style, m_CalibrationGroup, index) * 100.0));
                 row.Maximum = binary ? 100u : std::max<uint32_t>(300u, std::max(row.CurrentWeight, std::max(row.DefaultWeight, row.SuggestedWeight)));
             }
         }
@@ -1980,9 +1980,9 @@ namespace PixelShipGeneratorPreview
         case PreviewCommandType::SAVE_SPRITESHEET: saveSpritesheet(); break;
         case PreviewCommandType::OPEN_REROLL_STUDIO: switchWorkspace(PreviewWorkspace::REROLL); break;
         case PreviewCommandType::REROLL_STUDIO_TOGGLE_DOMAIN:
-            if (command.Value < PixelShipGenerator::GenerationDomainCount)
+            if (command.Value < SpectralShipGen::GenerationDomainCount)
             {
-                toggleAttributeRerollDomain(m_RerollStudio, static_cast<PixelShipGenerator::GenerationDomain>(command.Value));
+                toggleAttributeRerollDomain(m_RerollStudio, static_cast<SpectralShipGen::GenerationDomain>(command.Value));
                 m_RerollStudio.CandidateValid = false;
                 m_RerollStudio.CandidateRecipe = m_RerollStudio.BaseRecipe;
             }
@@ -1998,7 +1998,7 @@ namespace PixelShipGeneratorPreview
             m_RerollStudio.CandidateRecipe = m_RerollStudio.BaseRecipe;
             break;
         case PreviewCommandType::REROLL_STUDIO_SELECT_STRUCTURE:
-            selectAttributeRerollParentChannel(m_RerollStudio, PixelShipGenerator::GenerationSeedChannel::STRUCTURE);
+            selectAttributeRerollParentChannel(m_RerollStudio, SpectralShipGen::GenerationSeedChannel::STRUCTURE);
             m_RerollStudio.CandidateValid = false;
             m_RerollStudio.CandidateRecipe = m_RerollStudio.BaseRecipe;
             break;
@@ -2406,7 +2406,7 @@ namespace PixelShipGeneratorPreview
             switch (type)
             {
             case PreviewCommandType::REROLL_STUDIO_TOGGLE_DOMAIN:
-                return command.Value < PixelShipGenerator::GenerationDomainCount;
+                return command.Value < SpectralShipGen::GenerationDomainCount;
             case PreviewCommandType::REROLL_STUDIO_SELECT_ALL:
             case PreviewCommandType::REROLL_STUDIO_CLEAR:
             case PreviewCommandType::REROLL_STUDIO_SELECT_STRUCTURE:
@@ -2551,12 +2551,12 @@ namespace PixelShipGeneratorPreview
         if (type == PreviewCommandType::REMOVE_CURRENT_FROM_FAVORITES) { return isCurrentFavorite(); }
         if (type == PreviewCommandType::ADD_RESOLUTION_BOOKMARK)
         {
-            const PixelShipGenerator::ShipDimensions dimensions = getCurrentRecipe().Dimensions;
+            const SpectralShipGen::ShipDimensions dimensions = getCurrentRecipe().Dimensions;
             return m_Collections.getResolutionBookmarks().size() < MaximumResolutionBookmarks && !m_Collections.hasResolutionBookmark(dimensions);
         }
         if (type == PreviewCommandType::REMOVE_RESOLUTION_BOOKMARK)
         {
-            const PixelShipGenerator::ShipDimensions dimensions = getCurrentRecipe().Dimensions;
+            const SpectralShipGen::ShipDimensions dimensions = getCurrentRecipe().Dimensions;
             return m_Collections.hasResolutionBookmark(dimensions);
         }
         if (type == PreviewCommandType::SELECT_RESOLUTION_BOOKMARK) { return command.Value < m_Collections.getResolutionBookmarks().size(); }
@@ -2589,10 +2589,10 @@ namespace PixelShipGeneratorPreview
         if (type == PreviewCommandType::TRIGGER_ANIMATION_FIRE) { return hasCurrentShip(); }
         if (type == PreviewCommandType::CYCLE_ANIMATION_PLAYBACK_SPEED) { return hasCurrentShip() && !getActiveAnimationFrames().empty(); }
         if (type == PreviewCommandType::SET_ANIMATION_NORMALIZED_TIME) { return hasCurrentShip() && !getActiveAnimationFrames().empty(); }
-        if (type == PreviewCommandType::CYCLE_MOVEMENT_PHASE) { return m_AnimationSession.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::IDLE && m_AnimationSession.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::FIRE; }
-        if (type == PreviewCommandType::CYCLE_FIRING_TARGET) { return m_AnimationSession.getSelectedAnimationType() == PixelShipGenerator::ShipAnimationType::FIRE && m_AnimationSession.getFiringTargets().size() > 1u; }
+        if (type == PreviewCommandType::CYCLE_MOVEMENT_PHASE) { return m_AnimationSession.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::IDLE && m_AnimationSession.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::FIRE; }
+        if (type == PreviewCommandType::CYCLE_FIRING_TARGET) { return m_AnimationSession.getSelectedAnimationType() == SpectralShipGen::ShipAnimationType::FIRE && m_AnimationSession.getFiringTargets().size() > 1u; }
         if (type == PreviewCommandType::APPLY_ANIMATION_STATE) { return true; }
-        if (type == PreviewCommandType::RETURN_ANIMATION_TO_IDLE) { return m_AnimationSession.getRuntimeMovementType() != PixelShipGenerator::ShipAnimationType::IDLE || m_AnimationSession.isTransientStatePreviewActive(); }
+        if (type == PreviewCommandType::RETURN_ANIMATION_TO_IDLE) { return m_AnimationSession.getRuntimeMovementType() != SpectralShipGen::ShipAnimationType::IDLE || m_AnimationSession.isTransientStatePreviewActive(); }
 
         if (m_PreviewMode == PreviewMode::FRAME_INSPECTION)
         {
@@ -2709,7 +2709,7 @@ namespace PixelShipGeneratorPreview
         const PreviewGenerationRecipe* favorite = m_Collections.getFavorite(index);
         if (favorite == nullptr || index >= m_FavoritesState.Grid.Items.size() || !m_FavoritesState.Grid.Items[index].Valid) { return; }
 
-        PixelShipGenerator::GeneratedShip ship;
+        SpectralShipGen::GeneratedShip ship;
         if (!generateShipFromRecipe(*favorite, ship))
         {
             setStatusMessage("Favorite image export failed: recipe could not be regenerated.");
@@ -2779,7 +2779,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::pinCurrentShip()
     {
-        const sf::Image pinnedImage = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(m_GeneratedShip.FinalImage);
+        const sf::Image pinnedImage = SpectralShipGen::SFMLImageAdapter::createSFMLImage(m_GeneratedShip.FinalImage);
 
         if (!m_PinnedTexture.loadFromImage(pinnedImage))
         {
@@ -2865,7 +2865,7 @@ namespace PixelShipGeneratorPreview
 
     void ShipGeneratorPreviewApp::removeResolutionBookmark()
     {
-        const PixelShipGenerator::ShipDimensions dimensions = getCurrentRecipe().Dimensions;
+        const SpectralShipGen::ShipDimensions dimensions = getCurrentRecipe().Dimensions;
         if (!m_Collections.removeResolutionBookmark(dimensions)) { return; }
         savePreviewAppPreferences();
         setStatusMessage("Resolution bookmark removed: " + std::to_string(dimensions.Width) + "x" + std::to_string(dimensions.Height));
@@ -2964,10 +2964,10 @@ namespace PixelShipGeneratorPreview
             PreviewThumbnailItem favorite;
             favorite.Recipe = recipe;
 
-            PixelShipGenerator::GeneratedShip favoriteShip;
+            SpectralShipGen::GeneratedShip favoriteShip;
             if (generateShipFromRecipe(recipe, favoriteShip))
             {
-                const sf::Image favoriteImage = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(favoriteShip.FinalImage);
+                const sf::Image favoriteImage = SpectralShipGen::SFMLImageAdapter::createSFMLImage(favoriteShip.FinalImage);
                 if (favorite.Texture.loadFromImage(favoriteImage))
                 {
                     favorite.Texture.setSmooth(false);
@@ -3001,7 +3001,7 @@ namespace PixelShipGeneratorPreview
             return false;
         }
 
-        m_PreviewImage = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(m_GeneratedShip.FinalImage);
+        m_PreviewImage = SpectralShipGen::SFMLImageAdapter::createSFMLImage(m_GeneratedShip.FinalImage);
 
         if (!m_PreviewTexture.loadFromImage(m_PreviewImage))
         {
@@ -3064,13 +3064,13 @@ namespace PixelShipGeneratorPreview
 
     bool ShipGeneratorPreviewApp::refreshAnimationTextures()
     {
-        const auto loadTextures = [](const std::vector<PixelShipGenerator::Image>& frames, std::vector<sf::Texture>& textures)
+        const auto loadTextures = [](const std::vector<SpectralShipGen::Image>& frames, std::vector<sf::Texture>& textures)
         {
             textures.clear();
             textures.resize(frames.size());
             for (std::size_t index = 0u; index < frames.size(); ++index)
             {
-                const sf::Image image = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(frames[index]);
+                const sf::Image image = SpectralShipGen::SFMLImageAdapter::createSFMLImage(frames[index]);
                 if (!textures[index].loadFromImage(image))
                 {
                     textures.clear();
@@ -3088,7 +3088,7 @@ namespace PixelShipGeneratorPreview
         }
         if (m_GenerateIdleFrameIndex >= m_GenerateIdleAnimationTextures.size()) { m_GenerateIdleFrameIndex = 0u; }
 
-        const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+        const std::vector<SpectralShipGen::Image>& frames = getActiveAnimationFrames();
         if (!loadTextures(frames, m_AnimationTextures))
         {
             std::cerr << "Failed to create animation texture.\n";
@@ -3135,7 +3135,7 @@ namespace PixelShipGeneratorPreview
         data.Comparison = &m_Comparison;
         data.Ship = hasCurrentShip() ? &m_GeneratedShip : nullptr;
         data.GenerationDebugInfo = hasCurrentShip() ? &m_GenerationDebugInfo : nullptr;
-        data.SelectedAnimationType = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? PixelShipGenerator::ShipAnimationType::IDLE : m_AnimationSession.getSelectedAnimationType();
+        data.SelectedAnimationType = m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE ? SpectralShipGen::ShipAnimationType::IDLE : m_AnimationSession.getSelectedAnimationType();
         data.IdleAnimation = &m_AnimationSession.getIdleAnimation();
         data.IdleAnimationSettings = &m_AnimationSession.getIdleSettings();
         data.MovementAnimation = &m_AnimationSession.getMovementAnimation();
@@ -3185,25 +3185,25 @@ namespace PixelShipGeneratorPreview
         if (!m_Locks.Structure)
         {
             recipe.Seeds.Structure = m_SeedGenerator();
-            PixelShipGenerator::clearGenerationDomainOverridesForChannel(recipe.DomainSeedOverrides, PixelShipGenerator::GenerationSeedChannel::STRUCTURE);
+            SpectralShipGen::clearGenerationDomainOverridesForChannel(recipe.DomainSeedOverrides, SpectralShipGen::GenerationSeedChannel::STRUCTURE);
         }
 
         if (!m_Locks.Palette)
         {
             recipe.Seeds.Palette = m_SeedGenerator();
-            PixelShipGenerator::clearGenerationDomainOverridesForChannel(recipe.DomainSeedOverrides, PixelShipGenerator::GenerationSeedChannel::PALETTE);
+            SpectralShipGen::clearGenerationDomainOverridesForChannel(recipe.DomainSeedOverrides, SpectralShipGen::GenerationSeedChannel::PALETTE);
         }
 
         if (!m_Locks.Details)
         {
             recipe.Seeds.Details = m_SeedGenerator();
-            PixelShipGenerator::clearGenerationDomainOverridesForChannel(recipe.DomainSeedOverrides, PixelShipGenerator::GenerationSeedChannel::DETAILS);
+            SpectralShipGen::clearGenerationDomainOverridesForChannel(recipe.DomainSeedOverrides, SpectralShipGen::GenerationSeedChannel::DETAILS);
         }
 
         if (!m_Locks.Attachments)
         {
             recipe.Seeds.Attachments = m_SeedGenerator();
-            PixelShipGenerator::clearGenerationDomainOverridesForChannel(recipe.DomainSeedOverrides, PixelShipGenerator::GenerationSeedChannel::ATTACHMENTS);
+            SpectralShipGen::clearGenerationDomainOverridesForChannel(recipe.DomainSeedOverrides, SpectralShipGen::GenerationSeedChannel::ATTACHMENTS);
         }
 
         appendHistoryEntry(recipe);
@@ -3226,7 +3226,7 @@ namespace PixelShipGeneratorPreview
 
         if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE && m_PreviewMode == PreviewMode::ANIMATION)
         {
-            const std::vector<PixelShipGenerator::Image>& frames = m_AnimationSession.getIdleAnimation().Frames;
+            const std::vector<SpectralShipGen::Image>& frames = m_AnimationSession.getIdleAnimation().Frames;
             if (m_GenerateIdleFrameIndex >= frames.size()) { return; }
             const std::filesystem::path savePath = getAvailableSavePath(baseName + "_idle_frame_" + getFrameNumberString(m_GenerateIdleFrameIndex));
             saveCoreImage(frames[m_GenerateIdleFrameIndex], savePath);
@@ -3235,18 +3235,18 @@ namespace PixelShipGeneratorPreview
 
         if (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION)
         {
-            const std::vector<PixelShipGenerator::Image>& frames = getActiveAnimationFrames();
+            const std::vector<SpectralShipGen::Image>& frames = getActiveAnimationFrames();
             if (m_AnimationSession.getFrameIndex() >= frames.size())
             {
                 return;
             }
 
             std::string animationName = baseName + "_" + getAnimationTypeFileToken(m_AnimationSession.getSelectedAnimationType());
-            if (m_AnimationSession.getSelectedAnimationType() == PixelShipGenerator::ShipAnimationType::FIRE)
+            if (m_AnimationSession.getSelectedAnimationType() == SpectralShipGen::ShipAnimationType::FIRE)
             {
                 animationName += "_weapon" + std::to_string(m_AnimationSession.getFiringAnimation().Target.WeaponComponentIndex);
             }
-            else if (m_AnimationSession.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::IDLE)
+            else if (m_AnimationSession.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::IDLE)
             {
                 animationName += "_" + getMovementPhaseFileToken(m_AnimationSession.getMovementPhase());
             }
@@ -3278,7 +3278,7 @@ namespace PixelShipGeneratorPreview
         if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE)
         {
             if (m_AnimationSession.getIdleAnimation().Frames.empty()) { return; }
-            const PixelShipGenerator::Image spritesheet = PixelShipGenerator::createHorizontalSpritesheet(m_AnimationSession.getIdleAnimation());
+            const SpectralShipGen::Image spritesheet = SpectralShipGen::createHorizontalSpritesheet(m_AnimationSession.getIdleAnimation());
             saveCoreImage(spritesheet, getAvailableSavePath(baseName + "_idle_" + std::to_string(m_AnimationSession.getIdleAnimation().Frames.size()) + "frames"));
             return;
         }
@@ -3289,22 +3289,22 @@ namespace PixelShipGeneratorPreview
             return;
         }
 
-        if (m_AnimationSession.getSelectedAnimationType() == PixelShipGenerator::ShipAnimationType::IDLE)
+        if (m_AnimationSession.getSelectedAnimationType() == SpectralShipGen::ShipAnimationType::IDLE)
         {
             if (m_AnimationSession.getIdleAnimation().Frames.empty())
             {
                 return;
             }
 
-            const PixelShipGenerator::Image spritesheet = PixelShipGenerator::createHorizontalSpritesheet(m_AnimationSession.getIdleAnimation());
+            const SpectralShipGen::Image spritesheet = SpectralShipGen::createHorizontalSpritesheet(m_AnimationSession.getIdleAnimation());
             saveCoreImage(spritesheet, getAvailableSavePath(baseName + "_idle_" + std::to_string(m_AnimationSession.getIdleAnimation().Frames.size()) + "frames"));
             return;
         }
 
-        if (m_AnimationSession.getSelectedAnimationType() == PixelShipGenerator::ShipAnimationType::FIRE)
+        if (m_AnimationSession.getSelectedAnimationType() == SpectralShipGen::ShipAnimationType::FIRE)
         {
             if (m_AnimationSession.getFiringAnimation().Frames.empty()) { return; }
-            const PixelShipGenerator::Image spritesheet = PixelShipGenerator::createHorizontalSpritesheet(m_AnimationSession.getFiringAnimation());
+            const SpectralShipGen::Image spritesheet = SpectralShipGen::createHorizontalSpritesheet(m_AnimationSession.getFiringAnimation());
             const std::string fileName = baseName + "_fire_weapon" + std::to_string(m_AnimationSession.getFiringAnimation().Target.WeaponComponentIndex) + "_" + std::to_string(m_AnimationSession.getFiringAnimation().DurationMilliseconds) + "ms_" + std::to_string(m_AnimationSession.getFiringAnimation().Frames.size()) + "frames";
             saveCoreImage(spritesheet, getAvailableSavePath(fileName));
             return;
@@ -3315,21 +3315,21 @@ namespace PixelShipGeneratorPreview
             return;
         }
 
-        const std::array<const PixelShipGenerator::ShipMovementAnimationClip*, 3u> clips =
+        const std::array<const SpectralShipGen::ShipMovementAnimationClip*, 3u> clips =
         {
             &m_AnimationSession.getMovementAnimation().Enter,
             &m_AnimationSession.getMovementAnimation().Sustain,
             &m_AnimationSession.getMovementAnimation().Exit
         };
 
-        for (const PixelShipGenerator::ShipMovementAnimationClip* clip : clips)
+        for (const SpectralShipGen::ShipMovementAnimationClip* clip : clips)
         {
             if (clip == nullptr || clip->Frames.empty())
             {
                 continue;
             }
 
-            const PixelShipGenerator::Image spritesheet = PixelShipGenerator::createHorizontalSpritesheet(*clip);
+            const SpectralShipGen::Image spritesheet = SpectralShipGen::createHorizontalSpritesheet(*clip);
             const std::string fileName = baseName + "_" + getAnimationTypeFileToken(m_AnimationSession.getSelectedAnimationType()) + "_" + getMovementPhaseFileToken(clip->Phase) + "_" + std::to_string(clip->Frames.size()) + "frames";
             saveCoreImage(spritesheet, getAvailableSavePath(fileName));
         }
@@ -3377,7 +3377,7 @@ namespace PixelShipGeneratorPreview
         setDimensions(m_Collections.getResolutionBookmarks()[index]);
     }
 
-    const std::vector<PixelShipGenerator::Image>& ShipGeneratorPreviewApp::getActiveAnimationFrames() const
+    const std::vector<SpectralShipGen::Image>& ShipGeneratorPreviewApp::getActiveAnimationFrames() const
     {
         return m_AnimationSession.getActiveFrames();
     }
@@ -3404,23 +3404,23 @@ namespace PixelShipGeneratorPreview
         refreshDisplayedTexture();
     }
 
-    void ShipGeneratorPreviewApp::setFaction(PixelShipGenerator::ShipFactionType faction)
+    void ShipGeneratorPreviewApp::setFaction(SpectralShipGen::ShipFactionType faction)
     {
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
 
-        if (recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET && recipe.Faction == faction)
+        if (recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET && recipe.Faction == faction)
         {
             return;
         }
 
         m_SelectedFactionPresetId.reset();
         m_SelectedConfigurationBundleId.reset();
-        recipe.FactionSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
+        recipe.FactionSource = SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
         recipe.Faction = faction;
         regenerate();
     }
 
-    void ShipGeneratorPreviewApp::setDimensions(const PixelShipGenerator::ShipDimensions& dimensions)
+    void ShipGeneratorPreviewApp::setDimensions(const SpectralShipGen::ShipDimensions& dimensions)
     {
         if (!isSelectablePreviewDimensions(dimensions)) { return; }
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
@@ -3434,7 +3434,7 @@ namespace PixelShipGeneratorPreview
     {
         height = clampPreviewDimensionValue(height);
         if (m_AspectRatioLocked) { setResolution(height); return; }
-        const PixelShipGenerator::ShipDimensions current = getCurrentRecipe().Dimensions;
+        const SpectralShipGen::ShipDimensions current = getCurrentRecipe().Dimensions;
         height = std::clamp(height, getMinimumPreviewHeightForWidth(current.Width), getMaximumPreviewHeightForWidth(current.Width));
         setDimensions({ current.Width, height });
     }
@@ -3449,23 +3449,23 @@ namespace PixelShipGeneratorPreview
     {
         width = clampPreviewDimensionValue(width);
         if (m_AspectRatioLocked) { setResolution(width); return; }
-        const PixelShipGenerator::ShipDimensions current = getCurrentRecipe().Dimensions;
+        const SpectralShipGen::ShipDimensions current = getCurrentRecipe().Dimensions;
         width = std::clamp(width, getMinimumPreviewWidthForHeight(current.Height), getMaximumPreviewWidthForHeight(current.Height));
         setDimensions({ width, current.Height });
     }
 
-    void ShipGeneratorPreviewApp::setStyle(PixelShipGenerator::ShipStyle style)
+    void ShipGeneratorPreviewApp::setStyle(SpectralShipGen::ShipStyle style)
     {
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
 
-        if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET && recipe.Style == style)
+        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET && recipe.Style == style)
         {
             return;
         }
 
         m_SelectedStructuralPresetId.reset();
         m_SelectedConfigurationBundleId.reset();
-        recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
+        recipe.StructuralSource = SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET;
         recipe.Style = style;
         regenerate();
     }
@@ -3475,8 +3475,8 @@ namespace PixelShipGeneratorPreview
         const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(id);
         if (preset == nullptr) { return; }
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        recipe.StructuralSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Style = PixelShipGenerator::ShipStyle::SHIP_STYLE_END;
+        recipe.StructuralSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+        recipe.Style = SpectralShipGen::ShipStyle::SHIP_STYLE_END;
         recipe.StructuralProfile = preset->Profile;
         m_SelectedStructuralPresetId = id;
         m_SelectedConfigurationBundleId.reset();
@@ -3503,7 +3503,7 @@ namespace PixelShipGeneratorPreview
             if (bundle != nullptr && !bundle->Bundle.StructuralDisplayName.empty()) { return bundle->Bundle.StructuralDisplayName; }
         }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        if (recipe.StructuralSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getStyleName(recipe.Style); }
+        if (recipe.StructuralSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getStyleName(recipe.Style); }
         if (m_SelectedStructuralPresetId.has_value())
         {
             const RuntimeStructuralPreset* preset = m_CustomPresetWorkspace.findStructural(*m_SelectedStructuralPresetId);
@@ -3517,8 +3517,8 @@ namespace PixelShipGeneratorPreview
         const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(id);
         if (preset == nullptr) { return; }
         PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        recipe.FactionSource = PixelShipGenerator::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
-        recipe.Faction = PixelShipGenerator::ShipFactionType::SHIP_FACTION_TYPE_END;
+        recipe.FactionSource = SpectralShipGen::ShipGenerationRecipeProfileSource::EMBEDDED_CUSTOM;
+        recipe.Faction = SpectralShipGen::ShipFactionType::SHIP_FACTION_TYPE_END;
         recipe.FactionProfile = preset->Profile;
         m_SelectedFactionPresetId = id;
         m_SelectedConfigurationBundleId.reset();
@@ -3545,7 +3545,7 @@ namespace PixelShipGeneratorPreview
             if (bundle != nullptr && !bundle->Bundle.FactionDisplayName.empty()) { return bundle->Bundle.FactionDisplayName; }
         }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        if (recipe.FactionSource == PixelShipGenerator::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getFactionDisplayName(recipe.Faction); }
+        if (recipe.FactionSource == SpectralShipGen::ShipGenerationRecipeProfileSource::BUILT_IN_PRESET) { return getFactionDisplayName(recipe.Faction); }
         if (m_SelectedFactionPresetId.has_value())
         {
             const RuntimeFactionPreset* preset = m_CustomPresetWorkspace.findFaction(*m_SelectedFactionPresetId);
@@ -3581,8 +3581,8 @@ namespace PixelShipGeneratorPreview
             setStatusMessage("Selected faction-default palette language.");
             break;
         case PaletteProfileSelectionKind::BUILT_IN_GENERATED:
-            recipe.PaletteConfiguration.Mode = PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
-            recipe.PaletteConfiguration.Generated = PixelShipGenerator::getBuiltInPalettePresetProfile(entry.PalettePreset);
+            recipe.PaletteConfiguration.Mode = SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+            recipe.PaletteConfiguration.Generated = SpectralShipGen::getBuiltInPalettePresetProfile(entry.PalettePreset);
             m_SelectedBuiltInPalettePreset = entry.PalettePreset;
             m_SelectedPalettePresetId.reset();
             m_SelectedConfigurationBundleId.reset();
@@ -3608,14 +3608,14 @@ namespace PixelShipGeneratorPreview
             if (bundle != nullptr && !bundle->Bundle.PaletteDisplayName.empty()) { return bundle->Bundle.PaletteDisplayName; }
         }
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
-        if (recipe.PaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED) { return "FACTION DEFAULT"; }
+        if (recipe.PaletteConfiguration.Mode == SpectralShipGen::ShipPaletteSourceMode::FACTION_PROFILE_GENERATED) { return "FACTION DEFAULT"; }
         if (m_SelectedPalettePresetId.has_value())
         {
             const RuntimePalettePreset* preset = m_CustomPresetWorkspace.findPalette(*m_SelectedPalettePresetId);
             if (preset != nullptr) { return preset->Name; }
         }
-        if (m_SelectedBuiltInPalettePreset.has_value()) { return std::string(PixelShipGenerator::getBuiltInPalettePresetId(*m_SelectedBuiltInPalettePreset)); }
-        return recipe.PaletteConfiguration.Mode == PixelShipGenerator::ShipPaletteSourceMode::FIXED ? "CUSTOM FIXED" : "CUSTOM GENERATED";
+        if (m_SelectedBuiltInPalettePreset.has_value()) { return std::string(SpectralShipGen::getBuiltInPalettePresetId(*m_SelectedBuiltInPalettePreset)); }
+        return recipe.PaletteConfiguration.Mode == SpectralShipGen::ShipPaletteSourceMode::FIXED ? "CUSTOM FIXED" : "CUSTOM GENERATED";
     }
 
     std::string ShipGeneratorPreviewApp::getCurrentConfigurationBundleDisplayName() const
@@ -3717,8 +3717,8 @@ namespace PixelShipGeneratorPreview
             return true;
         }
 
-        const PixelShipGenerator::Image diagnosticImage = createDiagnosticImage();
-        const sf::Image image = PixelShipGenerator::SFMLImageAdapter::createSFMLImage(diagnosticImage);
+        const SpectralShipGen::Image diagnosticImage = createDiagnosticImage();
+        const sf::Image image = SpectralShipGen::SFMLImageAdapter::createSFMLImage(diagnosticImage);
 
         if (!m_DiagnosticTexture.loadFromImage(image))
         {
@@ -3832,7 +3832,7 @@ namespace PixelShipGeneratorPreview
         const double elapsedMicroseconds = std::max(0.0, static_cast<double>(m_AnimationClock.restart().asMicroseconds()));
         if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::GENERATE)
         {
-            const PixelShipGenerator::ShipIdleAnimation& idleAnimation = m_AnimationSession.getIdleAnimation();
+            const SpectralShipGen::ShipIdleAnimation& idleAnimation = m_AnimationSession.getIdleAnimation();
             if (idleAnimation.Frames.empty() || m_GenerateIdleAnimationTextures.empty()) { return; }
             const double frameDurationMicroseconds = std::max(1.0, idleAnimation.FrameDurationMilliseconds * 1000.0);
             m_GenerateIdlePlaybackAccumulatorMicroseconds += elapsedMicroseconds;
@@ -3931,13 +3931,13 @@ namespace PixelShipGeneratorPreview
             const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
             const std::size_t runtimeCount = kind == ConfigurationEditorProfileKind::FACTION ? m_CustomPresetWorkspace.getFactionPresets().size() : kind == ConfigurationEditorProfileKind::PALETTE ? m_CustomPresetWorkspace.getPalettePresets().size() : m_CustomPresetWorkspace.getStructuralPresets().size();
             const char* editorName = kind == ConfigurationEditorProfileKind::FACTION ? "Faction Editor" : kind == ConfigurationEditorProfileKind::PALETTE ? "Palette Editor" : "Structural Editor";
-            m_Window.setTitle("Pixel Ship Generator | " + std::string(editorName) + " | " + m_ConfigurationEditor.getName() + " | User presets: " + std::to_string(runtimeCount));
+            m_Window.setTitle("SpectralShipGen Studio | " + std::string(editorName) + " | " + m_ConfigurationEditor.getName() + " | User presets: " + std::to_string(runtimeCount));
             return;
         }
 
         if (m_PreviewMode == PreviewMode::GALLERY)
         {
-            const std::string title = "Pixel Ship Generator | Gallery | BatchSeed: " + std::to_string(m_GalleryState.BatchSeed) + " | " + std::to_string(m_GalleryState.CandidateCount) + " candidates | Style: " + getStyleName(m_GalleryState.TemplateRecipe.Style) + " | Faction: " + getFactionName(m_GalleryState.TemplateRecipe.Faction) + " | " + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Width) + "x" + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Height) + " | Selected " + std::to_string(m_GalleryState.Grid.SelectedIndex + 1u) + "/" + std::to_string(m_GalleryState.Grid.Items.size());
+            const std::string title = "SpectralShipGen Studio | Gallery | BatchSeed: " + std::to_string(m_GalleryState.BatchSeed) + " | " + std::to_string(m_GalleryState.CandidateCount) + " candidates | Style: " + getStyleName(m_GalleryState.TemplateRecipe.Style) + " | Faction: " + getFactionName(m_GalleryState.TemplateRecipe.Faction) + " | " + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Width) + "x" + std::to_string(m_GalleryState.TemplateRecipe.Dimensions.Height) + " | Selected " + std::to_string(m_GalleryState.Grid.SelectedIndex + 1u) + "/" + std::to_string(m_GalleryState.Grid.Items.size());
             m_Window.setTitle(title);
             return;
         }
@@ -3945,7 +3945,7 @@ namespace PixelShipGeneratorPreview
         if (m_PreviewMode == PreviewMode::FAVORITES)
         {
             const std::string selected = m_FavoritesState.Grid.Items.empty() ? "0/0" : std::to_string(m_FavoritesState.Grid.SelectedIndex + 1u) + "/" + std::to_string(m_FavoritesState.Grid.Items.size());
-            m_Window.setTitle("Pixel Ship Generator | Favorites | Selected " + selected + " | Current seed: " + std::to_string(getCurrentRecipe().Seeds.Master));
+            m_Window.setTitle("SpectralShipGen Studio | Favorites | Selected " + selected + " | Current seed: " + std::to_string(getCurrentRecipe().Seeds.Master));
             return;
         }
 
@@ -3953,13 +3953,13 @@ namespace PixelShipGeneratorPreview
         {
             const std::size_t selectedCount = static_cast<std::size_t>(std::count(m_RerollStudio.SelectedDomains.begin(), m_RerollStudio.SelectedDomains.end(), true));
             const std::string candidate = m_RerollStudio.CandidateValid ? ("Candidate " + std::to_string(m_RerollStudio.CandidateSequence)) : "No Candidate";
-            m_Window.setTitle("Pixel Ship Generator | Attribute Reroll Studio | Selected " + std::to_string(selectedCount) + " domains | " + candidate + " | Base seed: " + std::to_string(m_RerollStudio.BaseRecipe.Seeds.Master));
+            m_Window.setTitle("SpectralShipGen Studio | Attribute Reroll Studio | Selected " + std::to_string(selectedCount) + " domains | " + candidate + " | Base seed: " + std::to_string(m_RerollStudio.BaseRecipe.Seeds.Master));
             return;
         }
 
         const PreviewGenerationRecipe& recipe = getCurrentRecipe();
         const std::string attachmentState = recipe.AttachmentsEnabled ? "ON" : "OFF";
-        std::string title = "Pixel Ship Generator | " + std::string(getPreviewWorkspaceName(m_WorkspaceSession.getActiveWorkspace())) + " | Seed: " + std::to_string(recipe.Seeds.Master) + " | " + std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height) + " | Profile: " + getCurrentStructuralProfileDisplayName() + " | Faction: " + getCurrentFactionProfileDisplayName() + " | Palette: " + getCurrentPaletteDisplayName() + " | Attachments: " + attachmentState + " | Favorite: " + (isCurrentFavorite() ? "YES" : "NO") + " | Favorites: " + std::to_string(m_Collections.getFavorites().size()) + " | S:" + getLockDisplay(m_Locks.Structure) + " P:" + getLockDisplay(m_Locks.Palette) + " D:" + getLockDisplay(m_Locks.Details) + " A:" + getLockDisplay(m_Locks.Attachments) + " | History " + std::to_string(m_Collections.getHistoryIndex() + 1u) + "/" + std::to_string(m_Collections.getHistoryCount());
+        std::string title = "SpectralShipGen Studio | " + std::string(getPreviewWorkspaceName(m_WorkspaceSession.getActiveWorkspace())) + " | Seed: " + std::to_string(recipe.Seeds.Master) + " | " + std::to_string(recipe.Dimensions.Width) + "x" + std::to_string(recipe.Dimensions.Height) + " | Profile: " + getCurrentStructuralProfileDisplayName() + " | Faction: " + getCurrentFactionProfileDisplayName() + " | Palette: " + getCurrentPaletteDisplayName() + " | Attachments: " + attachmentState + " | Favorite: " + (isCurrentFavorite() ? "YES" : "NO") + " | Favorites: " + std::to_string(m_Collections.getFavorites().size()) + " | S:" + getLockDisplay(m_Locks.Structure) + " P:" + getLockDisplay(m_Locks.Palette) + " D:" + getLockDisplay(m_Locks.Details) + " A:" + getLockDisplay(m_Locks.Attachments) + " | History " + std::to_string(m_Collections.getHistoryIndex() + 1u) + "/" + std::to_string(m_Collections.getHistoryCount());
 
         if (m_WorkspaceSession.getActiveWorkspace() == PreviewWorkspace::INSPECT && m_Comparison.ViewEnabled && m_Comparison.Pinned.Valid)
         {
@@ -3973,12 +3973,12 @@ namespace PixelShipGeneratorPreview
             title += " | AnimationSeed: " + std::to_string(m_AnimationSession.getIdleAnimation().Seed);
         }
 
-        const std::vector<PixelShipGenerator::Image>& animationFrames = getActiveAnimationFrames();
+        const std::vector<SpectralShipGen::Image>& animationFrames = getActiveAnimationFrames();
         if (!generateIdlePlayback && (m_PreviewMode == PreviewMode::ANIMATION || m_PreviewMode == PreviewMode::FRAME_INSPECTION) && !animationFrames.empty())
         {
             title += m_PreviewMode == PreviewMode::ANIMATION ? " | Anim: PLAY " : " | Anim: FRAME ";
             title += getAnimationTypeDisplayName(m_AnimationSession.getSelectedAnimationType());
-            if (m_AnimationSession.getSelectedAnimationType() == PixelShipGenerator::ShipAnimationType::FIRE)
+            if (m_AnimationSession.getSelectedAnimationType() == SpectralShipGen::ShipAnimationType::FIRE)
             {
                 title += " | Weapon: " + std::to_string(m_AnimationSession.getFiringAnimation().Target.WeaponComponentIndex);
                 if (m_AnimationSession.isTransientStatePreviewActive())
@@ -3986,7 +3986,7 @@ namespace PixelShipGeneratorPreview
                     title += " | Underlying: " + getAnimationTypeDisplayName(m_AnimationSession.getRuntimeMovementType());
                 }
             }
-            else if (m_AnimationSession.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::IDLE)
+            else if (m_AnimationSession.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::IDLE)
             {
                 title += " | Phase: " + getMovementPhaseDisplayName(m_AnimationSession.getMovementPhase());
                 if (m_AnimationSession.isMovementTransitionPending())

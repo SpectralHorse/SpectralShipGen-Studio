@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace PixelShipGeneratorTests
+namespace SpectralShipGenStudioTests
 {
     int runPreviewPreferencesRegression();
     int runPreviewFavoritesPersistenceRegression();

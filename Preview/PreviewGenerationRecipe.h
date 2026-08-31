@@ -1,8 +1,8 @@
 #pragma once
 
-#include <PixelShipGenerator/ShipGenerationRecipe.h>
+#include <SpectralShipGen/ShipGenerationRecipe.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
-    using PreviewGenerationRecipe = PixelShipGenerator::ShipGenerationRecipe;
+    using PreviewGenerationRecipe = SpectralShipGen::ShipGenerationRecipe;
 }

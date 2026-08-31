@@ -7,11 +7,11 @@
 #include <string_view>
 #include <vector>
 
-#include <PixelShipGenerator/ShipFactionProfile.h>
+#include <SpectralShipGen/ShipFactionProfile.h>
 
 #include "ConfigurationEditorControls.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct FactionRangeValue
     {
@@ -26,40 +26,40 @@ namespace PixelShipGeneratorPreview
     {
         std::string Path;
         ConfigurationIntegerControl Control;
-        std::function<int32_t(const PixelShipGenerator::ShipFactionProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipFactionProfile&, int32_t)> Write;
+        std::function<int32_t(const SpectralShipGen::ShipFactionProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipFactionProfile&, int32_t)> Write;
     };
 
     struct FactionRangeFieldBinding
     {
         std::string Path;
         ConfigurationRangeControl Control;
-        std::function<FactionRangeValue(const PixelShipGenerator::ShipFactionProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipFactionProfile&, FactionRangeValue)> Write;
+        std::function<FactionRangeValue(const SpectralShipGen::ShipFactionProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipFactionProfile&, FactionRangeValue)> Write;
     };
 
     struct FactionToggleFieldBinding
     {
         std::string Path;
         ConfigurationToggleControl Control;
-        std::function<bool(const PixelShipGenerator::ShipFactionProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipFactionProfile&, bool)> Write;
+        std::function<bool(const SpectralShipGen::ShipFactionProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipFactionProfile&, bool)> Write;
     };
 
     struct FactionChoiceFieldBinding
     {
         std::string Path;
         ConfigurationChoiceControl Control;
-        std::function<uint32_t(const PixelShipGenerator::ShipFactionProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipFactionProfile&, uint32_t)> Write;
+        std::function<uint32_t(const SpectralShipGen::ShipFactionProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipFactionProfile&, uint32_t)> Write;
     };
 
     struct FactionWeightGroupBinding
     {
         std::string Path;
         ConfigurationWeightGroupControl Control;
-        std::function<std::array<uint32_t, ConfigurationWeightGroupControl::MaximumRows>(const PixelShipGenerator::ShipFactionProfile&)> Read;
-        std::function<void(PixelShipGenerator::ShipFactionProfile&, const std::array<uint32_t, ConfigurationWeightGroupControl::MaximumRows>&)> Write;
+        std::function<std::array<uint32_t, ConfigurationWeightGroupControl::MaximumRows>(const SpectralShipGen::ShipFactionProfile&)> Read;
+        std::function<void(SpectralShipGen::ShipFactionProfile&, const std::array<uint32_t, ConfigurationWeightGroupControl::MaximumRows>&)> Write;
     };
 
     struct FactionProfileEditorSection
@@ -81,9 +81,9 @@ namespace PixelShipGeneratorPreview
     public:
         ShipFactionProfileEditorBindings();
 
-        void load(const PixelShipGenerator::ShipFactionProfile& profile);
-        void write(PixelShipGenerator::ShipFactionProfile& profile) const;
-        bool equivalent(const PixelShipGenerator::ShipFactionProfile& first, const PixelShipGenerator::ShipFactionProfile& second) const;
+        void load(const SpectralShipGen::ShipFactionProfile& profile);
+        void write(SpectralShipGen::ShipFactionProfile& profile) const;
+        bool equivalent(const SpectralShipGen::ShipFactionProfile& first, const SpectralShipGen::ShipFactionProfile& second) const;
 
         std::vector<FactionProfileEditorSection>& getSections();
         const std::vector<FactionProfileEditorSection>& getSections() const;

@@ -1,6 +1,6 @@
 #include "SFMLImageAdapter.h"
 
-namespace PixelShipGenerator
+namespace SpectralShipGen
 {
     sf::Image SFMLImageAdapter::createSFMLImage(const Image& image)
     {
@@ -18,4 +18,4 @@ namespace PixelShipGenerator
 
         return sfmlImage;
     }
-} // namespace PixelShipGenerator
+} // namespace SpectralShipGen

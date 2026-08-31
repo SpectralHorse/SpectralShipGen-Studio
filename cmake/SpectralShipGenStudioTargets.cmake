@@ -1,26 +1,26 @@
 # GUI/Application-owned targets. The Library targets must already exist, either
 # from the combined development tree or from an explicitly supplied checkout.
-if(NOT TARGET PixelShipGeneratorCore OR NOT TARGET PixelShipGeneratorDiagnosticsCore)
-    message(FATAL_ERROR "PixelShipGenerator GUI requires PixelShipGeneratorCore and PixelShipGeneratorDiagnosticsCore targets from the Library checkout.")
+if(NOT TARGET SpectralShipGenCore OR NOT TARGET SpectralShipGenDiagnosticsCore)
+    message(FATAL_ERROR "SpectralShipGen Studio requires SpectralShipGenCore and SpectralShipGenDiagnosticsCore targets from the Library checkout.")
 endif()
 
 find_package(Threads REQUIRED)
 
-add_library(PixelShipGeneratorDiagnosticsAppSupport STATIC DiagnosticsApp/DiagnosticsAppController.cpp)
-target_include_directories(PixelShipGeneratorDiagnosticsAppSupport PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/DiagnosticsApp)
-target_link_libraries(PixelShipGeneratorDiagnosticsAppSupport PUBLIC PixelShipGeneratorDiagnosticsCore Threads::Threads)
-target_compile_features(PixelShipGeneratorDiagnosticsAppSupport PUBLIC cxx_std_17)
+add_library(SpectralShipGenStudioDiagnosticsAppSupport STATIC DiagnosticsApp/DiagnosticsAppController.cpp)
+target_include_directories(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/DiagnosticsApp)
+target_link_libraries(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC SpectralShipGenDiagnosticsCore Threads::Threads)
+target_compile_features(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC cxx_std_17)
 
-add_library(PixelShipGeneratorApplicationCommon STATIC
+add_library(SpectralShipGenStudioApplicationCommon STATIC
     Application/SFMLPixelText.cpp
     Application/SFMLCharts.cpp
     Application/SFMLImageAdapter.cpp
 )
-target_include_directories(PixelShipGeneratorApplicationCommon PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Application)
-target_link_libraries(PixelShipGeneratorApplicationCommon PUBLIC PixelShipGeneratorCore sfml-graphics)
-target_compile_features(PixelShipGeneratorApplicationCommon PUBLIC cxx_std_17)
+target_include_directories(SpectralShipGenStudioApplicationCommon PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Application)
+target_link_libraries(SpectralShipGenStudioApplicationCommon PUBLIC SpectralShipGenCore sfml-graphics)
+target_compile_features(SpectralShipGenStudioApplicationCommon PUBLIC cxx_std_17)
 
-add_executable(PixelShipGenerator
+add_executable(SpectralShipGenStudio
     Preview/GenerationCalibration.cpp
     Preview/GenerationCalibrationSerializer.cpp
     Preview/AttributeRerollStudio.cpp
@@ -48,30 +48,30 @@ add_executable(PixelShipGenerator
     Preview/ShipGeneratorPreviewApp.cpp
     Preview/ShipGenerator_main.cpp
 )
-target_include_directories(PixelShipGenerator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Preview)
-target_link_libraries(PixelShipGenerator PRIVATE
-    PixelShipGeneratorCore PixelShipGeneratorDiagnosticsCore PixelShipGeneratorApplicationCommon sfml-graphics
+target_include_directories(SpectralShipGenStudio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Preview)
+target_link_libraries(SpectralShipGenStudio PRIVATE
+    SpectralShipGenCore SpectralShipGenDiagnosticsCore SpectralShipGenStudioApplicationCommon sfml-graphics
 )
-target_compile_features(PixelShipGenerator PRIVATE cxx_std_17)
+target_compile_features(SpectralShipGenStudio PRIVATE cxx_std_17)
 
-add_executable(PixelShipGeneratorDiagnostics DiagnosticsApp/DiagnosticsApp.cpp DiagnosticsApp/DiagnosticsApp_main.cpp)
-target_include_directories(PixelShipGeneratorDiagnostics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/DiagnosticsApp)
-target_link_libraries(PixelShipGeneratorDiagnostics PRIVATE
-    PixelShipGeneratorDiagnosticsAppSupport PixelShipGeneratorApplicationCommon sfml-graphics
+add_executable(SpectralShipGenStudioDiagnostics DiagnosticsApp/DiagnosticsApp.cpp DiagnosticsApp/DiagnosticsApp_main.cpp)
+target_include_directories(SpectralShipGenStudioDiagnostics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/DiagnosticsApp)
+target_link_libraries(SpectralShipGenStudioDiagnostics PRIVATE
+    SpectralShipGenStudioDiagnosticsAppSupport SpectralShipGenStudioApplicationCommon sfml-graphics
 )
-target_compile_features(PixelShipGeneratorDiagnostics PRIVATE cxx_std_17)
-target_compile_definitions(PixelShipGeneratorDiagnostics PRIVATE PIXEL_SHIP_GENERATOR_BUILD_CONFIGURATION="${CMAKE_BUILD_TYPE}")
+target_compile_features(SpectralShipGenStudioDiagnostics PRIVATE cxx_std_17)
+target_compile_definitions(SpectralShipGenStudioDiagnostics PRIVATE SPECTRAL_SHIP_GEN_BUILD_CONFIGURATION="${CMAKE_BUILD_TYPE}")
 
 include(CheckIncludeFileCXX)
-check_include_file_cxx("SFML/Graphics.hpp" PIXEL_SHIP_GENERATOR_HAS_SFML_GRAPHICS_HEADER)
-if(TARGET sfml-graphics OR PIXEL_SHIP_GENERATOR_HAS_SFML_GRAPHICS_HEADER)
-    set(PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_HAS_SFML ON)
+check_include_file_cxx("SFML/Graphics.hpp" SPECTRAL_SHIP_GEN_HAS_SFML_GRAPHICS_HEADER)
+if(TARGET sfml-graphics OR SPECTRAL_SHIP_GEN_HAS_SFML_GRAPHICS_HEADER)
+    set(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_HAS_SFML ON)
 else()
-    set(PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_HAS_SFML OFF)
+    set(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_HAS_SFML OFF)
 endif()
 
-set(PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_SOURCES
-    Tests/PixelShipGeneratorPreviewRegression_main.cpp
+set(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_SOURCES
+    Tests/SpectralShipGenStudioPreviewRegression_main.cpp
     Tests/RegressionRunner.cpp
     Tests/PreviewRegressionSuites.cpp
     Tests/GenerationCalibrationRegression.cpp
@@ -111,47 +111,47 @@ set(PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_SOURCES
     Preview/PreviewFavoritesPersistence.cpp
     Preview/PreviewPreferences.cpp
 )
-if(PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_HAS_SFML)
-    list(APPEND PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_SOURCES
+if(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_HAS_SFML)
+    list(APPEND SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_SOURCES
         Tests/AttributeRerollStudioRegression.cpp
         Preview/AttributeRerollStudio.cpp
         Preview/PreviewCommandPanel.cpp
     )
 endif()
 
-add_executable(PixelShipGeneratorPreviewRegression ${PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_SOURCES})
-target_include_directories(PixelShipGeneratorPreviewRegression PRIVATE
+add_executable(SpectralShipGenStudioPreviewRegression ${SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_SOURCES})
+target_include_directories(SpectralShipGenStudioPreviewRegression PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests
     ${CMAKE_CURRENT_SOURCE_DIR}/Preview
 )
-target_link_libraries(PixelShipGeneratorPreviewRegression PRIVATE
-    PixelShipGeneratorCore PixelShipGeneratorDiagnosticsCore PixelShipGeneratorDiagnosticsAppSupport
+target_link_libraries(SpectralShipGenStudioPreviewRegression PRIVATE
+    SpectralShipGenCore SpectralShipGenDiagnosticsCore SpectralShipGenStudioDiagnosticsAppSupport
 )
-target_compile_features(PixelShipGeneratorPreviewRegression PRIVATE cxx_std_17)
-if(PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_HAS_SFML)
-    target_link_libraries(PixelShipGeneratorPreviewRegression PRIVATE sfml-graphics)
-    target_compile_definitions(PixelShipGeneratorPreviewRegression PRIVATE PIXEL_SHIP_GENERATOR_PREVIEW_HAS_SFML=1)
+target_compile_features(SpectralShipGenStudioPreviewRegression PRIVATE cxx_std_17)
+if(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_HAS_SFML)
+    target_link_libraries(SpectralShipGenStudioPreviewRegression PRIVATE sfml-graphics)
+    target_compile_definitions(SpectralShipGenStudioPreviewRegression PRIVATE SPECTRAL_SHIP_GEN_PREVIEW_HAS_SFML=1)
 else()
-    target_compile_definitions(PixelShipGeneratorPreviewRegression PRIVATE PIXEL_SHIP_GENERATOR_PREVIEW_HAS_SFML=0)
+    target_compile_definitions(SpectralShipGenStudioPreviewRegression PRIVATE SPECTRAL_SHIP_GEN_PREVIEW_HAS_SFML=0)
     message(STATUS "SFML graphics headers unavailable: Attribute Reroll Studio Preview regression is not registered in this build.")
 endif()
 
 if(BUILD_TESTING)
-    set(PIXEL_SHIP_GENERATOR_PREVIEW_NORMAL_SUITES
+    set(SPECTRAL_SHIP_GEN_PREVIEW_NORMAL_SUITES
         preview-preferences preview-favorites favorites-browser user-presets configuration-bundles
         preview-session preview-workspaces preview-inspection animation-lab preview-ui-qol diagnostics-app
         configuration-editor faction-profile-editor palette-editor
     )
-    if(PIXEL_SHIP_GENERATOR_PREVIEW_REGRESSION_HAS_SFML)
-        list(APPEND PIXEL_SHIP_GENERATOR_PREVIEW_NORMAL_SUITES attribute-reroll-studio)
+    if(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_HAS_SFML)
+        list(APPEND SPECTRAL_SHIP_GEN_PREVIEW_NORMAL_SUITES attribute-reroll-studio)
     endif()
-    set(PIXEL_SHIP_GENERATOR_PREVIEW_LONG_SUITES calibration)
-    foreach(SUITE_NAME IN LISTS PIXEL_SHIP_GENERATOR_PREVIEW_NORMAL_SUITES)
-        add_test(NAME preview.${SUITE_NAME} COMMAND PixelShipGeneratorPreviewRegression --suite ${SUITE_NAME})
+    set(SPECTRAL_SHIP_GEN_PREVIEW_LONG_SUITES calibration)
+    foreach(SUITE_NAME IN LISTS SPECTRAL_SHIP_GEN_PREVIEW_NORMAL_SUITES)
+        add_test(NAME preview.${SUITE_NAME} COMMAND SpectralShipGenStudioPreviewRegression --suite ${SUITE_NAME})
         set_tests_properties(preview.${SUITE_NAME} PROPERTIES LABELS "preview;normal")
     endforeach()
-    foreach(SUITE_NAME IN LISTS PIXEL_SHIP_GENERATOR_PREVIEW_LONG_SUITES)
-        add_test(NAME preview.${SUITE_NAME} COMMAND PixelShipGeneratorPreviewRegression --suite ${SUITE_NAME})
+    foreach(SUITE_NAME IN LISTS SPECTRAL_SHIP_GEN_PREVIEW_LONG_SUITES)
+        add_test(NAME preview.${SUITE_NAME} COMMAND SpectralShipGenStudioPreviewRegression --suite ${SUITE_NAME})
         set_tests_properties(preview.${SUITE_NAME} PROPERTIES LABELS "preview;long")
     endforeach()
 endif()

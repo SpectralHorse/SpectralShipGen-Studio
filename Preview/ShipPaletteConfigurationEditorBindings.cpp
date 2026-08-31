@@ -3,11 +3,11 @@
 #include <algorithm>
 #include <utility>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     namespace
     {
-        using Configuration = PixelShipGenerator::ShipPaletteConfiguration;
+        using Configuration = SpectralShipGen::ShipPaletteConfiguration;
 
         template<typename T>
         T* findByPath(std::vector<PaletteProfileEditorSection>& sections, std::string_view path, std::vector<T> PaletteProfileEditorSection::* member)
@@ -59,13 +59,13 @@ namespace PixelShipGeneratorPreview
         PaletteChoiceFieldBinding mode;
         mode.Path = "Mode";
         mode.Control.configure("SOURCE MODE", { "GENERATED", "FIXED" }, 0u);
-        mode.Read = [](const Configuration& c) { return c.Mode == PixelShipGenerator::ShipPaletteSourceMode::FIXED ? 1u : 0u; };
-        mode.Write = [](Configuration& c, uint32_t value) { c.Mode = value == 1u ? PixelShipGenerator::ShipPaletteSourceMode::FIXED : PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED; };
+        mode.Read = [](const Configuration& c) { return c.Mode == SpectralShipGen::ShipPaletteSourceMode::FIXED ? 1u : 0u; };
+        mode.Write = [](Configuration& c, uint32_t value) { c.Mode = value == 1u ? SpectralShipGen::ShipPaletteSourceMode::FIXED : SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED; };
         source.Choices.push_back(std::move(mode));
 
         const auto addUIntRange = [](PaletteProfileEditorSection& section, const char* path, const char* label, int32_t minimum, int32_t maximum,
-            std::function<const PixelShipGenerator::PaletteUIntRange& (const Configuration&)> readRef,
-            std::function<PixelShipGenerator::PaletteUIntRange& (Configuration&)> writeRef)
+            std::function<const SpectralShipGen::PaletteUIntRange& (const Configuration&)> readRef,
+            std::function<SpectralShipGen::PaletteUIntRange& (Configuration&)> writeRef)
             {
                 PaletteRangeFieldBinding field;
                 field.Path = path;
@@ -75,8 +75,8 @@ namespace PixelShipGeneratorPreview
                 section.Ranges.push_back(std::move(field));
             };
         const auto addIntRange = [](PaletteProfileEditorSection& section, const char* path, const char* label, int32_t minimum, int32_t maximum,
-            std::function<const PixelShipGenerator::PaletteIntRange& (const Configuration&)> readRef,
-            std::function<PixelShipGenerator::PaletteIntRange& (Configuration&)> writeRef)
+            std::function<const SpectralShipGen::PaletteIntRange& (const Configuration&)> readRef,
+            std::function<SpectralShipGen::PaletteIntRange& (Configuration&)> writeRef)
             {
                 PaletteRangeFieldBinding field;
                 field.Path = path;
@@ -106,7 +106,7 @@ namespace PixelShipGeneratorPreview
                 section.Choices.push_back(std::move(field));
             };
         const auto addColor = [](PaletteProfileEditorSection& section, const char* path, const char* label,
-            std::function<PixelShipGenerator::Color(const Configuration&)> read, std::function<void(Configuration&, PixelShipGenerator::Color)> write)
+            std::function<SpectralShipGen::Color(const Configuration&)> read, std::function<void(Configuration&, SpectralShipGen::Color)> write)
             {
                 PaletteColorFieldBinding field;
                 field.Path = path;
@@ -116,8 +116,8 @@ namespace PixelShipGeneratorPreview
                 section.Colors.push_back(std::move(field));
             };
 
-#define ADD_URANGE(section, member, label, minv, maxv) addUIntRange(section, "Generated.Ranges." #member, label, minv, maxv, [](const Configuration& c)->const PixelShipGenerator::PaletteUIntRange& { return c.Generated.Ranges.member; }, [](Configuration& c)->PixelShipGenerator::PaletteUIntRange& { return c.Generated.Ranges.member; })
-#define ADD_IRANGE(section, member, label, minv, maxv) addIntRange(section, "Generated.Ranges." #member, label, minv, maxv, [](const Configuration& c)->const PixelShipGenerator::PaletteIntRange& { return c.Generated.Ranges.member; }, [](Configuration& c)->PixelShipGenerator::PaletteIntRange& { return c.Generated.Ranges.member; })
+#define ADD_URANGE(section, member, label, minv, maxv) addUIntRange(section, "Generated.Ranges." #member, label, minv, maxv, [](const Configuration& c)->const SpectralShipGen::PaletteUIntRange& { return c.Generated.Ranges.member; }, [](Configuration& c)->SpectralShipGen::PaletteUIntRange& { return c.Generated.Ranges.member; })
+#define ADD_IRANGE(section, member, label, minv, maxv) addIntRange(section, "Generated.Ranges." #member, label, minv, maxv, [](const Configuration& c)->const SpectralShipGen::PaletteIntRange& { return c.Generated.Ranges.member; }, [](Configuration& c)->SpectralShipGen::PaletteIntRange& { return c.Generated.Ranges.member; })
         ADD_URANGE(generatedHull, HullHue, "HULL HUE", 0, 359);
         ADD_URANGE(generatedHull, HullSaturation, "HULL SATURATION", 0, 100);
         ADD_URANGE(generatedHull, HullValue, "HULL VALUE", 0, 100);
@@ -140,16 +140,16 @@ namespace PixelShipGeneratorPreview
 
         addChoice(generatedBehavior, "Generated.Behavior.HullValueMode", "HULL VALUE MODE", { "PROFILE RANGE", "ALTERNATING BRIGHT/DARK" },
             [](const Configuration& c) { return static_cast<uint32_t>(c.Generated.Behavior.HullValueMode); },
-            [](Configuration& c, uint32_t value) { c.Generated.Behavior.HullValueMode = static_cast<PixelShipGenerator::ShipFactionHullValueMode>(value); });
+            [](Configuration& c, uint32_t value) { c.Generated.Behavior.HullValueMode = static_cast<SpectralShipGen::ShipFactionHullValueMode>(value); });
         addUIntRange(generatedBehavior, "Generated.Behavior.BrightHullValue", "BRIGHT HULL VALUE", 0, 100,
-            [](const Configuration& c)->const PixelShipGenerator::PaletteUIntRange& { return c.Generated.Behavior.BrightHullValue; },
-            [](Configuration& c)->PixelShipGenerator::PaletteUIntRange& { return c.Generated.Behavior.BrightHullValue; });
+            [](const Configuration& c)->const SpectralShipGen::PaletteUIntRange& { return c.Generated.Behavior.BrightHullValue; },
+            [](Configuration& c)->SpectralShipGen::PaletteUIntRange& { return c.Generated.Behavior.BrightHullValue; });
         addUIntRange(generatedBehavior, "Generated.Behavior.DarkHullValue", "DARK HULL VALUE", 0, 100,
-            [](const Configuration& c)->const PixelShipGenerator::PaletteUIntRange& { return c.Generated.Behavior.DarkHullValue; },
-            [](Configuration& c)->PixelShipGenerator::PaletteUIntRange& { return c.Generated.Behavior.DarkHullValue; });
+            [](const Configuration& c)->const SpectralShipGen::PaletteUIntRange& { return c.Generated.Behavior.DarkHullValue; },
+            [](Configuration& c)->SpectralShipGen::PaletteUIntRange& { return c.Generated.Behavior.DarkHullValue; });
         addChoice(generatedBehavior, "Generated.Behavior.SecondaryToneDirection", "SECONDARY TONE", { "RANDOM", "DARKER", "LIGHTER", "CONTRAST FROM MIDPOINT" },
             [](const Configuration& c) { return static_cast<uint32_t>(c.Generated.Behavior.SecondaryToneDirection); },
-            [](Configuration& c, uint32_t value) { c.Generated.Behavior.SecondaryToneDirection = static_cast<PixelShipGenerator::ShipFactionSecondaryToneDirection>(value); });
+            [](Configuration& c, uint32_t value) { c.Generated.Behavior.SecondaryToneDirection = static_cast<SpectralShipGen::ShipFactionSecondaryToneDirection>(value); });
         addInteger(generatedBehavior, "Generated.Behavior.MinimumAccentHueDistance", "MIN ACCENT HUE DISTANCE", ConfigurationNumericSemantic::COUNT, 0, 180,
             [](const Configuration& c) { return static_cast<int32_t>(c.Generated.Behavior.MinimumAccentHueDistance); },
             [](Configuration& c, int32_t value) { c.Generated.Behavior.MinimumAccentHueDistance = static_cast<uint32_t>(value); });
@@ -160,7 +160,7 @@ namespace PixelShipGeneratorPreview
             [](const Configuration& c) { return c.Generated.Behavior.AccentHueSeparationShiftB; },
             [](Configuration& c, int32_t value) { c.Generated.Behavior.AccentHueSeparationShiftB = value; });
 
-#define ADD_COLOR(section, member, label) addColor(section, "Fixed." #member, label, [](const Configuration& c) { return c.Fixed.member; }, [](Configuration& c, PixelShipGenerator::Color value) { c.Fixed.member = value; })
+#define ADD_COLOR(section, member, label) addColor(section, "Fixed." #member, label, [](const Configuration& c) { return c.Fixed.member; }, [](Configuration& c, SpectralShipGen::Color value) { c.Fixed.member = value; })
         ADD_COLOR(fixedGeneral, Transparent, "TRANSPARENT");
         ADD_COLOR(fixedGeneral, Outline, "OUTLINE");
         ADD_COLOR(fixedHull, HullDeepShadow, "HULL DEEP SHADOW");
@@ -199,7 +199,7 @@ namespace PixelShipGeneratorPreview
             for (PaletteChoiceFieldBinding& field : section.Choices) { field.Control.setValue(field.Read(configuration)); }
             for (PaletteColorFieldBinding& field : section.Colors)
             {
-                const PixelShipGenerator::Color color = field.Read(configuration);
+                const SpectralShipGen::Color color = field.Read(configuration);
                 field.Control.setValues(color.R, color.G, color.B, color.A);
             }
         }
@@ -214,36 +214,36 @@ namespace PixelShipGeneratorPreview
             for (const PaletteChoiceFieldBinding& field : section.Choices) { field.Write(configuration, field.Control.Value); }
             for (const PaletteColorFieldBinding& field : section.Colors)
             {
-                field.Write(configuration, PixelShipGenerator::Color(static_cast<uint8_t>(field.Control.Red), static_cast<uint8_t>(field.Control.Green), static_cast<uint8_t>(field.Control.Blue), static_cast<uint8_t>(field.Control.Alpha)));
+                field.Write(configuration, SpectralShipGen::Color(static_cast<uint8_t>(field.Control.Red), static_cast<uint8_t>(field.Control.Green), static_cast<uint8_t>(field.Control.Blue), static_cast<uint8_t>(field.Control.Alpha)));
             }
         }
     }
 
-    PixelShipGenerator::ShipPaletteSourceMode ShipPaletteConfigurationEditorBindings::getEditedMode() const
+    SpectralShipGen::ShipPaletteSourceMode ShipPaletteConfigurationEditorBindings::getEditedMode() const
     {
         const PaletteChoiceFieldBinding* mode = findChoice("Mode");
-        return mode != nullptr && mode->Control.Value == 1u ? PixelShipGenerator::ShipPaletteSourceMode::FIXED : PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+        return mode != nullptr && mode->Control.Value == 1u ? SpectralShipGen::ShipPaletteSourceMode::FIXED : SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
     }
 
     bool ShipPaletteConfigurationEditorBindings::isSectionVisible(const PaletteProfileEditorSection& section) const
     {
         if (section.Mode == PaletteEditorSectionMode::ALWAYS) { return true; }
-        const PixelShipGenerator::ShipPaletteSourceMode mode = getEditedMode();
-        return section.Mode == PaletteEditorSectionMode::GENERATED ? mode == PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED : mode == PixelShipGenerator::ShipPaletteSourceMode::FIXED;
+        const SpectralShipGen::ShipPaletteSourceMode mode = getEditedMode();
+        return section.Mode == PaletteEditorSectionMode::GENERATED ? mode == SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED : mode == SpectralShipGen::ShipPaletteSourceMode::FIXED;
     }
 
     bool ShipPaletteConfigurationEditorBindings::equivalent(const Configuration& first, const Configuration& second) const
     {
-        const auto normalizeMode = [](PixelShipGenerator::ShipPaletteSourceMode mode)
+        const auto normalizeMode = [](SpectralShipGen::ShipPaletteSourceMode mode)
             {
-                return mode == PixelShipGenerator::ShipPaletteSourceMode::FIXED ? PixelShipGenerator::ShipPaletteSourceMode::FIXED : PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED;
+                return mode == SpectralShipGen::ShipPaletteSourceMode::FIXED ? SpectralShipGen::ShipPaletteSourceMode::FIXED : SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED;
             };
         if (normalizeMode(first.Mode) != normalizeMode(second.Mode)) { return false; }
-        const PixelShipGenerator::ShipPaletteSourceMode mode = normalizeMode(first.Mode);
+        const SpectralShipGen::ShipPaletteSourceMode mode = normalizeMode(first.Mode);
         for (const PaletteProfileEditorSection& section : m_Sections)
         {
-            if (section.Mode == PaletteEditorSectionMode::GENERATED && mode != PixelShipGenerator::ShipPaletteSourceMode::EXPLICIT_GENERATED) { continue; }
-            if (section.Mode == PaletteEditorSectionMode::FIXED && mode != PixelShipGenerator::ShipPaletteSourceMode::FIXED) { continue; }
+            if (section.Mode == PaletteEditorSectionMode::GENERATED && mode != SpectralShipGen::ShipPaletteSourceMode::EXPLICIT_GENERATED) { continue; }
+            if (section.Mode == PaletteEditorSectionMode::FIXED && mode != SpectralShipGen::ShipPaletteSourceMode::FIXED) { continue; }
             for (const PaletteIntegerFieldBinding& field : section.Integers) { if (field.Read(first) != field.Read(second)) { return false; } }
             for (const PaletteRangeFieldBinding& field : section.Ranges) { if (field.Read(first) != field.Read(second)) { return false; } }
             for (const PaletteChoiceFieldBinding& field : section.Choices) { if (field.Path != "Mode" && field.Read(first) != field.Read(second)) { return false; } }

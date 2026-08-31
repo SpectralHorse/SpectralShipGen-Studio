@@ -6,16 +6,16 @@
 #include <vector>
 
 #include "AttributeRerollStudio.h"
-#include <PixelShipGenerator/GenerationDomainReroll.h>
+#include <SpectralShipGen/GenerationDomainReroll.h>
 #include "PreviewCommandPanel.h"
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
-#include <PixelShipGenerator/ShipGenerationSettings.h>
-#include <PixelShipGenerator/ShipGenerator.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipGenerationSettings.h>
+#include <SpectralShipGen/ShipGenerator.h>
 
 namespace
 {
-    using namespace PixelShipGenerator;
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGen;
+    using namespace SpectralShipGenStudioPreview;
 
     PreviewGenerationRecipe makeRecipe(ShipDimensions dimensions = { 96u, 64u })
     {
@@ -264,7 +264,7 @@ namespace
     }
 }
 
-int PixelShipGeneratorTests::runAttributeRerollStudioRegression()
+int SpectralShipGenStudioTests::runAttributeRerollStudioRegression()
 {
     bool success = true;
     success = checkBaseAndRepeatedCandidates() && success;

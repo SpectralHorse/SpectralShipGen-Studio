@@ -10,16 +10,16 @@
 #include "PreviewCommand.h"
 #include "PreviewFavoritesPersistence.h"
 #include "PreviewWorkspace.h"
-#include <PixelShipGenerator/ShipGenerationSeeds.h>
+#include <SpectralShipGen/ShipGenerationSeeds.h>
 
 namespace
 {
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGenStudioPreview;
 
-    PreviewGenerationRecipe makeRecipe(uint64_t seed, PixelShipGenerator::ShipStyle style, PixelShipGenerator::ShipFactionType faction)
+    PreviewGenerationRecipe makeRecipe(uint64_t seed, SpectralShipGen::ShipStyle style, SpectralShipGen::ShipFactionType faction)
     {
         PreviewGenerationRecipe recipe;
-        recipe.Seeds = PixelShipGenerator::deriveShipGenerationSeeds(seed);
+        recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(seed);
         recipe.Dimensions = { 64u, 64u };
         recipe.Style = style;
         recipe.Faction = faction;
@@ -33,13 +33,13 @@ namespace
     }
 }
 
-int PixelShipGeneratorTests::runPreviewFavoritesBrowserRegression()
+int SpectralShipGenStudioTests::runPreviewFavoritesBrowserRegression()
 {
-    using namespace PixelShipGeneratorPreview;
+    using namespace SpectralShipGenStudioPreview;
 
-    const PreviewGenerationRecipe initial = makeRecipe(0x9800000000000001ull, PixelShipGenerator::ShipStyle::FIGHTER, PixelShipGenerator::ShipFactionType::MILITARY);
-    const PreviewGenerationRecipe favoriteA = makeRecipe(0x9800000000000002ull, PixelShipGenerator::ShipStyle::SPEARHEAD, PixelShipGenerator::ShipFactionType::ASCENDANT);
-    const PreviewGenerationRecipe favoriteB = makeRecipe(0x9800000000000003ull, PixelShipGenerator::ShipStyle::DELTA, PixelShipGenerator::ShipFactionType::CORPORATE);
+    const PreviewGenerationRecipe initial = makeRecipe(0x9800000000000001ull, SpectralShipGen::ShipStyle::FIGHTER, SpectralShipGen::ShipFactionType::MILITARY);
+    const PreviewGenerationRecipe favoriteA = makeRecipe(0x9800000000000002ull, SpectralShipGen::ShipStyle::SPEARHEAD, SpectralShipGen::ShipFactionType::ASCENDANT);
+    const PreviewGenerationRecipe favoriteB = makeRecipe(0x9800000000000003ull, SpectralShipGen::ShipStyle::DELTA, SpectralShipGen::ShipFactionType::CORPORATE);
 
     PreviewCollectionSession collection(initial);
     if (!collection.addFavorite(favoriteA) || !collection.addFavorite(favoriteB) || collection.addFavorite(favoriteA))
@@ -86,7 +86,7 @@ int PixelShipGeneratorTests::runPreviewFavoritesBrowserRegression()
     }
 
     collection.beginGallery(0x9800000000000010ull, initial);
-    const PreviewGenerationRecipe galleryFavorite = makeRecipe(0x9800000000000004ull, PixelShipGenerator::ShipStyle::INDUSTRIAL, PixelShipGenerator::ShipFactionType::FRONTIER);
+    const PreviewGenerationRecipe galleryFavorite = makeRecipe(0x9800000000000004ull, SpectralShipGen::ShipStyle::INDUSTRIAL, SpectralShipGen::ShipFactionType::FRONTIER);
     collection.addGalleryRecipe(galleryFavorite);
     const std::optional<bool> galleryToggle = collection.toggleGalleryFavorite(0u);
     if (!galleryToggle.has_value() || !*galleryToggle || !collection.isFavorite(galleryFavorite))
@@ -99,7 +99,7 @@ int PixelShipGeneratorTests::runPreviewFavoritesBrowserRegression()
         return fail("removing a Favorite mutated the already-open shared current ship");
     }
 
-    const std::filesystem::path directory = std::filesystem::temp_directory_path() / "pixel_ship_generator_favorites_browser_regression";
+    const std::filesystem::path directory = std::filesystem::temp_directory_path() / "spectral_ship_gen_favorites_browser_regression";
     const std::filesystem::path path = directory / "favorites.json";
     std::error_code ec;
     std::filesystem::remove_all(directory, ec);

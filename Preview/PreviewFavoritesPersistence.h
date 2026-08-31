@@ -7,7 +7,7 @@
 
 #include "PreviewGenerationRecipe.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     inline constexpr uint32_t PreviewFavoritesFormatVersion = 1u;
 

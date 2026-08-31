@@ -4,11 +4,11 @@
 #include <initializer_list>
 #include <utility>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     namespace
     {
-        using Profile = PixelShipGenerator::ShipFactionProfile;
+        using Profile = SpectralShipGen::ShipFactionProfile;
         constexpr uint32_t WeightMaximum = 10000u;
         constexpr int32_t MultiplierMaximum = 2000;
         constexpr int32_t SafeOffsetMaximum = 1000000;

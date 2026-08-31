@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "sibling-vs2022",
+      "displayName": "Sibling Library - Visual Studio 2022",
+      "description": "Configure SpectralShipGen Studio against ../SpectralShipGen for Visual Studio development.",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR": "${sourceDir}/../SpectralShipGen"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "sibling-debug",
+      "displayName": "Sibling Library - Debug",
+      "configurePreset": "sibling-vs2022",
+      "configuration": "Debug"
+    },
+    {
+      "name": "sibling-release",
+      "displayName": "Sibling Library - Release",
+      "configurePreset": "sibling-vs2022",
+      "configuration": "Release"
+    }
+  ]
+}

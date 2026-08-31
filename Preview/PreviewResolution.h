@@ -4,9 +4,9 @@
 #include <array>
 #include <cstdint>
 
-#include <PixelShipGenerator/ShipDimensions.h>
+#include <SpectralShipGen/ShipDimensions.h>
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     inline constexpr uint32_t MinimumPreviewResolution = 24u;
     inline constexpr uint32_t MaximumPreviewResolution = 256u;
@@ -28,17 +28,17 @@ namespace PixelShipGeneratorPreview
         return MinimumPreviewResolution + snappedOffset;
     }
 
-    inline constexpr bool hasSupportedPreviewAspectRatio(const PixelShipGenerator::ShipDimensions& dimensions)
+    inline constexpr bool hasSupportedPreviewAspectRatio(const SpectralShipGen::ShipDimensions& dimensions)
     {
         return static_cast<uint64_t>(dimensions.Width) <= static_cast<uint64_t>(dimensions.Height) * 2u && static_cast<uint64_t>(dimensions.Height) <= static_cast<uint64_t>(dimensions.Width) * 2u;
     }
 
-    inline constexpr bool isSelectablePreviewDimensions(const PixelShipGenerator::ShipDimensions& dimensions)
+    inline constexpr bool isSelectablePreviewDimensions(const SpectralShipGen::ShipDimensions& dimensions)
     {
         return isSelectablePreviewDimensionValue(dimensions.Width) && isSelectablePreviewDimensionValue(dimensions.Height) && hasSupportedPreviewAspectRatio(dimensions);
     }
 
-    inline constexpr PixelShipGenerator::ShipDimensions makeSquarePreviewDimensions(uint32_t value)
+    inline constexpr SpectralShipGen::ShipDimensions makeSquarePreviewDimensions(uint32_t value)
     {
         const uint32_t snapped = clampPreviewDimensionValue(value);
         return { snapped, snapped };

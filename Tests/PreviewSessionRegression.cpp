@@ -6,41 +6,41 @@
 
 #include "PreviewAnimationSession.h"
 #include "PreviewCollectionSession.h"
-#include <PixelShipGenerator/ShipFiringAnimator.h>
-#include <PixelShipGenerator/ShipIdleAnimator.h>
-#include <PixelShipGenerator/ShipLateralMovementAnimator.h>
-#include <PixelShipGenerator/ShipGenerationSettings.h>
-#include <PixelShipGenerator/ShipGenerator.h>
+#include <SpectralShipGen/ShipFiringAnimator.h>
+#include <SpectralShipGen/ShipIdleAnimator.h>
+#include <SpectralShipGen/ShipLateralMovementAnimator.h>
+#include <SpectralShipGen/ShipGenerationSettings.h>
+#include <SpectralShipGen/ShipGenerator.h>
 
 namespace
 {
-    bool imagesEqual(const PixelShipGenerator::Image& first, const PixelShipGenerator::Image& second)
+    bool imagesEqual(const SpectralShipGen::Image& first, const SpectralShipGen::Image& second)
     {
         return first.getWidth() == second.getWidth() && first.getHeight() == second.getHeight() && first.getPixels() == second.getPixels();
     }
 
-    PixelShipGeneratorPreview::PreviewGenerationRecipe makeRecipe(uint64_t seed, uint32_t width = 64u, uint32_t height = 64u)
+    SpectralShipGenStudioPreview::PreviewGenerationRecipe makeRecipe(uint64_t seed, uint32_t width = 64u, uint32_t height = 64u)
     {
-        PixelShipGeneratorPreview::PreviewGenerationRecipe recipe;
-        recipe.Seeds = PixelShipGenerator::deriveShipGenerationSeeds(seed);
+        SpectralShipGenStudioPreview::PreviewGenerationRecipe recipe;
+        recipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(seed);
         recipe.Dimensions = { width, height };
-        recipe.Style = PixelShipGenerator::ShipStyle::FIGHTER;
-        recipe.Faction = PixelShipGenerator::ShipFactionType::MILITARY;
+        recipe.Style = SpectralShipGen::ShipStyle::FIGHTER;
+        recipe.Faction = SpectralShipGen::ShipFactionType::MILITARY;
         return recipe;
     }
 
-    PixelShipGenerator::GeneratedShip generateAnimatedShip()
+    SpectralShipGen::GeneratedShip generateAnimatedShip()
     {
-        PixelShipGenerator::ShipGenerator generator;
-        PixelShipGenerator::ShipFiringAnimator firingAnimator;
+        SpectralShipGen::ShipGenerator generator;
+        SpectralShipGen::ShipFiringAnimator firingAnimator;
         for (uint64_t seed = 1u; seed <= 128u; ++seed)
         {
-            PixelShipGenerator::ShipGenerationSettings settings;
+            SpectralShipGen::ShipGenerationSettings settings;
             settings.Seed = seed;
             settings.Dimensions = { 96u, 96u };
-            settings.Style = PixelShipGenerator::ShipStyle::FIGHTER;
-            settings.Faction = PixelShipGenerator::ShipFactionType::MILITARY;
-            PixelShipGenerator::GeneratedShip ship = generator.generate(settings);
+            settings.Style = SpectralShipGen::ShipStyle::FIGHTER;
+            settings.Faction = SpectralShipGen::ShipFactionType::MILITARY;
+            SpectralShipGen::GeneratedShip ship = generator.generate(settings);
             if (!firingAnimator.getAvailableTargets(ship).empty()) { return ship; }
         }
         return {};
@@ -48,7 +48,7 @@ namespace
 
     bool runCollectionChecks()
     {
-        using namespace PixelShipGeneratorPreview;
+        using namespace SpectralShipGenStudioPreview;
         const PreviewGenerationRecipe first = makeRecipe(101u);
         const PreviewGenerationRecipe second = makeRecipe(202u, 96u, 64u);
         const PreviewGenerationRecipe third = makeRecipe(303u, 44u, 64u);
@@ -96,15 +96,15 @@ namespace
         if (!session.addResolutionBookmark({ 44u, 44u })) { return false; }
         if (session.addResolutionBookmark({ 96u, 64u })) { return false; }
         if (!session.hasResolutionBookmark({ 44u, 44u })) { return false; }
-        if (session.getResolutionBookmarks().size() != 2u || session.getResolutionBookmarks().front() != PixelShipGenerator::ShipDimensions{ 44u, 44u }) { return false; }
+        if (session.getResolutionBookmarks().size() != 2u || session.getResolutionBookmarks().front() != SpectralShipGen::ShipDimensions{ 44u, 44u }) { return false; }
         if (!session.removeResolutionBookmark({ 44u, 44u }) || session.hasResolutionBookmark({ 44u, 44u })) { return false; }
         return true;
     }
 
     bool runAnimationChecks()
     {
-        using namespace PixelShipGeneratorPreview;
-        const PixelShipGenerator::GeneratedShip ship = generateAnimatedShip();
+        using namespace SpectralShipGenStudioPreview;
+        const SpectralShipGen::GeneratedShip ship = generateAnimatedShip();
         if (ship.FinalImage.empty()) { return false; }
 
         PreviewAnimationSession first;
@@ -119,7 +119,7 @@ namespace
             if (!imagesEqual(first.getActiveFrames()[index], second.getActiveFrames()[index])) { return false; }
         }
 
-        const PixelShipGenerator::ShipIdleAnimation directIdle = PixelShipGenerator::ShipIdleAnimator{}.generate(ship, first.getIdleSettings());
+        const SpectralShipGen::ShipIdleAnimation directIdle = SpectralShipGen::ShipIdleAnimator{}.generate(ship, first.getIdleSettings());
         if (directIdle.Frames.size() != first.getIdleAnimation().Frames.size()) { return false; }
         for (std::size_t index = 0u; index < directIdle.Frames.size(); ++index)
         {
@@ -127,8 +127,8 @@ namespace
         }
 
         const PreviewAnimationActionResult leftSelect = first.cycleAnimationType(ship);
-        if (!leftSelect.Success || first.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::MOVE_LEFT || first.getMovementPhase() != PixelShipGenerator::ShipMovementAnimationPhase::ENTER) { return false; }
-        const PixelShipGenerator::ShipMovementAnimation directLeft = PixelShipGenerator::ShipLateralMovementAnimator{}.generate(ship, PixelShipGenerator::ShipAnimationType::MOVE_LEFT, first.getMovementSettings());
+        if (!leftSelect.Success || first.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::MOVE_LEFT || first.getMovementPhase() != SpectralShipGen::ShipMovementAnimationPhase::ENTER) { return false; }
+        const SpectralShipGen::ShipMovementAnimation directLeft = SpectralShipGen::ShipLateralMovementAnimator{}.generate(ship, SpectralShipGen::ShipAnimationType::MOVE_LEFT, first.getMovementSettings());
         if (directLeft.Enter.Frames.size() != first.getMovementAnimation().Enter.Frames.size()) { return false; }
         for (std::size_t index = 0u; index < directLeft.Enter.Frames.size(); ++index)
         {
@@ -136,27 +136,27 @@ namespace
         }
 
         const PreviewAnimationActionResult leftApply = first.applySelectedState(ship);
-        if (!leftApply.Success || !leftApply.StartPlayback || first.getRuntimeMovementType() != PixelShipGenerator::ShipAnimationType::MOVE_LEFT) { return false; }
+        if (!leftApply.Success || !leftApply.StartPlayback || first.getRuntimeMovementType() != SpectralShipGen::ShipAnimationType::MOVE_LEFT) { return false; }
         const PreviewAnimationAdvanceResult enterAdvance = first.advancePlayback(ship, 1000000.0);
-        if (!enterAdvance.FrameChanged || first.getMovementPhase() != PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN) { return false; }
+        if (!enterAdvance.FrameChanged || first.getMovementPhase() != SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN) { return false; }
 
         if (!first.moveFrame(1) || first.getFrameIndex() >= first.getActiveFrames().size()) { return false; }
         if (!first.moveFrame(-1) || first.getFrameIndex() >= first.getActiveFrames().size()) { return false; }
 
         const PreviewAnimationActionResult rightSelect = first.cycleAnimationType(ship);
-        if (!rightSelect.Success || first.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::MOVE_RIGHT) { return false; }
+        if (!rightSelect.Success || first.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::MOVE_RIGHT) { return false; }
         const PreviewAnimationActionResult reverse = first.applySelectedState(ship);
-        if (!reverse.Success || !first.isMovementTransitionPending() || first.getMovementPhase() != PixelShipGenerator::ShipMovementAnimationPhase::EXIT) { return false; }
+        if (!reverse.Success || !first.isMovementTransitionPending() || first.getMovementPhase() != SpectralShipGen::ShipMovementAnimationPhase::EXIT) { return false; }
         first.advancePlayback(ship, 1000000.0);
-        if (first.getRuntimeMovementType() != PixelShipGenerator::ShipAnimationType::MOVE_RIGHT || first.getMovementPhase() != PixelShipGenerator::ShipMovementAnimationPhase::ENTER) { return false; }
+        if (first.getRuntimeMovementType() != SpectralShipGen::ShipAnimationType::MOVE_RIGHT || first.getMovementPhase() != SpectralShipGen::ShipMovementAnimationPhase::ENTER) { return false; }
         first.advancePlayback(ship, 1000000.0);
-        if (first.getMovementPhase() != PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN) { return false; }
+        if (first.getMovementPhase() != SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN) { return false; }
 
         first.cycleAnimationType(ship); // MOVE_UP
         first.cycleAnimationType(ship); // MOVE_DOWN
         const PreviewAnimationActionResult fireSelect = first.cycleAnimationType(ship); // FIRE
-        if (!fireSelect.Success || first.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::FIRE || first.getFiringTargets().empty()) { return false; }
-        const PixelShipGenerator::ShipFiringAnimation directFire = PixelShipGenerator::ShipFiringAnimator{}.generate(ship, first.getFiringTargets()[first.getSelectedFiringTargetIndex()], first.getFiringSettings());
+        if (!fireSelect.Success || first.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::FIRE || first.getFiringTargets().empty()) { return false; }
+        const SpectralShipGen::ShipFiringAnimation directFire = SpectralShipGen::ShipFiringAnimator{}.generate(ship, first.getFiringTargets()[first.getSelectedFiringTargetIndex()], first.getFiringSettings());
         if (directFire.Frames.size() != first.getFiringAnimation().Frames.size()) { return false; }
         for (std::size_t index = 0u; index < directFire.Frames.size(); ++index)
         {
@@ -167,17 +167,17 @@ namespace
         if (!firing.Success || !firing.StartPlayback || !first.isTransientStatePreviewActive()) { return false; }
         if (first.getActiveFrames().empty() || first.getFiringAnimation().Frames.empty()) { return false; }
         first.advancePlayback(ship, 2000000.0);
-        if (first.isTransientStatePreviewActive() || first.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::MOVE_RIGHT || first.getRuntimeMovementType() != PixelShipGenerator::ShipAnimationType::MOVE_RIGHT || first.getMovementPhase() != PixelShipGenerator::ShipMovementAnimationPhase::SUSTAIN) { return false; }
+        if (first.isTransientStatePreviewActive() || first.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::MOVE_RIGHT || first.getRuntimeMovementType() != SpectralShipGen::ShipAnimationType::MOVE_RIGHT || first.getMovementPhase() != SpectralShipGen::ShipMovementAnimationPhase::SUSTAIN) { return false; }
 
         const PreviewAnimationActionResult returnIdle = first.returnToIdle(ship);
-        if (!returnIdle.Success || !returnIdle.StartPlayback || first.getMovementPhase() != PixelShipGenerator::ShipMovementAnimationPhase::EXIT) { return false; }
+        if (!returnIdle.Success || !returnIdle.StartPlayback || first.getMovementPhase() != SpectralShipGen::ShipMovementAnimationPhase::EXIT) { return false; }
         first.advancePlayback(ship, 1000000.0);
-        if (first.getSelectedAnimationType() != PixelShipGenerator::ShipAnimationType::IDLE || first.getRuntimeMovementType() != PixelShipGenerator::ShipAnimationType::IDLE) { return false; }
+        if (first.getSelectedAnimationType() != SpectralShipGen::ShipAnimationType::IDLE || first.getRuntimeMovementType() != SpectralShipGen::ShipAnimationType::IDLE) { return false; }
         return true;
     }
 }
 
-namespace PixelShipGeneratorTests
+namespace SpectralShipGenStudioTests
 {
     int runPreviewSessionRegression()
     {

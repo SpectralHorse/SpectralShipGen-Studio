@@ -6,20 +6,20 @@
 #include <cstdint>
 #include <string>
 
-#include <PixelShipGenerator/GeneratedShip.h>
+#include <SpectralShipGen/GeneratedShip.h>
 #include "AttributeRerollStudio.h"
 #include "GenerationCalibration.h"
-#include <PixelShipGenerator/ShipGenerationDebugInfo.h>
-#include <PixelShipGenerator/ShipFiringAnimation.h>
-#include <PixelShipGenerator/ShipIdleAnimation.h>
-#include <PixelShipGenerator/ShipMovementAnimation.h>
+#include <SpectralShipGen/ShipGenerationDebugInfo.h>
+#include <SpectralShipGen/ShipFiringAnimation.h>
+#include <SpectralShipGen/ShipIdleAnimation.h>
+#include <SpectralShipGen/ShipMovementAnimation.h>
 
 #include "PreviewCommandPanel.h"
 #include "PreviewConfigurationEditor.h"
 #include "PreviewState.h"
 #include "PreviewWorkspaceNavigation.h"
 
-namespace PixelShipGeneratorPreview
+namespace SpectralShipGenStudioPreview
 {
     struct PreviewRenderData
     {
@@ -40,20 +40,20 @@ namespace PixelShipGeneratorPreview
         const GenerationLocks* Locks = nullptr;
         const PreviewDiagnosticState* Diagnostics = nullptr;
         const PreviewComparisonState* Comparison = nullptr;
-        const PixelShipGenerator::GeneratedShip* Ship = nullptr;
-        const PixelShipGenerator::ShipGenerationDebugInfo* GenerationDebugInfo = nullptr;
-        PixelShipGenerator::ShipAnimationType SelectedAnimationType = PixelShipGenerator::ShipAnimationType::IDLE;
-        const PixelShipGenerator::ShipIdleAnimation* IdleAnimation = nullptr;
-        const PixelShipGenerator::ShipIdleAnimationSettings* IdleAnimationSettings = nullptr;
-        const PixelShipGenerator::ShipMovementAnimation* MovementAnimation = nullptr;
-        const PixelShipGenerator::ShipMovementAnimationSettings* MovementAnimationSettings = nullptr;
-        PixelShipGenerator::ShipMovementAnimationPhase MovementPhase = PixelShipGenerator::ShipMovementAnimationPhase::ENTER;
-        PixelShipGenerator::ShipAnimationType RuntimeMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
-        PixelShipGenerator::ShipAnimationType PendingMovementType = PixelShipGenerator::ShipAnimationType::IDLE;
+        const SpectralShipGen::GeneratedShip* Ship = nullptr;
+        const SpectralShipGen::ShipGenerationDebugInfo* GenerationDebugInfo = nullptr;
+        SpectralShipGen::ShipAnimationType SelectedAnimationType = SpectralShipGen::ShipAnimationType::IDLE;
+        const SpectralShipGen::ShipIdleAnimation* IdleAnimation = nullptr;
+        const SpectralShipGen::ShipIdleAnimationSettings* IdleAnimationSettings = nullptr;
+        const SpectralShipGen::ShipMovementAnimation* MovementAnimation = nullptr;
+        const SpectralShipGen::ShipMovementAnimationSettings* MovementAnimationSettings = nullptr;
+        SpectralShipGen::ShipMovementAnimationPhase MovementPhase = SpectralShipGen::ShipMovementAnimationPhase::ENTER;
+        SpectralShipGen::ShipAnimationType RuntimeMovementType = SpectralShipGen::ShipAnimationType::IDLE;
+        SpectralShipGen::ShipAnimationType PendingMovementType = SpectralShipGen::ShipAnimationType::IDLE;
         bool MovementTransitionPending = false;
         bool TransientStatePreviewActive = false;
-        const PixelShipGenerator::ShipFiringAnimation* FiringAnimation = nullptr;
-        const PixelShipGenerator::ShipFiringAnimationSettings* FiringAnimationSettings = nullptr;
+        const SpectralShipGen::ShipFiringAnimation* FiringAnimation = nullptr;
+        const SpectralShipGen::ShipFiringAnimationSettings* FiringAnimationSettings = nullptr;
         const PreviewCommandPanel* CommandPanel = nullptr;
         const PreviewConfigurationEditor* ConfigurationEditor = nullptr;
         std::size_t HistoryIndex = 0u;
@@ -69,7 +69,7 @@ namespace PixelShipGeneratorPreview
         const CalibrationCandidatePair* CalibrationPair = nullptr;
         const CalibrationObjectiveBatch* ObjectiveBatch = nullptr;
         const GenerationCalibrationSession* CalibrationSession = nullptr;
-        PixelShipGenerator::GenerationWeightGroup CalibrationGroup = PixelShipGenerator::GenerationWeightGroup::ENGINE_LAYOUT;
+        SpectralShipGen::GenerationWeightGroup CalibrationGroup = SpectralShipGen::GenerationWeightGroup::ENGINE_LAYOUT;
         CalibrationContextFilter CalibrationFilter;
         const sf::Texture* CalibrationTextureA = nullptr;
         const sf::Texture* CalibrationTextureB = nullptr;
