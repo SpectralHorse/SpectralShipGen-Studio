@@ -1,14 +1,14 @@
 # GUI/Application-owned targets. The Library targets must already exist, either
 # from the combined development tree or from an explicitly supplied checkout.
-if(NOT TARGET SpectralShipGenCore OR NOT TARGET SpectralShipGenDiagnosticsCore)
-    message(FATAL_ERROR "SpectralShipGen Studio requires SpectralShipGenCore and SpectralShipGenDiagnosticsCore targets from the Library checkout.")
+if(NOT TARGET SpectralShipGen::Core OR NOT TARGET SpectralShipGen::Diagnostics)
+    message(FATAL_ERROR "SpectralShipGen Studio requires SpectralShipGen::Core and SpectralShipGen::Diagnostics targets from the Library checkout.")
 endif()
 
 find_package(Threads REQUIRED)
 
 add_library(SpectralShipGenStudioDiagnosticsAppSupport STATIC DiagnosticsApp/DiagnosticsAppController.cpp)
 target_include_directories(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/DiagnosticsApp)
-target_link_libraries(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC SpectralShipGenDiagnosticsCore Threads::Threads)
+target_link_libraries(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC SpectralShipGen::Diagnostics Threads::Threads)
 target_compile_features(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC cxx_std_17)
 
 add_library(SpectralShipGenStudioApplicationCommon STATIC
@@ -17,7 +17,7 @@ add_library(SpectralShipGenStudioApplicationCommon STATIC
     Application/SFMLImageAdapter.cpp
 )
 target_include_directories(SpectralShipGenStudioApplicationCommon PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Application)
-target_link_libraries(SpectralShipGenStudioApplicationCommon PUBLIC SpectralShipGenCore sfml-graphics)
+target_link_libraries(SpectralShipGenStudioApplicationCommon PUBLIC SpectralShipGen::Core sfml-graphics)
 target_compile_features(SpectralShipGenStudioApplicationCommon PUBLIC cxx_std_17)
 
 add_executable(SpectralShipGenStudio
@@ -50,7 +50,7 @@ add_executable(SpectralShipGenStudio
 )
 target_include_directories(SpectralShipGenStudio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Preview)
 target_link_libraries(SpectralShipGenStudio PRIVATE
-    SpectralShipGenCore SpectralShipGenDiagnosticsCore SpectralShipGenStudioApplicationCommon sfml-graphics
+    SpectralShipGen::Core SpectralShipGen::Diagnostics SpectralShipGenStudioApplicationCommon sfml-graphics
 )
 target_compile_features(SpectralShipGenStudio PRIVATE cxx_std_17)
 
@@ -125,7 +125,7 @@ target_include_directories(SpectralShipGenStudioPreviewRegression PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Preview
 )
 target_link_libraries(SpectralShipGenStudioPreviewRegression PRIVATE
-    SpectralShipGenCore SpectralShipGenDiagnosticsCore SpectralShipGenStudioDiagnosticsAppSupport
+    SpectralShipGen::Core SpectralShipGen::Diagnostics SpectralShipGenStudioDiagnosticsAppSupport
 )
 target_compile_features(SpectralShipGenStudioPreviewRegression PRIVATE cxx_std_17)
 if(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_HAS_SFML)
