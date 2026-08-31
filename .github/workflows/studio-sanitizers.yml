@@ -1,0 +1,53 @@
+name: Studio Sanitizers
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  asan-ubsan:
+    name: Linux Clang ASan+UBSan Model Regression
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CC: clang
+      CXX: clang++
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+
+    steps:
+      - name: Checkout SpectralShipGen Studio
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Checkout private SpectralShipGen Library
+        uses: actions/checkout@v7
+        with:
+          repository: SpectralHorse/SpectralShipGen
+          ref: master
+          token: ${{ secrets.SPECTRAL_SHIP_GEN_CI_TOKEN }}
+          path: SpectralShipGen
+          persist-credentials: false
+
+      - name: Configure sanitized model/regression build
+        run: >-
+          cmake -S . -B build-sanitized
+          -DCMAKE_BUILD_TYPE=Debug
+          -DBUILD_TESTING=ON
+          -DSPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR="${{ github.workspace }}/SpectralShipGen"
+          -DSPECTRAL_SHIP_GEN_FETCH_LIBRARY=OFF
+          -DSPECTRAL_SHIP_GEN_FETCH_SFML=OFF
+          -DSPECTRAL_SHIP_GEN_ENABLE_SANITIZERS=ON
+          -DSPECTRAL_SHIP_GEN_STUDIO_ENABLE_SANITIZERS=ON
+
+      - name: Build sanitized Preview regression
+        run: cmake --build build-sanitized --parallel --target SpectralShipGenStudioPreviewRegression
+
+      - name: Run sanitized Preview NORMAL regression
+        run: ctest --test-dir build-sanitized -L normal --output-on-failure

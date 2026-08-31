@@ -1,0 +1,62 @@
+name: Studio LONG Regression
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '43 4 * * 0'
+
+permissions:
+  contents: read
+
+jobs:
+  long:
+    name: Linux Full LONG
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout SpectralShipGen Studio
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Checkout private SpectralShipGen Library
+        uses: actions/checkout@v7
+        with:
+          repository: SpectralHorse/SpectralShipGen
+          ref: master
+          token: ${{ secrets.SPECTRAL_SHIP_GEN_CI_TOKEN }}
+          path: SpectralShipGen
+          persist-credentials: false
+
+      - name: Install Linux SFML build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libx11-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libudev-dev \
+            libfreetype6-dev \
+            libgl1-mesa-dev \
+            libegl1-mesa-dev
+
+      - name: Configure LONG regression build
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTING=ON
+          -DSPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR="${{ github.workspace }}/SpectralShipGen"
+          -DSPECTRAL_SHIP_GEN_FETCH_LIBRARY=OFF
+          -DSPECTRAL_SHIP_GEN_FETCH_SFML=ON
+          -DSFML_BUILD_AUDIO=OFF
+          -DSFML_BUILD_NETWORK=OFF
+          -DSFML_BUILD_EXAMPLES=OFF
+          -DSFML_BUILD_DOC=OFF
+
+      - name: Build Preview regression runner
+        run: cmake --build build --config Release --parallel --target SpectralShipGenStudioPreviewRegression
+
+      - name: Run NORMAL and LONG Preview suites
+        run: ./build/bin/SpectralShipGenStudioPreviewRegression --all --include-long

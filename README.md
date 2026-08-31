@@ -74,7 +74,29 @@ cmake -S . -B build \
 
 An explicitly supplied `SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR` always takes priority over the fetch option.
 
+### Installed Library package
+
+When neither a source checkout nor the Library FetchContent fallback is selected, Studio uses the normal Task-103 package interface:
+
+```text
+cmake -S . -B build \
+  -DCMAKE_PREFIX_PATH=<SpectralShipGen-install-prefix> \
+  -DSPECTRAL_SHIP_GEN_FETCH_LIBRARY=OFF
+```
+
+This resolves `find_package(SpectralShipGen CONFIG REQUIRED)` and links the same `SpectralShipGen::Core` / `SpectralShipGen::Diagnostics` targets used by source integration. No Library source include path is required.
+
 Studio's SFML mechanism is independent: `SPECTRAL_SHIP_GEN_FETCH_SFML` controls the existing SFML 2.6.x FetchContent path.
+
+## CI and private Library access
+
+Studio CI deliberately obtains SpectralShipGen as a second repository rather than copying Library implementation into Studio. While the Library is private, GitHub Actions uses the Studio repository secret `SPECTRAL_SHIP_GEN_CI_TOKEN` solely for read access to `SpectralHorse/SpectralShipGen`. No credential belongs in CMake or source.
+
+- `.github/workflows/studio-ci.yml` covers Windows and Linux source-checkout integration plus a Linux installed-package integration job.
+- `.github/workflows/studio-sanitizers.yml` runs the no-SFML Preview/model regression under Clang ASan+UBSan, keeping sanitizer focus on project-owned code.
+- `.github/workflows/studio-long.yml` keeps the existing LONG suite on manual/weekly execution rather than ordinary push/PR CI.
+
+Cross-repository jobs intentionally avoid `pull_request_target`. Pull requests whose source context cannot receive the private Library-read secret do not run privileged cross-repository integration; this can be simplified once the Library becomes public.
 
 ## Main targets
 

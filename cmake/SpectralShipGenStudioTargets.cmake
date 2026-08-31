@@ -10,6 +10,7 @@ add_library(SpectralShipGenStudioDiagnosticsAppSupport STATIC DiagnosticsApp/Dia
 target_include_directories(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/DiagnosticsApp)
 target_link_libraries(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC SpectralShipGen::Diagnostics Threads::Threads)
 target_compile_features(SpectralShipGenStudioDiagnosticsAppSupport PUBLIC cxx_std_17)
+spectral_ship_gen_studio_enable_sanitizers(SpectralShipGenStudioDiagnosticsAppSupport)
 
 add_library(SpectralShipGenStudioApplicationCommon STATIC
     Application/SFMLPixelText.cpp
@@ -19,6 +20,7 @@ add_library(SpectralShipGenStudioApplicationCommon STATIC
 target_include_directories(SpectralShipGenStudioApplicationCommon PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Application)
 target_link_libraries(SpectralShipGenStudioApplicationCommon PUBLIC SpectralShipGen::Core sfml-graphics)
 target_compile_features(SpectralShipGenStudioApplicationCommon PUBLIC cxx_std_17)
+spectral_ship_gen_studio_enable_sanitizers(SpectralShipGenStudioApplicationCommon)
 
 add_executable(SpectralShipGenStudio
     Preview/GenerationCalibration.cpp
@@ -53,6 +55,7 @@ target_link_libraries(SpectralShipGenStudio PRIVATE
     SpectralShipGen::Core SpectralShipGen::Diagnostics SpectralShipGenStudioApplicationCommon sfml-graphics
 )
 target_compile_features(SpectralShipGenStudio PRIVATE cxx_std_17)
+spectral_ship_gen_studio_enable_sanitizers(SpectralShipGenStudio)
 
 add_executable(SpectralShipGenStudioDiagnostics DiagnosticsApp/DiagnosticsApp.cpp DiagnosticsApp/DiagnosticsApp_main.cpp)
 target_include_directories(SpectralShipGenStudioDiagnostics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/DiagnosticsApp)
@@ -60,6 +63,7 @@ target_link_libraries(SpectralShipGenStudioDiagnostics PRIVATE
     SpectralShipGenStudioDiagnosticsAppSupport SpectralShipGenStudioApplicationCommon sfml-graphics
 )
 target_compile_features(SpectralShipGenStudioDiagnostics PRIVATE cxx_std_17)
+spectral_ship_gen_studio_enable_sanitizers(SpectralShipGenStudioDiagnostics)
 target_compile_definitions(SpectralShipGenStudioDiagnostics PRIVATE SPECTRAL_SHIP_GEN_BUILD_CONFIGURATION="${CMAKE_BUILD_TYPE}")
 
 include(CheckIncludeFileCXX)
@@ -128,6 +132,7 @@ target_link_libraries(SpectralShipGenStudioPreviewRegression PRIVATE
     SpectralShipGen::Core SpectralShipGen::Diagnostics SpectralShipGenStudioDiagnosticsAppSupport
 )
 target_compile_features(SpectralShipGenStudioPreviewRegression PRIVATE cxx_std_17)
+spectral_ship_gen_studio_enable_sanitizers(SpectralShipGenStudioPreviewRegression)
 if(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_HAS_SFML)
     target_link_libraries(SpectralShipGenStudioPreviewRegression PRIVATE sfml-graphics)
     target_compile_definitions(SpectralShipGenStudioPreviewRegression PRIVATE SPECTRAL_SHIP_GEN_PREVIEW_HAS_SFML=1)

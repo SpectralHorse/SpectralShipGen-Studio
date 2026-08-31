@@ -9,6 +9,31 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
+option(SPECTRAL_SHIP_GEN_STUDIO_ENABLE_SANITIZERS "Enable ASan+UBSan for Studio-owned project targets" OFF)
+if(SPECTRAL_SHIP_GEN_STUDIO_ENABLE_SANITIZERS)
+    if(MSVC OR NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(FATAL_ERROR "SPECTRAL_SHIP_GEN_STUDIO_ENABLE_SANITIZERS requires GCC or Clang on a non-MSVC toolchain")
+    endif()
+endif()
+
+function(spectral_ship_gen_studio_enable_sanitizers target_name)
+    if(NOT SPECTRAL_SHIP_GEN_STUDIO_ENABLE_SANITIZERS)
+        return()
+    endif()
+
+    target_compile_options(${target_name} PRIVATE
+        -fsanitize=address,undefined
+        -fno-omit-frame-pointer
+    )
+
+    get_target_property(_spectral_ship_gen_studio_target_type ${target_name} TYPE)
+    if(NOT _spectral_ship_gen_studio_target_type STREQUAL "STATIC_LIBRARY"
+       AND NOT _spectral_ship_gen_studio_target_type STREQUAL "OBJECT_LIBRARY"
+       AND NOT _spectral_ship_gen_studio_target_type STREQUAL "INTERFACE_LIBRARY")
+        target_link_options(${target_name} PRIVATE -fsanitize=address,undefined)
+    endif()
+endfunction()
+
 option(SPECTRAL_SHIP_GEN_FETCH_SFML "Fetch SFML 2.6.x for application targets" ON)
 if(SPECTRAL_SHIP_GEN_FETCH_SFML)
     include(FetchContent)
@@ -40,9 +65,7 @@ if(NOT TARGET SpectralShipGen::Core)
             GIT_TAG master)
         FetchContent_MakeAvailable(SpectralShipGen)
     else()
-        message(FATAL_ERROR
-            "SpectralShipGen Studio requires the SpectralShipGen Library. "
-            "Set SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR to a local checkout or enable SPECTRAL_SHIP_GEN_FETCH_LIBRARY.")
+        find_package(SpectralShipGen CONFIG REQUIRED)
     endif()
 endif()
 
