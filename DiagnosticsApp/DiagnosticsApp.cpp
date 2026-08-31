@@ -293,7 +293,7 @@ namespace SpectralShipGenStudioDiagnosticsApp
         m_Window.clear(Background);
         drawConfigurationPanel(snapshot);
         drawDashboardPanel(snapshot);
-        SpectralShipGenStudioApplication::drawPixelText(m_Window, "PIXEL SHIP GENERATOR - DIAGNOSTICS", Margin, 8.0f, Highlight, TextScale);
+        SpectralShipGenStudioApplication::drawPixelText(m_Window, "SPECTRALSHIPGEN STUDIO - DIAGNOSTICS", Margin, 8.0f, Highlight, TextScale);
         const std::string status = !m_LocalStatus.empty() ? m_LocalStatus : snapshot.StatusMessage;
         if (!status.empty())
         {

@@ -289,3 +289,10 @@ Generate owns exact ship recipe import/export. Profiles owns reusable authoring-
 ## Library API documentation
 
 For C++ generation/configuration/recipe/animation examples, see the separate [SpectralShipGen Library repository](https://github.com/SpectralHorse/SpectralShipGen).
+
+## License
+
+SpectralShipGen Studio is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**. See [`LICENSE`](LICENSE).
+
+The repository convention is to provide the MPL-2.0 notice through the root `LICENSE` file rather than duplicating the Exhibit A notice in every project-owned source file. Studio consumes the separately zlib-licensed SpectralShipGen Library and the zlib/png-licensed SFML dependency; see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
