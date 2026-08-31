@@ -19,7 +19,8 @@ namespace SpectralShipGenStudioTests
             { "configuration-editor", "Preview Configuration Editor", RegressionCategory::TOOLING, runPreviewConfigurationEditorRegression, false },
             { "faction-profile-editor", "Preview Faction Profile Editor", RegressionCategory::TOOLING, runPreviewFactionProfileEditorRegression, false },
             { "palette-editor", "Preview Palette Editor", RegressionCategory::TOOLING, runPreviewPaletteEditorRegression, false },
-            { "calibration", "Calibration Lab", RegressionCategory::TOOLING, runGenerationCalibrationRegression, true }
+            { "calibration", "Calibration Lab", RegressionCategory::TOOLING, runGenerationCalibrationRegression, true },
+            { "release-robustness", "Task-106 Preview Release Robustness", RegressionCategory::TOOLING, runTask106PreviewReleaseRobustnessRegression, true }
         };
 #if SPECTRAL_SHIP_GEN_PREVIEW_HAS_SFML
         suites.push_back({ "attribute-reroll-studio", "Attribute Reroll Studio", RegressionCategory::TOOLING, runAttributeRerollStudioRegression, false });

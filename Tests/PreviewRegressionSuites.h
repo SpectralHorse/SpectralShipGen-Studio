@@ -22,6 +22,7 @@ namespace SpectralShipGenStudioTests
     int runPreviewConfigurationEditorRegression();
     int runPreviewFactionProfileEditorRegression();
     int runPreviewPaletteEditorRegression();
+    int runTask106PreviewReleaseRobustnessRegression();
 
     std::vector<RegressionSuite> createPreviewRegressionSuites();
 }

@@ -93,6 +93,7 @@ set(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_SOURCES
     Tests/PreviewConfigurationEditorRegression.cpp
     Tests/PreviewFactionProfileEditorRegression.cpp
     Tests/PreviewPaletteEditorRegression.cpp
+    Tests/Task106PreviewReleaseRobustnessRegression.cpp
 
     Preview/GenerationCalibration.cpp
     Preview/GenerationCalibrationSerializer.cpp
@@ -150,7 +151,7 @@ if(BUILD_TESTING)
     if(SPECTRAL_SHIP_GEN_PREVIEW_REGRESSION_HAS_SFML)
         list(APPEND SPECTRAL_SHIP_GEN_PREVIEW_NORMAL_SUITES attribute-reroll-studio)
     endif()
-    set(SPECTRAL_SHIP_GEN_PREVIEW_LONG_SUITES calibration)
+    set(SPECTRAL_SHIP_GEN_PREVIEW_LONG_SUITES calibration release-robustness)
     foreach(SUITE_NAME IN LISTS SPECTRAL_SHIP_GEN_PREVIEW_NORMAL_SUITES)
         add_test(NAME preview.${SUITE_NAME} COMMAND SpectralShipGenStudioPreviewRegression --suite ${SUITE_NAME})
         set_tests_properties(preview.${SUITE_NAME} PROPERTIES LABELS "preview;normal")
