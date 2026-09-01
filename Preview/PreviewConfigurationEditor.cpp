@@ -139,6 +139,7 @@ namespace SpectralShipGenStudioPreview
                 {
                     if (!section.Expanded) { continue; }
                     for (auto& field : section.Integers) { changed = field.Control.updatePointer(x) || changed; }
+                    for (auto& field : section.Ranges) { changed = field.Control.updatePointer(x) || changed; }
                     for (auto& field : section.WeightGroups) { changed = field.Control.updatePointer(x) || changed; }
                 }
             };
@@ -150,6 +151,7 @@ namespace SpectralShipGenStudioPreview
             {
                 if (!section.Expanded || !m_PaletteBindings.isSectionVisible(section)) { continue; }
                 for (auto& field : section.Integers) { changed = field.Control.updatePointer(x) || changed; }
+                for (auto& field : section.Ranges) { changed = field.Control.updatePointer(x) || changed; }
                 for (auto& field : section.Colors) { changed = field.Control.updatePointer(x) || changed; }
             }
         }
@@ -184,6 +186,8 @@ namespace SpectralShipGenStudioPreview
                     if (!section.Expanded || consumed) { continue; }
                     for (auto& field : section.Integers) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
                     if (consumed) { continue; }
+                    for (auto& field : section.Ranges) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
+                    if (consumed) { continue; }
                     for (auto& field : section.WeightGroups) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
                 }
             };
@@ -196,8 +200,15 @@ namespace SpectralShipGenStudioPreview
                 if (!section.Expanded || !m_PaletteBindings.isSectionVisible(section) || consumed) { continue; }
                 for (auto& field : section.Integers) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
                 if (consumed) { continue; }
+                for (auto& field : section.Ranges) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
+                if (consumed) { continue; }
                 for (auto& field : section.Colors) { if (field.Control.beginPointer(x, y)) { consumed = true; break; } }
             }
+        }
+        if (consumed)
+        {
+            syncDraftFromControls();
+            refreshValidation();
         }
     }
 
@@ -219,7 +230,7 @@ namespace SpectralShipGenStudioPreview
                 {
                     if (!section.Expanded) { continue; }
                     for (auto& field : section.Integers) { changed = field.Control.endPointer(x, y) || changed; }
-                    for (auto& field : section.Ranges) { changed = field.Control.activate(x, y) || changed; }
+                    for (auto& field : section.Ranges) { changed = field.Control.endPointer(x, y) || changed; }
                     for (auto& field : section.Toggles) { changed = field.Control.activate(x, y) || changed; }
                     for (auto& field : section.Choices) { changed = field.Control.activate(x, y) || changed; }
                     for (auto& field : section.WeightGroups) { changed = field.Control.endPointer(x, y) || changed; }
@@ -233,7 +244,7 @@ namespace SpectralShipGenStudioPreview
             {
                 if (!section.Expanded || !m_PaletteBindings.isSectionVisible(section)) { continue; }
                 for (auto& field : section.Integers) { changed = field.Control.endPointer(x, y) || changed; }
-                for (auto& field : section.Ranges) { changed = field.Control.activate(x, y) || changed; }
+                for (auto& field : section.Ranges) { changed = field.Control.endPointer(x, y) || changed; }
                 for (auto& field : section.Choices) { changed = field.Control.activate(x, y) || changed; }
                 for (auto& field : section.Colors) { changed = field.Control.endPointer(x, y) || changed; }
             }
@@ -642,6 +653,7 @@ namespace SpectralShipGenStudioPreview
                 for (auto& section : sections)
                 {
                     for (auto& field : section.Integers) { field.Control.Dragging = false; }
+                    for (auto& field : section.Ranges) { field.Control.DraggingEndpoint = -1; }
                     for (auto& field : section.WeightGroups)
                     {
                         for (ConfigurationWeightRow& row : field.Control.getRows()) { row.Control.Dragging = false; }
@@ -653,6 +665,7 @@ namespace SpectralShipGenStudioPreview
         for (auto& section : m_PaletteBindings.getSections())
         {
             for (auto& field : section.Integers) { field.Control.Dragging = false; }
+            for (auto& field : section.Ranges) { field.Control.DraggingEndpoint = -1; }
             for (auto& field : section.Colors) { field.Control.DraggingChannel = -1; }
         }
     }

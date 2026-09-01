@@ -705,11 +705,25 @@ namespace SpectralShipGenStudioPreview
         const auto drawRange = [&](const ConfigurationRangeControl& range)
             {
                 if (!visible(range.RowBounds)) { return; }
-                drawDebugText(window, fitDebugTextToWidth(range.Label, 280.0f, EditorTextScale), range.RowBounds.Left + 6.0f, range.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), EditorTextScale);
-                drawDebugText(window, "MIN " + std::to_string(range.MinimumValue), range.MinimumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), EditorTextScale);
+                drawDebugText(window, fitDebugTextToWidth(range.Label, 178.0f, EditorTextScale), range.RowBounds.Left + 6.0f, range.RowBounds.Top + 9.0f, sf::Color(185, 190, 204), EditorTextScale);
+                const float span = static_cast<float>(std::max(1, range.MaximumLimit - range.MinimumLimit));
+                const auto drawEndpoint = [&](const ConfigurationEditorRect& trackBounds, int32_t value, const char* prefix, bool dragging)
+                    {
+                        drawDebugText(window, prefix + std::to_string(value), trackBounds.Left - 56.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), EditorTextScale);
+                        sf::RectangleShape track(sf::Vector2f(trackBounds.Width, trackBounds.Height));
+                        track.setPosition(trackBounds.Left, trackBounds.Top);
+                        track.setFillColor(sf::Color(58, 64, 76));
+                        window.draw(track);
+                        const float normalized = static_cast<float>(value - range.MinimumLimit) / span;
+                        sf::RectangleShape knob(sf::Vector2f(4.0f, 14.0f));
+                        knob.setPosition(trackBounds.Left + normalized * trackBounds.Width - 2.0f, trackBounds.Top - 4.0f);
+                        knob.setFillColor(dragging ? sf::Color(240, 215, 105) : sf::Color(120, 190, 230));
+                        window.draw(knob);
+                    };
+                drawEndpoint(range.MinimumTrackBounds, range.MinimumValue, "MIN ", range.DraggingEndpoint == 0);
                 drawSmallButton(range.MinimumDecrementBounds, "-");
                 drawSmallButton(range.MinimumIncrementBounds, "+");
-                drawDebugText(window, "MAX " + std::to_string(range.MaximumValue), range.MaximumDecrementBounds.Left - 72.0f, range.RowBounds.Top + 9.0f, sf::Color(220, 224, 232), EditorTextScale);
+                drawEndpoint(range.MaximumTrackBounds, range.MaximumValue, "MAX ", range.DraggingEndpoint == 1);
                 drawSmallButton(range.MaximumDecrementBounds, "-");
                 drawSmallButton(range.MaximumIncrementBounds, "+");
             };

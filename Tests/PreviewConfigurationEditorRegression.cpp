@@ -1,5 +1,6 @@
 #include "PreviewRegressionSuites.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -10,6 +11,7 @@
 #include "PreviewConfigurationEditor.h"
 #include "RuntimeCustomPresetWorkspace.h"
 #include "StructuralProfileSelection.h"
+#include "UserPresetPersistence.h"
 
 #include <SpectralShipGen/ShipFactionProfile.h>
 #include <SpectralShipGen/ShipGenerationProfile.h>
@@ -78,9 +80,22 @@ namespace SpectralShipGenStudioTests
         if (multiplier.Value != 140 || multiplier.getDisplayValue() != "140% x") { return fail("multiplier values above 100 were not preserved"); }
 
         ConfigurationRangeControl range;
-        range.configure("RANGE", 0, 100, 1, 20, 30);
+        range.configure("RANGE", 0, 100, 1, 20, 80);
+        range.setRowBounds({ 0.0f, 0.0f, 720.0f, 30.0f });
+        if (range.minimumValueForTrackPosition(range.MinimumTrackBounds.Left) != 0 ||
+            range.maximumValueForTrackPosition(range.MaximumTrackBounds.Left + range.MaximumTrackBounds.Width) != 100)
+        {
+            return fail("range slider endpoints did not resolve exactly");
+        }
+        const float minimum75X = range.MinimumTrackBounds.Left + range.MinimumTrackBounds.Width * 0.75f;
+        if (!range.beginPointer(minimum75X, range.MinimumTrackBounds.Top - 4.0f) || range.MinimumValue != 75) { return fail("range minimum slider press/thumb hit did not update exact integer value"); }
+        if (!range.updatePointer(range.MinimumTrackBounds.Left + range.MinimumTrackBounds.Width) || range.MinimumValue != 80) { return fail("range minimum drag did not clamp at current maximum"); }
+        if (!range.endPointer(range.MinimumTrackBounds.Left, range.MinimumTrackBounds.Top) || range.MinimumValue != 0 || range.DraggingEndpoint != -1) { return fail("range minimum drag/release did not resolve endpoint/reset drag state"); }
+        const float maximum25X = range.MaximumTrackBounds.Left + range.MaximumTrackBounds.Width * 0.25f;
+        if (!range.beginPointer(maximum25X, range.MaximumTrackBounds.Top) || range.MaximumValue != 25) { return fail("range maximum slider did not update exact middle integer value"); }
+        if (!range.endPointer(range.MaximumTrackBounds.Left, range.MaximumTrackBounds.Top) || range.MaximumValue != range.MinimumValue) { return fail("range maximum drag did not preserve Min <= Max at the lower endpoint"); }
         range.setValues(60, 40);
-        if (range.MinimumValue != 60 || range.MaximumValue != 60) { return fail("range control did not enforce Min <= Max"); }
+        if (range.MinimumValue != 60 || range.MaximumValue != 60) { return fail("range control did not preserve existing Min <= Max normalization"); }
 
         ConfigurationToggleControl toggle;
         toggle.configure("TOGGLE", false);
@@ -140,7 +155,31 @@ namespace SpectralShipGenStudioTests
 
         expandOnly(2u); // Hull dimensions.
         StructuralRangeFieldBinding* noseEnd = editor.findRangeField("NoseEndPercent");
-        if (noseEnd == nullptr) { return fail("nose end binding lookup failed"); }
+        StructuralRangeFieldBinding* noseWidth = editor.findRangeField("NoseWidthPercent");
+        StructuralRangeFieldBinding* upperWidth = editor.findRangeField("UpperFuselageWidthPercent");
+        if (noseEnd == nullptr || noseWidth == nullptr || upperWidth == nullptr) { return fail("representative structural range binding lookup failed"); }
+        const int32_t originalUpperWidthMinimum = upperWidth->Control.MinimumValue;
+        const int32_t noseWidthTarget = noseWidth->Control.MinimumValue < noseWidth->Control.MaximumValue ? noseWidth->Control.MinimumValue + 1 : noseWidth->Control.MinimumValue;
+        const float noseWidthTargetX = noseWidth->Control.MinimumTrackBounds.Left +
+            noseWidth->Control.MinimumTrackBounds.Width * static_cast<float>(noseWidthTarget - noseWidth->Control.MinimumLimit) /
+            static_cast<float>(std::max(1, noseWidth->Control.MaximumLimit - noseWidth->Control.MinimumLimit));
+        editor.onMousePress(noseWidthTargetX, noseWidth->Control.MinimumTrackBounds.Top - 4.0f);
+        if (static_cast<int32_t>(editor.getDraftProfile().NoseWidthPercent.Min) != noseWidth->Control.MinimumValue) { return fail("structural range slider press did not synchronize the authoritative draft immediately"); }
+        editor.onMouseRelease(0.0f, 0.0f);
+        if (noseWidth->Control.DraggingEndpoint != -1 ||
+            static_cast<int32_t>(editor.getDraftProfile().NoseWidthPercent.Min) != noseWidth->Control.MinimumValue ||
+            upperWidth->Control.MinimumValue != originalUpperWidthMinimum)
+        {
+            return fail("structural range slider outside release did not preserve synchronized state or leaked into another control");
+        }
+        RuntimeCustomPresetWorkspace sliderPersistenceWorkspace;
+        const RuntimeCustomPresetId sliderPresetId = sliderPersistenceWorkspace.addStructural("Slider Persistence", editor.getDraftProfile());
+        const UserPresetLibraryLoadResult sliderReloaded = deserializeUserPresetLibrary(serializeUserPresetLibrary(sliderPersistenceWorkspace));
+        const RuntimeStructuralPreset* sliderReloadedPreset = sliderReloaded.Workspace.findStructural(sliderPresetId);
+        if (!sliderReloaded.Success || sliderReloadedPreset == nullptr || sliderReloadedPreset->Profile.NoseWidthPercent.Min != editor.getDraftProfile().NoseWidthPercent.Min)
+        {
+            return fail("slider-edited structural range did not persist exactly through the current user-preset schema");
+        }
         noseEnd->Control.setValues(70, 80);
         expandOnly(0u);
         StructuralToggleFieldBinding* hierarchyToggle = editor.findToggleField("VisualHierarchyEnabled");

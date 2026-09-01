@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: SpectralHorse/SpectralShipGen
-          ref: v1.0.0-rc.1
+          ref: c033c263fe3236346d23e85e3631812c84473041
           token: ${{ secrets.SPECTRAL_SHIP_GEN_CI_TOKEN }}
           path: SpectralShipGen
           persist-credentials: false
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: SpectralHorse/SpectralShipGen
-          ref: v1.0.0-rc.1
+          ref: c033c263fe3236346d23e85e3631812c84473041
           token: ${{ secrets.SPECTRAL_SHIP_GEN_CI_TOKEN }}
           path: SpectralShipGen
           persist-credentials: false

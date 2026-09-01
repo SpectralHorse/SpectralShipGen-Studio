@@ -65,14 +65,22 @@ namespace SpectralShipGenStudioPreview
         int32_t MinimumValue = 0;
         int32_t MaximumValue = 100;
         ConfigurationEditorRect RowBounds;
+        ConfigurationEditorRect MinimumTrackBounds;
+        ConfigurationEditorRect MaximumTrackBounds;
         ConfigurationEditorRect MinimumDecrementBounds;
         ConfigurationEditorRect MinimumIncrementBounds;
         ConfigurationEditorRect MaximumDecrementBounds;
         ConfigurationEditorRect MaximumIncrementBounds;
+        int32_t DraggingEndpoint = -1;
 
         void configure(std::string label, int32_t minimumLimit, int32_t maximumLimit, int32_t step, int32_t minimumValue, int32_t maximumValue);
         void setRowBounds(const ConfigurationEditorRect& bounds);
         void setValues(int32_t minimumValue, int32_t maximumValue);
+        int32_t minimumValueForTrackPosition(float x) const;
+        int32_t maximumValueForTrackPosition(float x) const;
+        bool beginPointer(float x, float y);
+        bool updatePointer(float x);
+        bool endPointer(float x, float y);
         bool activate(float x, float y);
     };
 

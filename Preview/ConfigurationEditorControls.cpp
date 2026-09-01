@@ -17,6 +17,21 @@ namespace SpectralShipGenStudioPreview
             const int64_t stepped = minimum + ((relative + safeStep / 2) / safeStep) * safeStep;
             return static_cast<int32_t>(std::clamp<int64_t>(stepped, minimum, maximum));
         }
+
+        int32_t steppedValueForTrackPosition(float x, const ConfigurationEditorRect& trackBounds, int32_t minimum, int32_t maximum, int32_t step)
+        {
+            const float width = std::max(1.0f, trackBounds.Width);
+            const float normalized = std::clamp((x - trackBounds.Left) / width, 0.0f, 1.0f);
+            const double raw = static_cast<double>(minimum) + static_cast<double>(maximum - minimum) * normalized;
+            return clampSteppedValue(static_cast<int32_t>(std::llround(raw)), minimum, maximum, step);
+        }
+
+        bool containsTrackInteraction(const ConfigurationEditorRect& trackBounds, float x, float y)
+        {
+            constexpr float VerticalPadding = 8.0f;
+            return x >= trackBounds.Left && x <= trackBounds.Left + trackBounds.Width &&
+                y >= trackBounds.Top - VerticalPadding && y <= trackBounds.Top + trackBounds.Height + VerticalPadding;
+        }
     }
 
     void ConfigurationIntegerControl::configure(std::string label, ConfigurationNumericSemantic semantic, int32_t minimum, int32_t maximum, int32_t step, int32_t value)
@@ -57,15 +72,12 @@ namespace SpectralShipGenStudioPreview
 
     int32_t ConfigurationIntegerControl::valueForTrackPosition(float x) const
     {
-        const float width = std::max(1.0f, TrackBounds.Width);
-        const float normalized = std::clamp((x - TrackBounds.Left) / width, 0.0f, 1.0f);
-        const double raw = static_cast<double>(Minimum) + static_cast<double>(Maximum - Minimum) * normalized;
-        return clampSteppedValue(static_cast<int32_t>(std::llround(raw)), Minimum, Maximum, Step);
+        return steppedValueForTrackPosition(x, TrackBounds, Minimum, Maximum, Step);
     }
 
     bool ConfigurationIntegerControl::beginPointer(float x, float y)
     {
-        if (TrackBounds.contains(x, y))
+        if (containsTrackInteraction(TrackBounds, x, y))
         {
             Dragging = true;
             setValue(valueForTrackPosition(x));
@@ -126,14 +138,28 @@ namespace SpectralShipGenStudioPreview
     void ConfigurationRangeControl::setRowBounds(const ConfigurationEditorRect& bounds)
     {
         RowBounds = bounds;
-        constexpr float ButtonWidth = 24.0f;
-        constexpr float Gap = 4.0f;
-        const float right = bounds.Left + bounds.Width;
-        MaximumIncrementBounds = { right - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
-        MaximumDecrementBounds = { MaximumIncrementBounds.Left - Gap - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
-        constexpr float RangeGroupSeparation = 104.0f;
-        MinimumIncrementBounds = { MaximumDecrementBounds.Left - RangeGroupSeparation - Gap - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
-        MinimumDecrementBounds = { MinimumIncrementBounds.Left - Gap - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
+        constexpr float LabelAreaWidth = 190.0f;
+        constexpr float GroupGap = 10.0f;
+        constexpr float ValueAreaWidth = 60.0f;
+        constexpr float ButtonWidth = 20.0f;
+        constexpr float ButtonGap = 3.0f;
+        constexpr float TrackGap = 4.0f;
+        const float controlsLeft = bounds.Left + LabelAreaWidth;
+        const float controlsWidth = std::max(1.0f, bounds.Width - LabelAreaWidth);
+        const float groupWidth = std::max(1.0f, (controlsWidth - GroupGap) * 0.5f);
+
+        const auto layoutGroup = [&](float groupLeft, ConfigurationEditorRect& trackBounds, ConfigurationEditorRect& decrementBounds, ConfigurationEditorRect& incrementBounds)
+            {
+                const float groupRight = groupLeft + groupWidth;
+                incrementBounds = { groupRight - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
+                decrementBounds = { incrementBounds.Left - ButtonGap - ButtonWidth, bounds.Top, ButtonWidth, bounds.Height };
+                const float trackLeft = groupLeft + ValueAreaWidth;
+                const float trackRight = decrementBounds.Left - TrackGap;
+                trackBounds = { trackLeft, bounds.Top + bounds.Height * 0.5f - 3.0f, std::max(1.0f, trackRight - trackLeft), 6.0f };
+            };
+
+        layoutGroup(controlsLeft, MinimumTrackBounds, MinimumDecrementBounds, MinimumIncrementBounds);
+        layoutGroup(controlsLeft + groupWidth + GroupGap, MaximumTrackBounds, MaximumDecrementBounds, MaximumIncrementBounds);
     }
 
     void ConfigurationRangeControl::setValues(int32_t minimumValue, int32_t maximumValue)
@@ -141,6 +167,64 @@ namespace SpectralShipGenStudioPreview
         MinimumValue = clampSteppedValue(minimumValue, MinimumLimit, MaximumLimit, Step);
         MaximumValue = clampSteppedValue(maximumValue, MinimumLimit, MaximumLimit, Step);
         if (MinimumValue > MaximumValue) { MaximumValue = MinimumValue; }
+    }
+
+    int32_t ConfigurationRangeControl::minimumValueForTrackPosition(float x) const
+    {
+        return std::min(MaximumValue, steppedValueForTrackPosition(x, MinimumTrackBounds, MinimumLimit, MaximumLimit, Step));
+    }
+
+    int32_t ConfigurationRangeControl::maximumValueForTrackPosition(float x) const
+    {
+        return std::max(MinimumValue, steppedValueForTrackPosition(x, MaximumTrackBounds, MinimumLimit, MaximumLimit, Step));
+    }
+
+    bool ConfigurationRangeControl::beginPointer(float x, float y)
+    {
+        if (containsTrackInteraction(MinimumTrackBounds, x, y))
+        {
+            DraggingEndpoint = 0;
+            MinimumValue = minimumValueForTrackPosition(x);
+            return true;
+        }
+        if (containsTrackInteraction(MaximumTrackBounds, x, y))
+        {
+            DraggingEndpoint = 1;
+            MaximumValue = maximumValueForTrackPosition(x);
+            return true;
+        }
+        return MinimumDecrementBounds.contains(x, y) || MinimumIncrementBounds.contains(x, y) ||
+            MaximumDecrementBounds.contains(x, y) || MaximumIncrementBounds.contains(x, y);
+    }
+
+    bool ConfigurationRangeControl::updatePointer(float x)
+    {
+        if (DraggingEndpoint == 0)
+        {
+            MinimumValue = minimumValueForTrackPosition(x);
+            return true;
+        }
+        if (DraggingEndpoint == 1)
+        {
+            MaximumValue = maximumValueForTrackPosition(x);
+            return true;
+        }
+        return false;
+    }
+
+    bool ConfigurationRangeControl::endPointer(float x, float y)
+    {
+        bool changed = false;
+        if (DraggingEndpoint >= 0)
+        {
+            changed = updatePointer(x);
+        }
+        else
+        {
+            changed = activate(x, y);
+        }
+        DraggingEndpoint = -1;
+        return changed;
     }
 
     bool ConfigurationRangeControl::activate(float x, float y)

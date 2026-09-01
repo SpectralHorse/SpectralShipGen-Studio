@@ -1,5 +1,6 @@
 #include "PreviewRegressionSuites.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <optional>
@@ -146,7 +147,11 @@ namespace
             if (hue == nullptr) { return false; }
             if (hue->Control.MinimumValue < hue->Control.MaximumValue)
             {
-                editor.onMouseRelease(centerX(hue->Control.MinimumIncrementBounds), centerY(hue->Control.MinimumIncrementBounds));
+                const int32_t target = hue->Control.MinimumValue + 1;
+                const float targetX = hue->Control.MinimumTrackBounds.Left + hue->Control.MinimumTrackBounds.Width *
+                    static_cast<float>(target - hue->Control.MinimumLimit) / static_cast<float>(std::max(1, hue->Control.MaximumLimit - hue->Control.MinimumLimit));
+                editor.onMousePress(targetX, hue->Control.MinimumTrackBounds.Top);
+                editor.onMouseRelease(targetX, hue->Control.MinimumTrackBounds.Top);
             }
             const ShipPaletteGenerationProfile after = getBuiltInPalettePresetProfile(preset.FactionPreset);
             if (before.Ranges.HullHue.Min != after.Ranges.HullHue.Min || before.Ranges.HullHue.Max != after.Ranges.HullHue.Max) { return false; }
@@ -173,8 +178,12 @@ namespace
         const int32_t originalMin = hullHue->Control.MinimumValue;
         if (originalMin < hullHue->Control.MaximumValue)
         {
-            editor.onMouseRelease(centerX(hullHue->Control.MinimumIncrementBounds), centerY(hullHue->Control.MinimumIncrementBounds));
-            if (editor.getDraftPaletteConfiguration().Generated.Ranges.HullHue.Min != static_cast<uint32_t>(originalMin + 1)) { return false; }
+            const int32_t target = originalMin + 1;
+            const float targetX = hullHue->Control.MinimumTrackBounds.Left + hullHue->Control.MinimumTrackBounds.Width *
+                static_cast<float>(target - hullHue->Control.MinimumLimit) / static_cast<float>(std::max(1, hullHue->Control.MaximumLimit - hullHue->Control.MinimumLimit));
+            editor.onMousePress(targetX, hullHue->Control.MinimumTrackBounds.Top);
+            editor.onMouseRelease(targetX, hullHue->Control.MinimumTrackBounds.Top);
+            if (editor.getDraftPaletteConfiguration().Generated.Ranges.HullHue.Min != static_cast<uint32_t>(target)) { return false; }
         }
 
         PaletteChoiceFieldBinding* mode = editor.findPaletteChoiceField("Mode");

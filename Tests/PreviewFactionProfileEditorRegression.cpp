@@ -1,5 +1,6 @@
 #include "PreviewRegressionSuites.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -104,6 +105,17 @@ namespace SpectralShipGenStudioTests
             for (std::size_t index = 0u; index < editor.getFactionProfileSections().size(); ++index) { editor.setSectionExpanded(index, index == sectionIndex); }
             editor.onMouseWheelScrolled(1000.0f);
         };
+
+        expandOnly(0u); // Palette.
+        FactionRangeFieldBinding* hullHue = editor.findFactionRangeField("Palette.HullHue");
+        if (hullHue == nullptr) { return fail("faction hull hue range binding lookup failed"); }
+        const int32_t factionHueTarget = hullHue->Control.MaximumValue > hullHue->Control.MinimumValue ? hullHue->Control.MaximumValue - 1 : hullHue->Control.MaximumValue;
+        const float factionHueX = hullHue->Control.MaximumTrackBounds.Left +
+            hullHue->Control.MaximumTrackBounds.Width * static_cast<float>(factionHueTarget - hullHue->Control.MinimumLimit) /
+            static_cast<float>(std::max(1, hullHue->Control.MaximumLimit - hullHue->Control.MinimumLimit));
+        editor.onMousePress(factionHueX, hullHue->Control.MaximumTrackBounds.Top);
+        editor.onMouseRelease(factionHueX, hullHue->Control.MaximumTrackBounds.Top);
+        if (static_cast<int32_t>(editor.getDraftFactionProfile().Palette.HullHue.Max) != hullHue->Control.MaximumValue) { return fail("faction range slider did not synchronize the real draft profile"); }
 
         expandOnly(1u); // Surface details.
         FactionIntegerFieldBinding* detailDensity = editor.findFactionIntegerField("SurfaceDetails.DetailDensityPercent");
