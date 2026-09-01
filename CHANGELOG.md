@@ -9,11 +9,19 @@ Initial public release candidate.
 ### Workspaces
 
 - **Generate** — single generation, Gallery batches, History, recipe import/export, and bookmarking.
-- **Profiles** — Structural, Faction, Palette, and Full Configuration authoring/import/export.
+- **Profiles** — Structural, Faction, Palette, and Full Configuration authoring/import/export, with bounded integer sliders and dual MIN/MAX range controls for faster editing.
 - **Reroll** — selective deterministic domain rerolls with explicit candidate acceptance.
 - **Inspect** — semantic inspection of the current generated ship.
 - **Favorites** — persistent recipe-backed collection browser and multi-Favorite Gallery workflow.
 - **Animation** — Animation Lab for IDLE, movement, FIRE composition, scrubbing, playback, and export.
+
+### Desktop usability
+
+- Native resizable/maximizable Studio window while preserving the fixed 1640×1000 logical UI coordinate space.
+- Aspect-preserving letterbox/pillarbox presentation and centralized scaled mouse mapping.
+- Initial Windows window size fits the available desktop work area where the normal client size would not fit.
+- Windows validation establishes 1920×1080-or-higher as recommended, with functional usability down to 1280×720 and a small-text readability caveat.
+- Windows x64 portable documentation records static SFML linkage and the possible Microsoft Visual C++ 2015–2022 Redistributable (x64) prerequisite.
 
 ### Authoring and persistence
 

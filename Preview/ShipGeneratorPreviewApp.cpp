@@ -383,9 +383,9 @@ namespace
         return true;
     }
 
-    bool readUserPresetPathFromConsole(std::filesystem::path& path)
+    bool readUserPresetPathFromConsole(std::filesystem::path& path, bool fullConfiguration)
     {
-        std::cout << "Enter .shipgenpreset.json path: ";
+        std::cout << "Enter " << (fullConfiguration ? ".shipgenbundle.json" : ".shipgenpreset.json") << " path: ";
         std::string input;
         std::getline(std::cin >> std::ws, input);
         if (input.empty())
@@ -1541,10 +1541,10 @@ namespace SpectralShipGenStudioPreview
 
     void ShipGeneratorPreviewApp::importConfigurationEditorPreset()
     {
-        std::filesystem::path path;
-        if (!readUserPresetPathFromConsole(path)) { return; }
-
         const ConfigurationEditorProfileKind kind = m_ConfigurationEditor.getProfileKind();
+        std::filesystem::path path;
+        if (!readUserPresetPathFromConsole(path, kind == ConfigurationEditorProfileKind::FULL_CONFIGURATION)) { return; }
+
         const UserPresetImportResult imported = SpectralShipGenStudioPreview::importUserPreset(m_CustomPresetWorkspace, userPresetCategory(kind), path);
         if (!imported.Success)
         {

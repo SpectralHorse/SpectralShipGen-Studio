@@ -6,12 +6,13 @@ SpectralShipGen Studio is the standalone SFML desktop application for generating
 
 - Six focused workspaces: Generate, Profiles, Reroll, Inspect, Favorites, and Animation.
 - Gallery generation with multiple independent Favorites from one batch.
-- Structural, Faction, Palette, and Full Configuration authoring and export.
+- Structural, Faction, Palette, and Full Configuration authoring and export, including slider-first bounded range editing with exact integer MIN/MAX controls.
 - Recipe-backed Favorites and portable recipe import/export.
 - Selective deterministic rerolls.
 - Semantic Inspect workspace.
 - Experimental Animation Lab with IDLE, movement, FIRE composition, scrub/playback, and export.
 - Separate statistical Diagnostics application.
+- Resizable/maximizable desktop window with aspect-preserving 1640×1000 logical presentation and lower-resolution support.
 - Contextual help and first-time-user documentation.
 
 ## Required Library
@@ -21,6 +22,12 @@ Studio numeric version: `1.0.0`.
 Studio 1.0 supports **SpectralShipGen Library >=1.0.0,<2.0.0**. This release candidate is intended to pair specifically with **SpectralShipGen v1.0.0-rc.1**. Source/fetch release declarations pin that exact candidate rather than a moving branch.
 
 The Studio and Library version independently after the coordinated initial 1.0 release.
+
+## Windows x64 portable package
+
+The first-party RC package is Windows x64. SFML is linked statically in the validated portable build, so no `sfml-*.dll` files are required beside the executable. The Release executable uses the normal dynamically linked Microsoft C++ runtime; **Microsoft Visual C++ 2015–2022 Redistributable (x64) may be required** if it is not already installed.
+
+**1920×1080 or higher is recommended.** Studio remains functionally usable at lower resolutions down to 1280×720, although some of the smallest interface text may be difficult to read. The window supports native resize/maximize/restore and preserves the logical UI aspect ratio.
 
 ## Persistence baselines
 
@@ -44,6 +51,7 @@ If you make something interesting or funny with the generator, sharing it with t
 
 - Animation Lab is an experimental 1.0 feature; animation behavior and authoring ergonomics may evolve in later compatible releases.
 - Studio currently stores its automatic local presets, Favorites, and preferences relative to the application's working directory; keep the executable's working directory stable if you want that local state to follow the same portable folder.
+- At 1280×720 the application remains functionally usable, but some of the smallest helper text is difficult to read comfortably; 1920×1080 or higher is recommended.
 - The first prebuilt portable distribution target is Windows x64. Other supported development platforms may build from source but are not promised a first-party binary package for this RC.
 - Exact generated pixels are tied to the exact SpectralShipGen Library release revision, not merely the Studio version or readable recipe schema.
 
