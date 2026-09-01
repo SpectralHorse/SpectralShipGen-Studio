@@ -1285,7 +1285,7 @@ namespace SpectralShipGenStudioPreview
             {
                 const auto& objective = *data.ObjectiveBatch;
                 y += 4.0f;
-                drawSectionHeader(window, "TASK33 BATCH", x, y);
+                drawSectionHeader(window, "OBJECTIVE BATCH", x, y);
                 drawDebugText(window, "PROD -> TUNED", x, y, sf::Color(180, 185, 195), SmallTextScale); y += 14.0f;
                 drawDebugText(window, "ENG " + std::to_string(objective.Production.EngineCount.average()) + " -> " + std::to_string(objective.Tuned.EngineCount.average()), x, y, sf::Color(150, 180, 205), SmallTextScale); y += 14.0f;
                 drawDebugText(window, "ATT " + std::to_string(objective.Production.AttachmentGroupCount.average()) + " -> " + std::to_string(objective.Tuned.AttachmentGroupCount.average()), x, y, sf::Color(150, 180, 205), SmallTextScale); y += 14.0f;

@@ -573,7 +573,7 @@ namespace SpectralShipGenStudioDiagnosticsApp
     {
         (void)result;
         appendChartHits(0u, SpectralShipGenStudioApplication::drawLineChart(m_Window, { RightX + 14.0f, 190.0f, RightWidth - 28.0f, 270.0f }, "HULL RETRY RATE VS RESOLUTION", { toChartSeries(m_RetryResolutionSeries, "RETRY RATE") }, "%", chartColors(), m_SelectedChartSeries, m_SelectedChartValue));
-        appendChartHits(1u, SpectralShipGenStudioApplication::drawBarChart(m_Window, { RightX + 14.0f, 475.0f, RightWidth - 28.0f, 300.0f }, "TASK-56 REJECTION REASONS", { toChartSeries(m_RejectionSeries, "COUNT") }, "COUNT", chartColors(), m_SelectedChartSeries, m_SelectedChartValue, true));
+        appendChartHits(1u, SpectralShipGenStudioApplication::drawBarChart(m_Window, { RightX + 14.0f, 475.0f, RightWidth - 28.0f, 300.0f }, "REJECTION REASONS", { toChartSeries(m_RejectionSeries, "COUNT") }, "COUNT", chartColors(), m_SelectedChartSeries, m_SelectedChartValue, true));
         const auto& summary = m_FilteredCache.Summary;
         SpectralShipGenStudioApplication::drawPixelText(m_Window, "NEG SPACE ATTEMPT " + formatDouble(summary.StructuralNegativeSpaceAttemptRatePercent) + "%   SUCCESS " + formatDouble(summary.StructuralNegativeSpaceSuccessRatePercent) + "%", RightX + 14.0f, 798.0f, Text, SmallTextScale);
     }

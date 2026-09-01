@@ -1,6 +1,6 @@
 # SpectralShipGen Studio
 
-SpectralShipGen Studio is the standalone SFML application for generating, authoring, inspecting, bookmarking, rerolling, and animating ships produced by the separate [SpectralShipGen](https://github.com/SpectralHorse/SpectralShipGen) C++ library.
+SpectralShipGen Studio 1.0.0 is the standalone SFML application for generating, authoring, inspecting, bookmarking, rerolling, and animating ships produced by the separate [SpectralShipGen](https://github.com/SpectralHorse/SpectralShipGen) C++ library.
 
 The repositories are intentionally separate:
 
@@ -11,12 +11,16 @@ SpectralShipGen Studio
 
 Studio owns the user interface, local authoring/persistence, Favorites workflow, file interaction, SFML rendering, and statistical Diagnostics application. The Library remains independently usable and SFML-independent.
 
+## First time using SpectralShipGen Studio?
+
+Start with the **[User Guide](docs/USER_GUIDE.md)**. Its two-minute Quick Start explains the Structural/Faction/Palette mental model, the six workspaces, and when to use a Profile, Full Configuration, Recipe, or Favorite.
+
 ## Requirements
 
 - CMake 3.20 or newer for the tracked Visual Studio presets
 - C++17 compiler
 - SFML 2.6.x for the Studio and Diagnostics application targets
-- SpectralShipGen Library, normally from a sibling checkout or the optional FetchContent path
+- SpectralShipGen Library `>=1.0.0,<2.0.0`, normally from a sibling checkout, exact RC FetchContent path, or installed package
 
 ## Recommended local development layout
 
@@ -65,18 +69,18 @@ On Windows with a multi-config generator, select the desired configuration with 
 
 ### Optional Library FetchContent fallback
 
-If no local Library path is supplied, Studio can fetch the private Library repository using normal Git authentication:
+If no local Library path is supplied, Studio can fetch the exact Library release-candidate dependency using normal Git authentication:
 
 ```text
 cmake -S . -B build \
   -DSPECTRAL_SHIP_GEN_FETCH_LIBRARY=ON
 ```
 
-An explicitly supplied `SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR` always takes priority over the fetch option.
+An explicitly supplied `SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR` always takes priority over the fetch option. For Studio `v1.0.0-rc.1`, the fetch declaration is pinned to Library `v1.0.0-rc.1`; it does not track a moving branch.
 
 ### Installed Library package
 
-When neither a source checkout nor the Library FetchContent fallback is selected, Studio uses the normal Task-103 package interface:
+When neither a source checkout nor the Library FetchContent fallback is selected, Studio uses the normal installed-package interface:
 
 ```text
 cmake -S . -B build \
@@ -84,7 +88,9 @@ cmake -S . -B build \
   -DSPECTRAL_SHIP_GEN_FETCH_LIBRARY=OFF
 ```
 
-This resolves `find_package(SpectralShipGen CONFIG REQUIRED)` and links the same `SpectralShipGen::Core` / `SpectralShipGen::Diagnostics` targets used by source integration. No Library source include path is required.
+This resolves `find_package(SpectralShipGen 1.0.0 CONFIG REQUIRED)` and links the same `SpectralShipGen::Core` / `SpectralShipGen::Diagnostics` targets used by source integration. No Library source include path is required.
+
+The installed-package contract is SpectralShipGen `>=1.0.0,<2.0.0`, implemented through the Library package's `SameMajorVersion` rule. Studio and Library version independently after their coordinated initial 1.0 release.
 
 Studio's SFML mechanism is independent: `SPECTRAL_SHIP_GEN_FETCH_SFML` controls the existing SFML 2.6.x FetchContent path.
 
@@ -276,7 +282,7 @@ Studio currently stores its persistent local authoring state relative to the app
 
 Individual authoring exports use the current `.shipgenpreset.json` / `.shipgenbundle.json` formats. Generation recipes are exported/imported as `.shipgen.json` by the current Studio workflow.
 
-These files are Studio-local convenience state. Public SpectralShipGen recipes remain portable and independent of the local preset database.
+User preset/export format v3 and Favorites format v1 are public 1.0 Studio user-data baselines. Preview Preferences v2 is local convenience state. Public SpectralShipGen recipes remain portable and independent of the local preset database. See [`COMPATIBILITY.md`](COMPATIBILITY.md) for the exact persistence promises.
 
 ## Recipe and profile import/export
 
@@ -285,6 +291,22 @@ Generate owns exact ship recipe import/export. Profiles owns reusable authoring-
 ## Diagnostics application
 
 `SpectralShipGenStudioDiagnostics` uses the Library's reusable diagnostics backend but is a separate SFML application owned by this repository. Use it for broad statistical/generator-wide analysis rather than inspecting one current ship.
+
+## Release version and compatibility
+
+The Studio numeric CMake version is `1.0.0`; the coordinated first RC tag candidate is `v1.0.0-rc.1`. The prerelease qualifier is tag/release metadata rather than part of CMake's numeric `VERSION`. Studio and the Library use independent Semantic Versioning after the initial release.
+
+See [`COMPATIBILITY.md`](COMPATIBILITY.md) for the supported Library range and Studio persistence contract, and [`CHANGELOG.md`](CHANGELOG.md) / [`RELEASE_NOTES_1.0.0-rc.1.md`](RELEASE_NOTES_1.0.0-rc.1.md) for the RC summary.
+
+## Generated output rights
+
+Images, spritesheets, animation frames, and other output generated with SpectralShipGen or SpectralShipGen Studio may be used for **any purpose**, including commercial use, with **no attribution requirement**. You may modify, redistribute, publish, sell, incorporate, or paint over generated output. The software licenses apply to the software source, not generated output.
+
+Sharing interesting/funny generated results with the project is appreciated but entirely optional.
+
+## Windows x64 portable release
+
+The supported first-party RC binary package target is `SpectralShipGen-Studio-1.0.0-rc.1-Windows-x64.zip`. On Windows x64, build target `SpectralShipGenStudioPortableZip` after configuring the normal supported SFML build. See [`docs/WINDOWS_PORTABLE.md`](docs/WINDOWS_PORTABLE.md) for the exact package contents and runtime assumptions.
 
 ## Library API documentation
 
