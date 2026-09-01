@@ -31,7 +31,7 @@ The portable build statically links SFML. **Microsoft Visual C++ 2015–2022 Red
 - CMake 3.20 or newer for the tracked Visual Studio presets
 - C++17 compiler
 - SFML 2.6.x for the Studio and Diagnostics application targets
-- SpectralShipGen Library `>=1.0.0,<2.0.0`, normally from a sibling checkout, exact RC FetchContent path, or installed package
+- SpectralShipGen Library `>=1.0.0,<2.0.0`, normally from a sibling checkout, exact release-tag FetchContent path, or installed package
 
 ## Recommended local development layout
 
@@ -80,14 +80,14 @@ On Windows with a multi-config generator, select the desired configuration with 
 
 ### Optional Library FetchContent fallback
 
-If no local Library path is supplied, Studio can fetch the exact Library release-candidate dependency using normal Git authentication:
+If no local Library path is supplied, Studio can fetch the exact public Library release dependency:
 
 ```text
 cmake -S . -B build \
   -DSPECTRAL_SHIP_GEN_FETCH_LIBRARY=ON
 ```
 
-An explicitly supplied `SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR` always takes priority over the fetch option. For Studio `v1.0.0-rc.1`, the fetch declaration is pinned to Library `v1.0.0-rc.1`; it does not track a moving branch.
+An explicitly supplied `SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR` always takes priority over the fetch option. For Studio `v1.0.0`, the fetch declaration is pinned to Library `v1.0.0`; it does not track a moving branch.
 
 ### Installed Library package
 
@@ -105,15 +105,15 @@ The installed-package contract is SpectralShipGen `>=1.0.0,<2.0.0`, implemented 
 
 Studio's SFML mechanism is independent: `SPECTRAL_SHIP_GEN_FETCH_SFML` controls the existing SFML 2.6.x FetchContent path.
 
-## CI and private Library access
+## CI and Library integration
 
-Studio CI deliberately obtains SpectralShipGen as a second repository rather than copying Library implementation into Studio. While the Library is private, GitHub Actions uses the Studio repository secret `SPECTRAL_SHIP_GEN_CI_TOKEN` solely for read access to `SpectralHorse/SpectralShipGen`. No credential belongs in CMake or source.
+Studio CI obtains SpectralShipGen as a second public repository rather than copying Library implementation into Studio. Cross-repository jobs pin the immutable Library `v1.0.0` tag and use read-only repository access; no private Library PAT is required.
 
 - `.github/workflows/studio-ci.yml` covers Windows and Linux source-checkout integration plus a Linux installed-package integration job.
 - `.github/workflows/studio-sanitizers.yml` runs the no-SFML Preview/model regression under Clang ASan+UBSan, keeping sanitizer focus on project-owned code.
 - `.github/workflows/studio-long.yml` keeps the existing LONG suite on manual/weekly execution rather than ordinary push/PR CI.
 
-Cross-repository jobs intentionally avoid `pull_request_target`. Pull requests whose source context cannot receive the private Library-read secret do not run privileged cross-repository integration; this can be simplified once the Library becomes public.
+The cross-repository steps require only `contents: read`, keep checkout credentials from persisting, and can run for external fork pull requests because both repositories are public and no repository secret is required.
 
 ## Main targets
 
@@ -305,9 +305,9 @@ Generate owns exact ship recipe import/export. Profiles owns reusable authoring-
 
 ## Release version and compatibility
 
-The Studio numeric CMake version is `1.0.0`; the coordinated first RC tag candidate is `v1.0.0-rc.1`. The prerelease qualifier is tag/release metadata rather than part of CMake's numeric `VERSION`. Studio and the Library use independent Semantic Versioning after the initial release.
+The Studio numeric CMake version and first public release tag are `1.0.0` / `v1.0.0`. Studio and the Library use independent Semantic Versioning after their coordinated initial release.
 
-See [`COMPATIBILITY.md`](COMPATIBILITY.md) for the supported Library range and Studio persistence contract, and [`CHANGELOG.md`](CHANGELOG.md) / [`RELEASE_NOTES_1.0.0-rc.1.md`](RELEASE_NOTES_1.0.0-rc.1.md) for the RC summary.
+See [`COMPATIBILITY.md`](COMPATIBILITY.md) for the supported Library range and Studio persistence contract, and [`CHANGELOG.md`](CHANGELOG.md) / [`RELEASE_NOTES_1.0.0.md`](RELEASE_NOTES_1.0.0.md) for the 1.0 release summary.
 
 ## Generated output rights
 
@@ -321,7 +321,7 @@ Development/coding was AI-assisted. The generated ship artwork itself is **not p
 
 ## Windows x64 portable release
 
-The supported first-party RC binary package target is `SpectralShipGen-Studio-1.0.0-rc.1-Windows-x64.zip`. The validated Windows package is x64, statically links SFML, and does not require `sfml-*.dll` files beside the executable. The normal Release build dynamically uses the Microsoft C++ runtime, so **Microsoft Visual C++ 2015–2022 Redistributable (x64) may be required** on systems where it is not already installed.
+The supported first-party binary package target is `SpectralShipGen-Studio-1.0.0-Windows-x64.zip`. The validated Windows package is x64, statically links SFML, and does not require `sfml-*.dll` files beside the executable. The normal Release build dynamically uses the Microsoft C++ runtime, so **Microsoft Visual C++ 2015–2022 Redistributable (x64) may be required** on systems where it is not already installed.
 
 On Windows x64, build target `SpectralShipGenStudioPortableZip` after configuring the normal supported SFML build. See [`docs/WINDOWS_PORTABLE.md`](docs/WINDOWS_PORTABLE.md) for the exact package contents, working-directory behavior, and runtime assumptions.
 

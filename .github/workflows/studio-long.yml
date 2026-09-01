@@ -20,12 +20,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Checkout private SpectralShipGen Library
+      - name: Checkout SpectralShipGen Library
         uses: actions/checkout@v7
         with:
           repository: SpectralHorse/SpectralShipGen
-          ref: c033c263fe3236346d23e85e3631812c84473041
-          token: ${{ secrets.SPECTRAL_SHIP_GEN_CI_TOKEN }}
+          ref: v1.0.0
           path: SpectralShipGen
           persist-credentials: false
 

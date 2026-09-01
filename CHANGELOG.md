@@ -2,9 +2,9 @@
 
 All notable public changes to SpectralShipGen Studio are recorded here beginning with the 1.0 compatibility epoch.
 
-## [1.0.0-rc.1] - Release candidate
+## [1.0.0]
 
-Initial public release candidate.
+Initial public release.
 
 ### Workspaces
 
@@ -39,7 +39,7 @@ Initial public release candidate.
 
 - Studio numeric version `1.0.0` with independent Semantic Versioning after the coordinated initial release.
 - Studio 1.0 supports SpectralShipGen Library `>=1.0.0,<2.0.0`.
-- Initial RC source/CI dependency declaration pins Library `v1.0.0-rc.1` rather than a moving branch.
-- First-time-user guide and explicit generated-output rights policy added for the public RC.
+- Public source/CI dependency declarations pin Library `v1.0.0` rather than a moving branch.
+- First-time-user guide and explicit generated-output rights policy included for the public 1.0 release.
 
 Pre-public development history is intentionally summarized rather than reproduced as an internal task diary.

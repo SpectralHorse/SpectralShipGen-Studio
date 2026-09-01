@@ -44,9 +44,9 @@ if(SPECTRAL_SHIP_GEN_FETCH_SFML)
 endif()
 
 set(SPECTRAL_SHIP_GEN_MINIMUM_LIBRARY_VERSION "1.0.0")
-set(SPECTRAL_SHIP_GEN_LIBRARY_RC_GIT_TAG "v1.0.0-rc.1")
+set(SPECTRAL_SHIP_GEN_LIBRARY_RELEASE_GIT_TAG "v1.0.0")
 set(SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR "" CACHE PATH "Path to a SpectralShipGen Library source checkout for local Studio development")
-option(SPECTRAL_SHIP_GEN_FETCH_LIBRARY "Fetch the exact SpectralShipGen RC dependency when no local Library checkout is supplied" OFF)
+option(SPECTRAL_SHIP_GEN_FETCH_LIBRARY "Fetch the exact SpectralShipGen release dependency when no local Library checkout is supplied" OFF)
 
 if(NOT TARGET SpectralShipGen::Core)
     set(SPECTRAL_SHIP_GEN_BUILD_DIAGNOSTICS ON CACHE BOOL "" FORCE)
@@ -64,7 +64,7 @@ if(NOT TARGET SpectralShipGen::Core)
         include(FetchContent)
         FetchContent_Declare(SpectralShipGen
             GIT_REPOSITORY https://github.com/SpectralHorse/SpectralShipGen.git
-            GIT_TAG "${SPECTRAL_SHIP_GEN_LIBRARY_RC_GIT_TAG}")
+            GIT_TAG "${SPECTRAL_SHIP_GEN_LIBRARY_RELEASE_GIT_TAG}")
         FetchContent_MakeAvailable(SpectralShipGen)
     else()
         find_package(SpectralShipGen ${SPECTRAL_SHIP_GEN_MINIMUM_LIBRARY_VERSION} CONFIG REQUIRED)

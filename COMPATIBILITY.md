@@ -4,7 +4,7 @@ SpectralShipGen Studio `1.0.0` begins the application's public compatibility epo
 
 ## Studio version
 
-The authoritative numeric application version is the root CMake `PROJECT_VERSION`, currently `1.0.0`. The initial RC tag candidate is `v1.0.0-rc.1`; the prerelease qualifier is release/tag metadata and is not part of CMake's numeric `VERSION` field.
+The authoritative numeric application version is the root CMake `PROJECT_VERSION`, currently `1.0.0`. The public 1.0 release tag is `v1.0.0`; Studio and Library version independently after their coordinated initial release.
 
 ## Supported SpectralShipGen Library
 
@@ -16,7 +16,7 @@ Studio 1.0 supports SpectralShipGen Library:
 
 Installed-package consumption requests `find_package(SpectralShipGen 1.0.0 CONFIG REQUIRED)` and relies on the Library package's `SameMajorVersion` compatibility rule.
 
-For the initial release candidate, source/fetch/CI declarations pin the exact intended Library candidate `v1.0.0-rc.1`; they do not track a moving `master`/`main` branch. Before the tag exists, local RC validation uses the exact current Library RC source tree through `SPECTRAL_SHIP_GEN_LIBRARY_SOURCE_DIR` rather than pretending a remote tag was fetched.
+For the public 1.0 release, source/fetch/CI declarations pin the exact SpectralShipGen `v1.0.0` tag; they do not track a moving `master`/`main` branch.
 
 A future Studio release may raise its minimum supported Library version independently. A future Library 1.x release does not automatically require a matching Studio version bump if the Studio compatibility contract still holds.
 
@@ -24,7 +24,7 @@ A future Studio release may raise its minimum supported Library version independ
 
 ### Generation recipes
 
-`.shipgen.json` files use the public SpectralShipGen recipe contract. Recipe schema v6 is the 1.0 baseline. Recipe compatibility is governed by the Library's [`COMPATIBILITY.md`](https://github.com/SpectralHorse/SpectralShipGen/blob/v1.0.0-rc.1/COMPATIBILITY.md); Studio must not reinterpret unsupported Library recipe schemas itself.
+`.shipgen.json` files use the public SpectralShipGen recipe contract. Recipe schema v6 is the 1.0 baseline. Recipe compatibility is governed by the Library's [`COMPATIBILITY.md`](https://github.com/SpectralHorse/SpectralShipGen/blob/v1.0.0/COMPATIBILITY.md); Studio must not reinterpret unsupported Library recipe schemas itself.
 
 ### User preset and Full Configuration exports
 

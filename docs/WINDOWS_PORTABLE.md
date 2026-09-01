@@ -1,23 +1,25 @@
 # Windows x64 Portable Distribution
 
-The 1.0 release-candidate binary target is a portable Windows x64 ZIP named:
+The 1.0 binary target is a portable Windows x64 ZIP named:
 
 ```text
-SpectralShipGen-Studio-1.0.0-rc.1-Windows-x64.zip
+SpectralShipGen-Studio-1.0.0-Windows-x64.zip
 ```
 
 The validated package contains:
 
 ```text
-SpectralShipGen-Studio-1.0.0-rc.1-Windows-x64/
+SpectralShipGen-Studio-1.0.0-Windows-x64/
     SpectralShipGenStudio.exe
     LICENSE
     THIRD_PARTY_NOTICES.md
     README.md
     USER_GUIDE.md
+    images/
+        ... User Guide screenshots ...
 ```
 
-`README.md` is this portable-distribution note; `USER_GUIDE.md` is the offline first-time-user guide.
+`README.md` is this portable-distribution note; `USER_GUIDE.md` is the offline first-time-user guide. The `images/` directory is included so every screenshot referenced by the offline guide resolves inside the extracted package.
 
 ## Running the portable package
 

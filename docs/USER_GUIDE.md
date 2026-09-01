@@ -407,7 +407,7 @@ No broader cross-platform/high-DPI guarantee is implied by the Windows validatio
 
 ## Windows x64 Portable Version
 
-The first-party 1.0 RC portable package is Windows x64.
+The first-party 1.0 portable package is Windows x64.
 
 Typical use:
 

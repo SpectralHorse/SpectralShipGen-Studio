@@ -1,4 +1,4 @@
-# Release-candidate portable packaging is intentionally explicit so a Studio ZIP
+# Public portable packaging is intentionally explicit so a Studio ZIP
 # cannot accidentally absorb Library install files, build caches, user data, or
 # diagnostics scratch from the combined development build.
 if(WIN32)
@@ -6,8 +6,7 @@ if(WIN32)
         message(FATAL_ERROR "SpectralShipGen Studio 1.0 portable release packaging supports Windows x64 only.")
     endif()
 
-    set(SPECTRAL_SHIP_GEN_STUDIO_RC_LABEL "${PROJECT_VERSION}-rc.1")
-    set(SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_NAME "SpectralShipGen-Studio-${SPECTRAL_SHIP_GEN_STUDIO_RC_LABEL}-Windows-x64")
+    set(SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_NAME "SpectralShipGen-Studio-${PROJECT_VERSION}-Windows-x64")
     set(SPECTRAL_SHIP_GEN_STUDIO_PACKAGE_ROOT "${CMAKE_BINARY_DIR}/package")
     set(SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_ROOT "${SPECTRAL_SHIP_GEN_STUDIO_PACKAGE_ROOT}/${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_NAME}")
     set(SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_ZIP "${SPECTRAL_SHIP_GEN_STUDIO_PACKAGE_ROOT}/${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_NAME}.zip")
@@ -22,6 +21,7 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/THIRD_PARTY_NOTICES.md" "${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_ROOT}/THIRD_PARTY_NOTICES.md"
         COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/docs/WINDOWS_PORTABLE.md" "${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_ROOT}/README.md"
         COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/docs/USER_GUIDE.md" "${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_ROOT}/USER_GUIDE.md"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/docs/images" "${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_ROOT}/images"
         COMMAND ${CMAKE_COMMAND} -E rm -f "${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_ZIP}"
         COMMAND ${CMAKE_COMMAND} -E tar "cf" "${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_ZIP}" --format=zip "${SPECTRAL_SHIP_GEN_STUDIO_PORTABLE_NAME}"
         WORKING_DIRECTORY "${SPECTRAL_SHIP_GEN_STUDIO_PACKAGE_ROOT}"
