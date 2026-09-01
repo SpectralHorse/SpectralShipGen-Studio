@@ -32,6 +32,7 @@
 #include "PreviewState.h"
 #include "PreviewWorkspace.h"
 #include "PreviewWorkspaceNavigation.h"
+#include "PreviewWindowPresentation.h"
 
 namespace SpectralShipGenStudioPreview
 {
@@ -133,7 +134,9 @@ namespace SpectralShipGenStudioPreview
         void handleMouseReleased(const sf::Event::MouseButtonEvent& event);
         void handleMouseWheelScrolled(const sf::Event::MouseWheelScrollEvent& event);
         void handleTextEntered(const sf::Event::TextEvent& event);
+        void handleWindowResized(const sf::Event::SizeEvent& event);
         bool isCommandActive(PreviewCommandType type) const;
+        bool isWindowPixelInsideLogicalViewport(int32_t x, int32_t y) const;
         bool isCommandEnabled(const PreviewCommand& command) const;
         bool importRecipeFromPath(const std::filesystem::path& path);
         void importRecipe();
@@ -145,6 +148,7 @@ namespace SpectralShipGenStudioPreview
         void moveGallerySelection(int32_t deltaX, int32_t deltaY);
         void moveGenerationStage(int32_t delta);
         bool loadFavorite(uint32_t index);
+        sf::Vector2f mapWindowPixelToLogical(int32_t x, int32_t y) const;
         void openSelectedFavoriteInWorkspace(PreviewWorkspace workspace);
         void exportSelectedFavoriteImage();
         void loadFavoriteCollection();
@@ -207,6 +211,7 @@ namespace SpectralShipGenStudioPreview
         void toggleGalleryCandidateFavorite(uint32_t index);
         void update();
         void updateCommandPanelState();
+        void updateLogicalWindowView(uint32_t physicalWidth, uint32_t physicalHeight);
         void updateWindowTitle();
         void setStatusMessage(const std::string& message);
         void switchWorkspace(PreviewWorkspace workspace);
@@ -216,6 +221,8 @@ namespace SpectralShipGenStudioPreview
 
     private:
         sf::RenderWindow m_Window;
+        sf::View m_LogicalView;
+        PreviewNormalizedViewport m_LogicalViewport;
         SpectralShipGen::ShipGenerator m_Generator;
         std::mt19937_64 m_SeedGenerator;
         PreviewRenderer m_Renderer;

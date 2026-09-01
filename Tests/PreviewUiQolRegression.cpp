@@ -1,5 +1,6 @@
 #include "PreviewRegressionSuites.h"
 
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <iostream>
@@ -12,6 +13,7 @@
 #include "PreviewFavoritesPersistence.h"
 #include "PreviewGenerationRecipe.h"
 #include "PreviewPagination.h"
+#include "PreviewWindowPresentation.h"
 #include <SpectralShipGen/ShipFactionProfile.h>
 #include <SpectralShipGen/ShipGenerationProfile.h>
 #include <SpectralShipGen/ShipGenerationSeeds.h>
@@ -170,6 +172,90 @@ int SpectralShipGenStudioTests::runPreviewUiQolRegression()
     for (const ConfigurationBundleComponentControl& component : editor.getBundleComponentControls())
     {
         if (component.RowBounds.Height < 40.0f || component.ReplaceBounds.Height < 34.0f) { return fail("Full Configuration component rows do not fit enlarged text"); }
+    }
+
+    const PreviewNormalizedViewport nativeViewport = calculatePreviewLogicalViewport(1640u, 1000u, 1640u, 1000u);
+    if (std::abs(nativeViewport.Left) > 0.0001f || std::abs(nativeViewport.Top) > 0.0001f ||
+        std::abs(nativeViewport.Width - 1.0f) > 0.0001f || std::abs(nativeViewport.Height - 1.0f) > 0.0001f)
+    {
+        return fail("logical viewport changed at the native 1640x1000 aspect ratio");
+    }
+
+    const PreviewNormalizedViewport wideViewport = calculatePreviewLogicalViewport(1920u, 1080u, 1640u, 1000u);
+    if (wideViewport.Left <= 0.0f || wideViewport.Top != 0.0f || wideViewport.Width >= 1.0f || wideViewport.Height != 1.0f)
+    {
+        return fail("wide-window pillarbox calculation is incorrect");
+    }
+    const int32_t wideContentLeft = static_cast<int32_t>(wideViewport.Left * 1920.0f);
+    if (isPreviewPixelInsideLogicalViewport(0, 540, 1920u, 1080u, wideViewport) ||
+        !isPreviewPixelInsideLogicalViewport(wideContentLeft + 2, 540, 1920u, 1080u, wideViewport))
+    {
+        return fail("pillarbox pixels are not isolated from the logical UI viewport");
+    }
+
+    const PreviewNormalizedViewport tallViewport = calculatePreviewLogicalViewport(1280u, 800u, 1640u, 1000u);
+    if (tallViewport.Top <= 0.0f || tallViewport.Left != 0.0f || tallViewport.Height >= 1.0f || tallViewport.Width != 1.0f)
+    {
+        return fail("tall-window letterbox calculation is incorrect");
+    }
+    const int32_t tallContentTop = static_cast<int32_t>(tallViewport.Top * 800.0f);
+    if (isPreviewPixelInsideLogicalViewport(640, 0, 1280u, 800u, tallViewport) ||
+        !isPreviewPixelInsideLogicalViewport(640, tallContentTop + 2, 1280u, 800u, tallViewport))
+    {
+        return fail("letterbox pixels are not isolated from the logical UI viewport");
+    }
+
+    struct ViewportCase { uint32_t Width; uint32_t Height; };
+    constexpr ViewportCase viewportCases[] = {
+        { 1920u, 1080u },
+        { 1600u, 900u },
+        { 1440u, 900u },
+        { 1366u, 768u },
+        { 1280u, 720u },
+        { 1280u, 800u }
+    };
+    for (const ViewportCase& viewportCase : viewportCases)
+    {
+        const PreviewNormalizedViewport viewport = calculatePreviewLogicalViewport(
+            viewportCase.Width,
+            viewportCase.Height,
+            1640u,
+            1000u);
+        const double contentWidth = static_cast<double>(viewport.Width) * static_cast<double>(viewportCase.Width);
+        const double contentHeight = static_cast<double>(viewport.Height) * static_cast<double>(viewportCase.Height);
+        if (contentHeight <= 0.0 || std::abs((contentWidth / contentHeight) - 1.64) > 0.002)
+        {
+            return fail("representative resized window does not preserve the 1640x1000 logical aspect ratio");
+        }
+        if (!isPreviewPixelInsideLogicalViewport(
+                static_cast<int32_t>(viewportCase.Width / 2u),
+                static_cast<int32_t>(viewportCase.Height / 2u),
+                viewportCase.Width,
+                viewportCase.Height,
+                viewport))
+        {
+            return fail("representative resized window center is outside the logical viewport");
+        }
+        if (viewport.Left > 0.0f && isPreviewPixelInsideLogicalViewport(0, static_cast<int32_t>(viewportCase.Height / 2u), viewportCase.Width, viewportCase.Height, viewport))
+        {
+            return fail("representative pillarbox region activates the logical viewport");
+        }
+        if (viewport.Top > 0.0f && isPreviewPixelInsideLogicalViewport(static_cast<int32_t>(viewportCase.Width / 2u), 0, viewportCase.Width, viewportCase.Height, viewport))
+        {
+            return fail("representative letterbox region activates the logical viewport");
+        }
+    }
+
+    const PreviewPhysicalSize nativeInitial = fitPreviewWindowToAvailableClientArea(1920u, 1040u, 1640u, 1000u);
+    if (nativeInitial.Width != 1640u || nativeInitial.Height != 1000u)
+    {
+        return fail("initial window sizing unnecessarily shrinks a fully fitting logical client area");
+    }
+    const PreviewPhysicalSize reducedInitial = fitPreviewWindowToAvailableClientArea(1366u, 768u, 1640u, 1000u);
+    if (reducedInitial.Width > 1366u || reducedInitial.Height > 768u ||
+        std::abs((static_cast<double>(reducedInitial.Width) / static_cast<double>(reducedInitial.Height)) - 1.64) > 0.002)
+    {
+        return fail("initial window sizing does not preserve the logical aspect ratio within the available client area");
     }
 
     std::cout << "Preview UI readability/Favorites scalability/Gallery QoL regression passed.\n";

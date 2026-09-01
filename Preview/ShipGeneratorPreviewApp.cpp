@@ -1,3 +1,9 @@
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#endif
+
 #include "ShipGeneratorPreviewApp.h"
 
 #include <algorithm>
@@ -9,6 +15,13 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+
+#if defined(_WIN32)
+#include <Windows.h>
+#ifdef DUPLICATE
+#undef DUPLICATE
+#endif
+#endif
 
 #include "SFMLImageAdapter.h"
 #include <SpectralShipGen/BuiltInPresetCatalog.h>
@@ -35,6 +48,50 @@ namespace
     const std::filesystem::path CalibrationSessionPath = "generation_calibration_session.json";
     const std::filesystem::path CalibrationReportPath = "generation_calibration_report.csv";
     const std::filesystem::path CalibrationTuningProfilePath = "generation_tuning_profile.json";
+
+    constexpr uint32_t PreviewFallbackDesktopFrameReserveWidth = 64u;
+    constexpr uint32_t PreviewFallbackDesktopFrameReserveHeight = 64u;
+
+    PreviewPhysicalSize getPreviewAvailableClientArea()
+    {
+#if defined(_WIN32)
+        RECT workArea{};
+        if (SystemParametersInfoW(SPI_GETWORKAREA, 0u, &workArea, 0u) != FALSE)
+        {
+            RECT requestedClient{ 0, 0, static_cast<LONG>(PreviewWindowWidth), static_cast<LONG>(PreviewWindowHeight) };
+            if (AdjustWindowRect(&requestedClient, WS_OVERLAPPEDWINDOW, FALSE) != FALSE)
+            {
+                const uint32_t workAreaWidth = static_cast<uint32_t>(std::max<LONG>(1, workArea.right - workArea.left));
+                const uint32_t workAreaHeight = static_cast<uint32_t>(std::max<LONG>(1, workArea.bottom - workArea.top));
+                const uint32_t outerWidth = static_cast<uint32_t>(requestedClient.right - requestedClient.left);
+                const uint32_t outerHeight = static_cast<uint32_t>(requestedClient.bottom - requestedClient.top);
+                const uint32_t frameWidth = outerWidth > PreviewWindowWidth ? outerWidth - PreviewWindowWidth : 0u;
+                const uint32_t frameHeight = outerHeight > PreviewWindowHeight ? outerHeight - PreviewWindowHeight : 0u;
+                return {
+                    workAreaWidth > frameWidth ? workAreaWidth - frameWidth : 1u,
+                    workAreaHeight > frameHeight ? workAreaHeight - frameHeight : 1u
+                };
+            }
+        }
+#endif
+
+        const sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
+        return {
+            desktopMode.width > PreviewFallbackDesktopFrameReserveWidth ? desktopMode.width - PreviewFallbackDesktopFrameReserveWidth : desktopMode.width,
+            desktopMode.height > PreviewFallbackDesktopFrameReserveHeight ? desktopMode.height - PreviewFallbackDesktopFrameReserveHeight : desktopMode.height
+        };
+    }
+
+    sf::VideoMode getInitialPreviewVideoMode()
+    {
+        const PreviewPhysicalSize availableClientArea = getPreviewAvailableClientArea();
+        const PreviewPhysicalSize initialSize = fitPreviewWindowToAvailableClientArea(
+            availableClientArea.Width,
+            availableClientArea.Height,
+            PreviewWindowWidth,
+            PreviewWindowHeight);
+        return sf::VideoMode(initialSize.Width, initialSize.Height);
+    }
 
 
     template <typename T, std::size_t Size>
@@ -400,10 +457,12 @@ namespace
 namespace SpectralShipGenStudioPreview
 {
     ShipGeneratorPreviewApp::ShipGeneratorPreviewApp(std::string startupRecipePath)
-        : m_Window(sf::VideoMode(PreviewWindowWidth, PreviewWindowHeight), "SpectralShipGen Studio", sf::Style::Titlebar | sf::Style::Close), m_SeedGenerator(createSeedGenerator()), m_StartupRecipePath(std::move(startupRecipePath))
+        : m_Window(getInitialPreviewVideoMode(), "SpectralShipGen Studio", sf::Style::Titlebar | sf::Style::Resize | sf::Style::Close), m_SeedGenerator(createSeedGenerator()), m_StartupRecipePath(std::move(startupRecipePath))
     {
         m_Window.setVerticalSyncEnabled(true);
         m_Window.setKeyRepeatEnabled(false);
+        m_LogicalView.reset(sf::FloatRect(0.0f, 0.0f, static_cast<float>(PreviewWindowWidth), static_cast<float>(PreviewWindowHeight)));
+        updateLogicalWindowView(m_Window.getSize().x, m_Window.getSize().y);
 
         PreviewGenerationRecipe initialRecipe;
         initialRecipe.Seeds = SpectralShipGen::deriveShipGenerationSeeds(m_SeedGenerator());
@@ -2274,7 +2333,7 @@ namespace SpectralShipGenStudioPreview
 
     void ShipGeneratorPreviewApp::handleMouseMoved(const sf::Event::MouseMoveEvent& event)
     {
-        const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        const sf::Vector2f position = mapWindowPixelToLogical(event.x, event.y);
         if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible) { return; }
 
         m_WorkspaceNavigation.onMouseMove(position);
@@ -2296,8 +2355,9 @@ namespace SpectralShipGenStudioPreview
     void ShipGeneratorPreviewApp::handleMousePressed(const sf::Event::MouseButtonEvent& event)
     {
         if (event.button != sf::Mouse::Left && event.button != sf::Mouse::Right) { return; }
+        if (!isWindowPixelInsideLogicalViewport(event.x, event.y)) { return; }
 
-        const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        const sf::Vector2f position = mapWindowPixelToLogical(event.x, event.y);
         if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible) { return; }
 
         if (event.button == sf::Mouse::Right)
@@ -2342,7 +2402,7 @@ namespace SpectralShipGenStudioPreview
     {
         if (event.button != sf::Mouse::Left) { return; }
 
-        const sf::Vector2f position = m_Window.mapPixelToCoords(sf::Vector2i(event.x, event.y));
+        const sf::Vector2f position = mapWindowPixelToLogical(event.x, event.y);
         if (m_Diagnostics.HelpVisible || m_Diagnostics.GenerationInspectorVisible || m_Diagnostics.PaletteInspectorVisible)
         {
             m_WorkspaceNavigation.cancelPress();
@@ -2370,12 +2430,18 @@ namespace SpectralShipGenStudioPreview
 
     void ShipGeneratorPreviewApp::handleMouseWheelScrolled(const sf::Event::MouseWheelScrollEvent& event)
     {
+        if (!isWindowPixelInsideLogicalViewport(event.x, event.y)) { return; }
         if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { m_ConfigurationEditor.onMouseWheelScrolled(event.delta); }
     }
 
     void ShipGeneratorPreviewApp::handleTextEntered(const sf::Event::TextEvent& event)
     {
         if (m_PreviewMode == PreviewMode::CONFIGURATION_EDITOR) { m_ConfigurationEditor.onTextEntered(event.unicode); }
+    }
+
+    void ShipGeneratorPreviewApp::handleWindowResized(const sf::Event::SizeEvent& event)
+    {
+        updateLogicalWindowView(event.width, event.height);
     }
 
     bool ShipGeneratorPreviewApp::isCommandActive(PreviewCommandType type) const
@@ -2657,6 +2723,11 @@ namespace SpectralShipGenStudioPreview
         }
     }
 
+    sf::Vector2f ShipGeneratorPreviewApp::mapWindowPixelToLogical(int32_t x, int32_t y) const
+    {
+        return m_Window.mapPixelToCoords(sf::Vector2i(x, y), m_LogicalView);
+    }
+
     void ShipGeneratorPreviewApp::moveAnimationFrame(int32_t delta)
     {
         if (!m_AnimationSession.moveFrame(delta)) { return; }
@@ -2690,6 +2761,12 @@ namespace SpectralShipGenStudioPreview
     void ShipGeneratorPreviewApp::moveGallerySelection(int32_t deltaX, int32_t deltaY)
     {
         if (movePreviewThumbnailSelection(m_GalleryState.Grid, deltaX, deltaY)) { updateWindowTitle(); }
+    }
+
+    bool ShipGeneratorPreviewApp::isWindowPixelInsideLogicalViewport(int32_t x, int32_t y) const
+    {
+        const sf::Vector2u size = m_Window.getSize();
+        return isPreviewPixelInsideLogicalViewport(x, y, size.x, size.y, m_LogicalViewport);
     }
 
     bool ShipGeneratorPreviewApp::loadFavorite(uint32_t index)
@@ -2932,6 +3009,11 @@ namespace SpectralShipGenStudioPreview
                 m_Window.close();
             }
 
+            if (event.type == sf::Event::Resized)
+            {
+                handleWindowResized(event.size);
+            }
+
             if (event.type == sf::Event::MouseMoved)
             {
                 handleMouseMoved(event.mouseMove);
@@ -3126,6 +3208,7 @@ namespace SpectralShipGenStudioPreview
 
     void ShipGeneratorPreviewApp::render()
     {
+        m_Window.setView(m_LogicalView);
         updateCommandPanelState();
         PreviewRenderData data;
         data.Mode = m_PreviewMode;
@@ -3882,6 +3965,21 @@ namespace SpectralShipGenStudioPreview
             updateCommandPanelState();
             updateWindowTitle();
         }
+    }
+
+    void ShipGeneratorPreviewApp::updateLogicalWindowView(uint32_t physicalWidth, uint32_t physicalHeight)
+    {
+        m_LogicalViewport = calculatePreviewLogicalViewport(
+            physicalWidth,
+            physicalHeight,
+            PreviewWindowWidth,
+            PreviewWindowHeight);
+        m_LogicalView.setViewport(sf::FloatRect(
+            m_LogicalViewport.Left,
+            m_LogicalViewport.Top,
+            m_LogicalViewport.Width,
+            m_LogicalViewport.Height));
+        m_Window.setView(m_LogicalView);
     }
 
     void ShipGeneratorPreviewApp::updateCommandPanelState()
