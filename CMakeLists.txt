@@ -34,8 +34,9 @@ function(spectral_ship_gen_studio_enable_sanitizers target_name)
     endif()
 endfunction()
 
-option(SPECTRAL_SHIP_GEN_FETCH_SFML "Fetch SFML 2.6.x for application targets" ON)
+option(SPECTRAL_SHIP_GEN_FETCH_SFML FetchContent_MakeAvailable"Fetch SFML 2.6.x for application targets" ON)
 if(SPECTRAL_SHIP_GEN_FETCH_SFML)
+    find_package(Freetype REQUIRED)
     include(FetchContent)
     FetchContent_Declare(SFML
         GIT_REPOSITORY https://github.com/SFML/SFML.git

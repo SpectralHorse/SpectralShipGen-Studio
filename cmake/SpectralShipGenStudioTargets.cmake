@@ -17,6 +17,7 @@ add_library(SpectralShipGenStudioApplicationCommon STATIC
     Application/SFMLCharts.cpp
     Application/SFMLImageAdapter.cpp
 )
+target_link_libraries(SpectralShipGenStudioApplicationCommon PRIVATE Freetype::Freetype)
 target_include_directories(SpectralShipGenStudioApplicationCommon PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Application)
 target_link_libraries(SpectralShipGenStudioApplicationCommon PUBLIC SpectralShipGen::Core sfml-graphics)
 target_compile_features(SpectralShipGenStudioApplicationCommon PUBLIC cxx_std_17)
