@@ -33,7 +33,8 @@ The portable build statically links SFML. **Microsoft Visual C++ 2015–2022 Red
 - SFML 2.6.x for the Studio and Diagnostics application targets
 - SpectralShipGen Library `>=1.0.0,<2.0.0`, normally from a sibling checkout, exact release-tag FetchContent path, or installed package
 
-## On Linux with X11 SFML requires following dependencies
+### On Debian with X11 SFML has additional requirements
+
 sudo apt update
 sudo apt install libx11-dev
 sudo apt-get install libgl1-mesa-dev libegl1-mesa-dev
