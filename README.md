@@ -35,6 +35,7 @@ The portable build statically links SFML. **Microsoft Visual C++ 2015–2022 Red
 
 ### On Debian with X11 SFML has additional requirements
 
+```
 sudo apt update
 sudo apt install libx11-dev
 sudo apt-get install libgl1-mesa-dev libegl1-mesa-dev
@@ -45,6 +46,7 @@ sudo apt-get install libflac-dev
 sudo apt-get install libxrandr-dev
 sudo apt install libxcursor-dev
 sudo apt-get install libfreetype6-dev
+```
 
 ## Recommended local development layout
 
