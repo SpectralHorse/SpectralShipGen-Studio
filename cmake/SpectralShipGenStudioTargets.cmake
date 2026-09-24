@@ -18,6 +18,9 @@ add_library(SpectralShipGenStudioApplicationCommon STATIC
     Application/SFMLImageAdapter.cpp
 )
 target_include_directories(SpectralShipGenStudioApplicationCommon PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Application)
+if(SPECTRAL_SHIP_GEN_FETCH_SFM AND MAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(SpectralShipGenStudioApplicationCommon PRIVATE Freetype::Freetype)
+endif()
 target_link_libraries(SpectralShipGenStudioApplicationCommon PUBLIC SpectralShipGen::Core sfml-graphics)
 target_compile_features(SpectralShipGenStudioApplicationCommon PUBLIC cxx_std_17)
 spectral_ship_gen_studio_enable_sanitizers(SpectralShipGenStudioApplicationCommon)

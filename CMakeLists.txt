@@ -36,6 +36,9 @@ endfunction()
 
 option(SPECTRAL_SHIP_GEN_FETCH_SFML "Fetch SFML 2.6.x for application targets" ON)
 if(SPECTRAL_SHIP_GEN_FETCH_SFML)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        find_package(Freetype REQUIRED)
+    endif()
     include(FetchContent)
     FetchContent_Declare(SFML
         GIT_REPOSITORY https://github.com/SFML/SFML.git
